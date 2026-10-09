@@ -1,0 +1,10 @@
+{
+  "name": "plane-for-codex",
+  "interface": {"displayName": "Plane for Codex"},
+  "plugins": [{
+    "name": "plane-for-codex",
+    "source": {"source": "local", "path": "./plugins/plane-for-codex"},
+    "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+    "category": "Productivity"
+  }]
+}

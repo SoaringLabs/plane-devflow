@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plane · Deliver"
+  short_description: "Deliver a linked PR and report results back to Plane"
+  default_prompt: "Use $plane-for-codex:plane-deliver to deliver this task as a PR and update Plane with the results."

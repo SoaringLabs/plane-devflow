@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plane · Start"
+  short_description: "Read a Plane task and prepare its development branch"
+  default_prompt: "Use $plane-for-codex:plane-start to read my Plane task and begin implementing it."

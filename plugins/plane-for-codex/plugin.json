@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "plane-for-codex",
+  "version": "0.1.0",
+  "description": "Move Plane work items from requirements to reviewed GitHub pull requests in Codex.",
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/plane-setup/SKILL.md",
+      "interface": {
+        "displayName": "Plane for Codex",
+        "shortDescription": "从 Plane 任务到 GitHub PR 的开发工作流",
+        "longDescription": "Community open-source Plane workflow for Codex. Connect a repository, start a work item, and deliver a linked pull request. Optional GitHub Actions synchronization.",
+        "developerName": "Plane for Codex contributors",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "defaultPrompt": ["初始化当前仓库的 Plane 工作流", "开始处理 Plane 任务", "交付当前 Plane 任务"]
+      }
+    }
+  }
+}

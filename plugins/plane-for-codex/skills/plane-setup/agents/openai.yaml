@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plane · Setup"
+  short_description: "Connect a repository to Plane and configure PR sync"
+  default_prompt: "Use $plane-for-codex:plane-setup to connect this repository to my Plane project in basic mode."
