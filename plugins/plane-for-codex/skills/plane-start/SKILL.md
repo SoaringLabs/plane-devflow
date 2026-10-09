@@ -7,6 +7,8 @@ description: Start development on an existing Plane work item by its task identi
 
 Resolve `../../scripts/plane_workflow.py` relative to this SKILL.md's directory and invoke it using its absolute path. Read [the workflow reference](../../references/workflow.md) for branch preparation and reporting commands.
 
+When selected without a task identifier/link, reuse an unambiguous task from the user's current context. Otherwise list suitable unfinished work items from the mapped project through MCP and ask the user to choose one by name. Task selection authorizes starting that work; keep the repository unchanged until the task is identified.
+
 1. Load `.plane-for-codex.json` from the target Git repository and run `doctor`. Use `plane-setup` if it is missing.
 2. Parse the task identifier or Plane link supplied by the user. Through Plane MCP, retrieve the work item, its complete description, comments, and relevant sub-items/relations. Confirm workspace, project and acceptance scope against the repo mapping. Summarize the intended change; clarify only missing information that affects implementation. Never silently develop a task in another project.
 3. Inspect the current branch, worktree and uncommitted changes. Fetch the configured origin base branch before creating a new task branch. Ensure setup mapping is committed in that base branch. Run `prepare` to inspect a branch plan. Apply it when the user has authorized starting development. If unrelated changes require isolation, use `--worktree` and work in the returned directory. Existing task branches can be resumed; preserve their changes.

@@ -4,7 +4,7 @@ The script path is `<plugin-directory>/scripts/plane_workflow.py`. Resolve it fr
 
 ## Authenticate and resolve mapping
 
-The human entry point is "初始化" after selecting the plugin. The commands below are agent-operated implementation details. Resolve their arguments automatically; show only meaningful choices and the resulting association to the user.
+The human entry point is selecting **Plane: 初始化** in Codex's skill selector and sending that selection; a Skill-only message starts setup. A short natural-language request also works. The commands below are agent-operated implementation details. Resolve their arguments automatically; show only meaningful choices and the resulting association to the user.
 
 1. Use Codex's bundled `plane` MCP connection. It targets the official OAuth endpoint `https://mcp.plane.so/http/mcp`. Browser consent selects a workspace; use `workspace` / `retrieve` to read that connection's slug and identity. If the user supplied a different workspace URL, resolve the mismatch. Reuse existing consent, reconnect only when necessary. Never ask for an OAuth token in chat.
 2. Confirm `gh auth status` succeeds. Both personal and organization repositories use the same repo-scoped commands. Organization ownership does not bypass SSO or repository access restrictions.

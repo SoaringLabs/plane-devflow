@@ -1,4 +1,4 @@
 interface:
-  display_name: "Plane · Deliver"
-  short_description: "Deliver a linked PR and report results back to Plane"
-  default_prompt: "Use $plane-for-codex:plane-deliver to deliver this task as a PR and update Plane with the results."
+  display_name: "Plane: 交付任务"
+  short_description: "创建或更新 GitHub PR，回写 Plane 链接、检查结果与验收状态"
+  default_prompt: "使用 $plane-for-codex:plane-deliver。"

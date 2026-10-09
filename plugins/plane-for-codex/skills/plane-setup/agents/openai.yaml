@@ -1,4 +1,4 @@
 interface:
-  display_name: "Plane · Setup"
-  short_description: "Connect a repository to Plane and configure PR sync"
-  default_prompt: "使用 $plane-for-codex:plane-setup 初始化。"
+  display_name: "Plane: 初始化"
+  short_description: "自动关联当前仓库与 Plane 项目，完成账号连接和任务状态配置"
+  default_prompt: "使用 $plane-for-codex:plane-setup。"

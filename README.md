@@ -6,19 +6,21 @@
 
 ## 基本使用
 
-在目标代码仓库的 Codex 聊天中，选择 **Plane for Codex**，说一句 **“初始化”** 即可。
+在目标代码仓库的 Codex 聊天中，打开你当前版本的技能选择菜单，搜索 **Plane**，选择 **Plane: 初始化** 并发送即可，无需再输入“初始化”或配置文字。
+
+如果你的版本在 `/` 菜单中展示技能，输入 `/` 后搜索 Plane；其他客户端可通过技能菜单或 `$` 选择 Skill。这里接入的是 Codex 原生的技能选择器，具体打开方式由客户端决定。
 
 插件会复用登录连接、读取工作区、结合当前仓库匹配项目，默认采用基础模式和人工验收。项目无法明确匹配时，它会列出项目让你选择。首次未连接账号时，在浏览器中完成授权；无需编写配置提示词或查找 UUID。
 
-后续可以继续通过插件描述任务，也可以选择具体 Skill：
+三个可选择的入口如下：
 
-| 入口 | 示例 | 结果 |
+| 菜单入口 | 所需输入 | 结果 |
 | --- | --- | --- |
-| `$plane-for-codex:plane-setup` | 初始化 | 复用或连接账号，匹配项目，自动解析状态和生成仓库映射 |
-| `$plane-for-codex:plane-start` | 开始处理 DEMO-12，按任务要求实现并检查 | 读取需求，创建或续接任务分支，回写开发中 |
-| `$plane-for-codex:plane-deliver` | 把当前任务提交为 PR，并回写交付结果 | 提交预期改动，推送、创建或更新 PR，回写链接和验收情况 |
+| **Plane: 初始化** | 直接选择并发送 | 复用或连接账号，匹配项目，自动解析状态和生成仓库映射 |
+| **Plane: 开始任务** | 可附任务编号/链接；未提供则引导选任务 | 读取需求，创建或续接任务分支，回写开发中 |
+| **Plane: 交付任务** | 当前任务明确时直接选择并发送 | 提交预期改动，推送、创建或更新 PR，回写链接和验收情况 |
 
-`@` 选择插件，`$` 选择具体 Skill。插件入口取决于 Codex 版本；这些命令可直接在聊天输入框使用。v0.1 没有独立的插件配置页面，初始化通过对话、浏览器授权和仓库配置完成。
+这些入口由插件内的三个 Skill 提供。显式技能标识分别为 `$plane-for-codex:plane-setup`、`$plane-for-codex:plane-start`、`$plane-for-codex:plane-deliver`。它们不是另行注册的 `/plane ...` 命令别名。v0.1 没有独立的插件配置页面，初始化通过技能引导、浏览器授权和仓库配置完成。
 
 ```mermaid
 flowchart LR
@@ -43,7 +45,7 @@ codex mcp login plane
 
 Plane 在浏览器中处理授权，选择与目标项目一致的工作区。新装插件若未在当前聊天中出现，请新开该代码仓库的聊天加载插件。已有 `plane` MCP 配置时先检查冲突，不要覆盖其他连接。
 
-然后在业务仓库中选择插件，说“初始化”。Codex 负责解析参数、生成 `.plane-for-codex.json`，并在已授权范围内处理配置提交/PR。映射合并到目标基础分支后即可开始任务。配置只保存工作区、项目、状态、仓库和完成规则，不保存凭证。完整字段见 [配置示例](examples/plane-for-codex.example.json)。
+然后在业务仓库中选择 **Plane: 初始化** 并发送。Codex 负责解析参数、生成 `.plane-for-codex.json`，并在已授权范围内处理配置提交/PR。映射合并到目标基础分支后即可开始任务。配置只保存工作区、项目、状态、仓库和完成规则，不保存凭证。完整字段见 [配置示例](examples/plane-for-codex.example.json)。
 
 ## 两种连接方式
 
@@ -84,6 +86,6 @@ python3 -m unittest discover -s tests -v
 
 ## English quick start
 
-Plane for Codex is a community plugin linking existing Plane work items to task branches and GitHub PRs. Install the local marketplace with the commands above, then select **Plane for Codex** in your application repository and say **"set up"**. Onboarding reads the connected workspace, resolves the project from repository/context, and defaults to basic mode with manual acceptance. Complete browser consent if needed; choose a project only when matching is ambiguous. Use **Plane · Start** to implement a task and **Plane · Deliver** to create/update its PR and write back the delivery report. Codex prefixes installed Skill names with `plane-for-codex:` as shown in the table above.
+Plane for Codex is a community plugin linking existing Plane work items to task branches and GitHub PRs. Install the local marketplace with the commands above, then open your client's skill selector and search **Plane**. Select **Plane: 初始化** (Setup) and send the selection; no additional setup sentence is required. Onboarding reads the connected workspace, resolves the project from repository/context, and defaults to basic mode with manual acceptance. Complete browser consent if needed; choose a project only when matching is ambiguous. **Plane: 开始任务** starts development, and **Plane: 交付任务** delivers the current task. Skill identifiers are `plane-for-codex:plane-setup`, `plane-for-codex:plane-start` and `plane-for-codex:plane-deliver`. Picker shortcuts depend on the client; no custom `/plane` command aliases are registered.
 
 Basic mode uses official Plane MCP OAuth and your existing GitHub CLI login. Optional event synchronization ships as a pinned GitHub Action and needs a separate Plane PAT in a repository Secret. Configuration is per repository; credentials are never stored in the mapping. Default completion requires manual acceptance. The offline demo makes no external service calls.

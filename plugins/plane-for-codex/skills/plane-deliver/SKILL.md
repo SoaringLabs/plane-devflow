@@ -7,6 +7,8 @@ description: Deliver a Plane task as a linked GitHub pull request and write back
 
 Resolve `../../scripts/plane_workflow.py` relative to this SKILL.md's directory and invoke it using its absolute path. Read [the workflow reference](../../references/workflow.md) for report and PR commands.
 
+When selected without additional prose, resolve the current task from repository mapping plus its task branch, bound PR or unambiguous user context. Ask for task selection only if those disagree or identify no single task. Explicitly selecting this delivery Skill requests the normal commit/push/PR and Plane writeback workflow; preserve any narrower user constraints and completion/acceptance requirements.
+
 1. Load the repository mapping and task through MCP. Inspect the actual diff, branch and required checks. Include only the task's intended files in commits; preserve other work.
 2. Write a report with the implemented change, observed verification results, remaining acceptance steps, and any limitations. Use `render-report` to create a reusable PR body with a primary `[PROJECT-123]` reference and a machine-readable binding. Never put credentials or internal reasoning in this report.
 3. Within the user's authorized delivery scope, commit, push and create or update the PR against the configured base branch. Reuse the existing task PR on retries. If delivery authorization excludes an external operation, prepare its concrete result before requesting the missing authorization. Attach newly created PRs with the host attachment tool when available.
