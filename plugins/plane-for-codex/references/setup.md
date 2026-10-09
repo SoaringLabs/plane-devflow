@@ -4,10 +4,12 @@ The script path is `<plugin-directory>/scripts/plane_workflow.py`. Resolve it fr
 
 ## Authenticate and resolve mapping
 
-1. Use Codex's bundled `plane` MCP connection. It targets the official OAuth endpoint `https://mcp.plane.so/http/mcp`. Browser consent selects a workspace; verify the chosen workspace agrees with the supplied URL. Reuse existing consent, reconnect only when necessary. Never ask for an OAuth token in chat.
+The human entry point is "初始化" after selecting the plugin. The commands below are agent-operated implementation details. Resolve their arguments automatically; show only meaningful choices and the resulting association to the user.
+
+1. Use Codex's bundled `plane` MCP connection. It targets the official OAuth endpoint `https://mcp.plane.so/http/mcp`. Browser consent selects a workspace; use `workspace` / `retrieve` to read that connection's slug and identity. If the user supplied a different workspace URL, resolve the mismatch. Reuse existing consent, reconnect only when necessary. Never ask for an OAuth token in chat.
 2. Confirm `gh auth status` succeeds. Both personal and organization repositories use the same repo-scoped commands. Organization ownership does not bypass SSO or repository access restrictions.
-3. Discover Plane project/state IDs via available MCP tools, following their actual schemas and pagination. Do not invent tool names or UUIDs. Distinguish state groups and names; map a started/development state, a separate review state, and a completed state. If review is missing, explain the needed state and create it only within setup authorization.
-4. Basic mode needs no Plane PAT. Default completion is `manual`; ask the user if merge alone is sufficient before selecting `on_merge`.
+3. Discover Plane project/state IDs via available MCP tools, following their actual schemas and pagination. Do not invent UUIDs. Prefer a valid existing mapping or explicit task/project context; otherwise a unique exact match to the origin repository name may resolve the project. If ambiguous, offer a concise project-name selection. Distinguish state groups and names; map a started/development state, a separate review state, and a completed state. If review is missing, explain the needed state and create it only within setup authorization; if the user's scope leaves that choice unresolved, ask specifically about adding that state. Preserve any existing state.
+4. For a new mapping, use basic mode and `manual` completion without asking the user to choose modes or type settings. Apply explicit preferences if given, and preserve configured choices on reruns. Enabling Actions or changing to `on_merge` is a later request. Resolve the base branch from the existing mapping or the actual GitHub default branch (`origin/HEAD`, or GitHub repository metadata); `main` in the example below is illustrative.
 
 ```sh
 python3 /absolute/plugin/scripts/plane_workflow.py doctor --repo /absolute/application/repo

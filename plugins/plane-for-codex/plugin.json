@@ -13,7 +13,7 @@
         "developerName": "Plane for Codex contributors",
         "category": "Productivity",
         "capabilities": ["Read", "Write"],
-        "defaultPrompt": ["初始化当前仓库的 Plane 工作流", "开始处理 Plane 任务", "交付当前 Plane 任务"]
+        "defaultPrompt": ["初始化", "开始任务", "交付任务"]
       }
     }
   }
