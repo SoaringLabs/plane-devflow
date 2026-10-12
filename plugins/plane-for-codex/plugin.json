@@ -10,7 +10,10 @@
         "displayName": "Plane for Codex",
         "shortDescription": "关联 Plane 项目，选择原生或 Actions 同步并交付 PR",
         "longDescription": "Community open-source Plane workflow for Codex. Connect a repository, choose verified native or Actions GitHub synchronization, start a work item, and deliver a linked pull request. Incomplete setup remains resumable.",
-        "developerName": "Plane for Codex contributors",
+        "developerName": "SoaringLabs",
+        "websiteURL": "https://github.com/SoaringLabs/plane-for-codex",
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png",
         "category": "Productivity",
         "capabilities": ["Read", "Write"],
         "defaultPrompt": ["初始化", "开始任务", "交付任务"]
