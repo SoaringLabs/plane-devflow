@@ -185,6 +185,14 @@ def assess(config, *, local_files=False, online=None):
                 "当前任务状态同步关闭：后台仅回写 PR 记录，保留任务状态；自定义状态规则尚未实现。"}
 
 
+def _github_timestamp(value):
+    require(isinstance(value, str), "Invalid GitHub timestamp.")
+    # Python 3.10 fromisoformat requires an explicit UTC offset instead of Z.
+    timestamp = datetime.fromisoformat(value[:-1] + "+00:00" if value.endswith("Z") else value)
+    require(timestamp.tzinfo is not None, "GitHub timestamps require a timezone.")
+    return timestamp
+
+
 def check(root, *, native_evidence_file=None):
     from plane_workflow import repo_config, run
     root, config = repo_config(root)
@@ -257,7 +265,7 @@ def check(root, *, native_evidence_file=None):
         require(isinstance(secrets, list) and all(isinstance(row, dict) and isinstance(row.get("name"), str) for row in secrets), "Invalid Secret metadata.")
         updated = next((r.get("updatedAt") for r in secrets if r["name"] == "PLANE_API_KEY"), None)
         if updated is not None:
-            require(isinstance(updated, str) and datetime.fromisoformat(updated).tzinfo is not None, "Invalid Secret timestamp.")
+            _github_timestamp(updated)
         evidence["secret_present"] = any(record["name"] == "PLANE_API_KEY" for record in secrets)
         evidence["secret_updated_at"] = updated
     except (WorkflowError, ValueError, KeyError, TypeError) as error:
@@ -272,7 +280,7 @@ def check(root, *, native_evidence_file=None):
         latest = dispatches[0] if dispatches else {}
         checked = latest.get("run_started_at")
         updated = evidence.get("secret_updated_at")
-        fresh_secret = bool(checked and updated and datetime.fromisoformat(checked) >= datetime.fromisoformat(updated))
+        fresh_secret = bool(checked and updated and _github_timestamp(checked) >= _github_timestamp(updated))
         if evidence.get("default_sha") and "secret_present" in evidence:
             evidence["connection_verified"] = latest.get("conclusion") == "success" and fresh_secret
         run_url = latest.get("html_url")

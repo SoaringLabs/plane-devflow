@@ -13,8 +13,16 @@ Installed with `codex plugin add plane-for-codex@plane-for-codex --json`. Invent
 
 ## Public-source validation — 2026-10-12
 
-For the first public source publication, the full suite was rerun: 129 tests passed; package validation, offline demo and whitespace checks passed. The local v0.4.2 cache contains 18 package files, all matching source SHA-256. This rerun does not repeat the historical live-service checks above.
+Before the initial public source publication, the full suite was rerun on Python 3.14: 129 tests passed; package validation, offline demo and whitespace checks passed. At that point, the local v0.4.2 cache contained 18 package files, all matching source SHA-256. This rerun did not repeat the historical live-service checks above.
 
 Public documentation omits private workspace/repository identities, real object IDs, private Actions run links and personal filesystem paths. Historical validation totals and failures remain recorded; raw private evidence and local response snapshots remain excluded from publication. The README provides installation from the public source repository and distinguishes implemented features from the roadmap.
 
 The 45 candidate publication files and existing `main` history passed the credential/private-identity pattern scan. Public Markdown contains no real object UUIDs or private Actions run links, and all local Markdown file links resolve. Synthetic UUID fixtures remain in examples and tests. Original document backups are in an ignored local directory; local Codex snapshot refs are excluded from the branch push. Pattern scans are a supplementary check, not a proof that arbitrary secret formats can always be detected.
+
+### Python 3.10 compatibility correction
+
+The [initial public CI run](https://github.com/SoaringLabs/plane-for-codex/actions/runs/38195744659) passed on Python 3.14 but failed one readiness test on Python 3.10. The same failure was reproduced locally on Python 3.10: `datetime.fromisoformat` could not parse GitHub's UTC timestamps ending in `Z`, so otherwise valid Secret/connection evidence stayed unverified.
+
+GitHub timestamp parsing now normalizes a trailing `Z` to `+00:00` and requires timezone-aware values. Two additional regression tests cover equivalent/ordered instants across offsets and invalid, timezone-free or non-string metadata remaining unverified with sanitized errors. Both local Python 3.10 and 3.14 suites pass all 131 tests, package validation passes on both, and the Python 3.10 offline demo passes. The CI matrix remains unchanged; the failing run remains visible as historical evidence.
+
+The installation/cache equality check above predates this source correction. Publishing source does not refresh an already installed plugin; reinstall from the updated source marketplace to load the correction. No version tag or GitHub Release is created by this source publication.

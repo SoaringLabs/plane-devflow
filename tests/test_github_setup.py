@@ -101,7 +101,7 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(target.read_text(), "keep")
 
     def remote_check(self, *, conclusions=("success",), remote_sha="a" * 40, run_sha="a" * 40, secret=True,
-                     secret_updated="2026-10-10T00:00:00Z"):
+                     secret_updated="2026-10-10T00:00:00Z", run_started="2026-10-10T01:00:00Z"):
         real_run = workflow.run
         files = setup.bundled_files() | {sync.CONFIG_NAME: json.dumps(config()).encode()}
         def fake_run(args, *pos, **kw):
@@ -125,7 +125,7 @@ class RepositoryTests(unittest.TestCase):
                     data = {"state": "active"}
                 else:
                     data = {"workflow_runs": [{"id": i, "event": "workflow_dispatch", "head_sha": run_sha,
-                              "head_branch": "main", "conclusion": c, "run_started_at": "2026-10-10T01:00:00Z",
+                              "head_branch": "main", "conclusion": c, "run_started_at": run_started,
                               "html_url": f"https://github.com/example/demo-project/actions/runs/{i}"}
                               for i, c in enumerate(conclusions, 1)]}
             return subprocess.CompletedProcess(args, 0, json.dumps(data), "")
@@ -146,6 +146,21 @@ class RepositoryTests(unittest.TestCase):
 
     def test_secret_replacement_invalidates_older_connection_check(self):
         self.assertEqual(self.remote_check(secret_updated="2026-10-10T02:00:00Z")["initialization"], "partial")
+
+    def test_connection_timestamp_offsets_compare_instants(self):
+        self.assertEqual(self.remote_check(secret_updated="2026-10-10T02:30:00+02:00")["github_sync"], "ready")
+        self.assertEqual(self.remote_check(secret_updated="2026-10-10T02:30:00+01:00")["initialization"], "partial")
+        self.assertEqual(self.remote_check(run_started="2026-10-10T01:00:00+00:00")["github_sync"], "ready")
+
+    def test_invalid_timestamps_remain_unverified(self):
+        for field, stage in (("secret_updated", "secret_metadata"), ("run_started", "connection")):
+            for value in ("2026-10-10T00:00:00", "invalid-private-timestamp", 123):
+                with self.subTest(field=field, value=value):
+                    result = self.remote_check(**{field: value})
+                    self.assertEqual(result["initialization"], "partial")
+                    self.assertIn({"code": "invalid_response", "stage": stage},
+                                  [{"code": item["code"], "stage": item["stage"]} for item in result["issues"]])
+                    self.assertNotIn(str(value), json.dumps(result["errors"]))
 
 
 class ConnectionTests(unittest.TestCase):
