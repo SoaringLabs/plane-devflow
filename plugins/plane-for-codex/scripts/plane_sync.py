@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Plane API v2 PR synchronization. Python standard library only."""
+"""Plane API v1 by default, v2 for explicit capabilities. Python standard library only."""
 from __future__ import annotations
 
 import argparse
 import html
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import json
 import os
 import re
@@ -16,7 +18,7 @@ from urllib.parse import quote, urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 CONFIG_NAME = ".plane-for-codex.json"
-VERSION = "0.1.0"
+VERSION = "0.4.2"
 REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 PROJECT_RE = re.compile(r"[A-Z][A-Z0-9_-]{0,29}\Z")
 BINDING_RE = re.compile(r"<!--\s*plane-for-codex\s+(\{.*?\})\s*-->", re.S)
@@ -43,7 +45,8 @@ def validate_url(value, *, allow_localhost=False):
 
 
 def validate_config(config, *, allow_localhost=False):
-    require(isinstance(config, dict) and config.get("version") == 1, "Expected config version 1.")
+    require(isinstance(config, dict) and type(config.get("version")) is int and config["version"] in {1, 2},
+            "Expected config version 1 or 2.")
     for section in ("plane", "github", "states", "completion"):
         require(isinstance(config.get(section), dict), f"Missing config section: {section}.")
     plane, github, states = config["plane"], config["github"], config["states"]
@@ -57,8 +60,14 @@ def validate_config(config, *, allow_localhost=False):
             uuid.UUID(value)
         except (ValueError, TypeError, AttributeError):
             raise WorkflowError(f"{key} must be a Plane UUID.") from None
-    require(set(states) == {"in_progress", "in_review", "done"}, "Configure all three workflow states.")
-    require(len(set(states.values())) == 3, "Development, review, and done require distinct states.")
+    if config["version"] == 1:
+        require(set(states) == {"in_progress", "in_review", "done"}, "Configure all three legacy workflow states.")
+        require(len(set(states.values())) == 3, "Legacy development, review, and done require distinct states.")
+    else:
+        require(config.get("status_sync") == {"enabled": False} and
+                type(config["status_sync"]["enabled"]) is bool,
+                "Version 2 basic mapping requires status_sync.enabled=false; custom rules come later.")
+        require(not states, "Basic mapping has no state targets; use existing legacy configuration for state sync.")
     require(REPO_RE.fullmatch(github.get("repository", "")), "GitHub repository must be owner/repo.")
     require(all(p not in {".", ".."} for p in github["repository"].split("/")), "Invalid repository.")
     require(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]*", github.get("base_branch", "")),
@@ -73,12 +82,30 @@ def validate_config(config, *, allow_localhost=False):
     require(isinstance(config["completion"].get("manual_label", "manual-acceptance"), str) and
             bool(config["completion"].get("manual_label", "manual-acceptance").strip()), "Invalid manual label.")
     # A small explicit schema keeps accidental credentials out of committed config.
-    allowed = {"version", "plane", "github", "states", "completion"}
+    sync = config.get("sync", {})
+    require(isinstance(sync, dict) and set(sync) <= {"provider", "api_version"}, "Unknown synchronization settings.")
+    require(sync.get("provider", "actions") in {"actions", "native"}, "Choose actions or native synchronization.")
+    require(sync.get("api_version", "v1") in {"v1", "v2"}, "Choose v1 or v2 API routing.")
+    allowed = {"version", "plane", "github", "states", "completion", "sync"}
+    if config["version"] == 2:
+        allowed.add("status_sync")
     require(set(config) <= allowed, "Unknown config keys; credentials belong in a secret store.")
     require(set(plane) <= {"api_url", "app_url", "workspace", "project_id", "project_identifier"}, "Unknown Plane config keys.")
     require(set(github) <= {"repository", "base_branch", "branch_prefix"}, "Unknown GitHub config keys.")
     require(set(config["completion"]) <= {"policy", "manual_label"}, "Unknown completion config keys.")
     return config
+
+
+def sync_provider(config):
+    return config.get("sync", {}).get("provider", "actions")
+
+
+def api_version(config):
+    return config.get("sync", {}).get("api_version", "v1")
+
+
+def state_sync_enabled(config):
+    return config["version"] == 1 and sync_provider(config) == "actions"
 
 
 def read_config(path, *, allow_localhost=False):
@@ -98,6 +125,8 @@ class PlaneClient:
         require(bool(token), "PLANE_API_KEY is missing. Configure the repository Secret for Actions.")
         self.origin = validate_url(config["plane"]["api_url"], allow_localhost=allow_localhost)
         self.workspace = config["plane"]["workspace"]
+        self.api_version = api_version(config)
+        self.project_id = config["plane"]["project_id"]
         self.token, self.sleep = token, sleep
         self.opener = build_opener(NoRedirect())
 
@@ -113,12 +142,19 @@ class PlaneClient:
                     raw = response.read()
                     return json.loads(raw) if raw else {}
             except HTTPError as error:
+                error.close()
+                if error.code in {502, 503, 504} and method != "GET":
+                    raise WorkflowError(f"Plane API HTTP {error.code}. Write result is ambiguous; inspect current state before retrying.") from None
                 if error.code in {429, 502, 503, 504} and attempt < 2:
                     try:
                         delay = float(error.headers.get("Retry-After", 2 ** attempt))
                     except (ValueError, TypeError):
-                        delay = 2 ** attempt
-                    self.sleep(min(max(delay, 0), 20))
+                        try:
+                            delay = max(0, (parsedate_to_datetime(error.headers["Retry-After"]) - datetime.now(timezone.utc)).total_seconds())
+                        except (ValueError, TypeError, KeyError, OverflowError):
+                            delay = 2 ** attempt
+                    require(0 <= delay <= 20, "Plane retry delay exceeds this run's budget. Retry later; Retry-After was not shortened.")
+                    self.sleep(delay)
                     continue
                 hint = {401: "Re-authenticate or replace the API token.",
                         402: "This operation is unavailable on your Plane plan; no upgrade is performed.",
@@ -136,21 +172,70 @@ class PlaneClient:
             except (json.JSONDecodeError, UnicodeDecodeError):
                 raise WorkflowError("Plane returned an invalid JSON response.") from None
 
-    def workspace_path(self):
-        return f"/api/v2/workspaces/{quote(self.workspace, safe='')}/"
+    def workspace_path(self, version=None):
+        return f"/api/{version or self.api_version}/workspaces/{quote(self.workspace, safe='')}/"
+
+    def records(self, path):
+        """Read a complete cursor collection; never make decisions on a partial list."""
+        records, cursor, seen = [], None, set()
+        for _ in range(100):
+            page = self.request("GET", path, query={"cursor": cursor} if cursor else None)
+            require(isinstance(page, (list, dict)), "Invalid Plane collection response.")
+            records.extend(page if isinstance(page, list) else page.get("results", []))
+            if isinstance(page, list) or not page.get("next_page_results"):
+                return records
+            cursor = page.get("next_cursor")
+            require(cursor and cursor not in seen, "Invalid Plane pagination; cannot safely synchronize.")
+            seen.add(cursor)
+        raise WorkflowError("Plane collection exceeded pagination limit.")
 
     def work_item(self, identifier):
-        return self.request("GET", self.workspace_path() + f"work-items/{quote(identifier, safe='')}/",
-                            query={"expand": "state,labels"})
+        raw = self.request("GET", self.workspace_path() + f"work-items/{quote(identifier, safe='')}/",
+                           query={"expand": "state,labels"})
+        require(isinstance(raw, dict), "Invalid Plane work item response.")
+        if self.api_version == "v2":
+            # The verified v2 expanded relation reads can lag. Safety decisions
+            # use a fresh v1 snapshot, while explicit v2 writes remain supported.
+            guard = self.request("GET", self.workspace_path("v1") + f"work-items/{quote(identifier, safe='')}/",
+                                 query={"expand": "state,labels"})
+            require(isinstance(guard, dict) and guard.get("id") == raw.get("id"), "API versions resolved different tasks.")
+            require("labels" in guard, "Cannot resolve current acceptance labels; no writes performed.")
+            raw = dict(raw, project_id=guard.get("project_id", guard.get("project")),
+                       state_id=None, state=guard.get("state"), labels=guard.get("labels", []))
+        item = dict(raw)
+        project = raw.get("project_id", raw.get("project"))
+        item["project_id"] = project.get("id") if isinstance(project, dict) else project
+        require(item["project_id"] == self.project_id, "Resolved task does not belong to configured Plane project.")
+        state = raw.get("state")
+        item["state_id"] = raw.get("state_id") or (state.get("id") if isinstance(state, dict) else state)
+        item["state"] = state if isinstance(state, dict) else {}
+        if not item["state"].get("group"):
+            states = self.records(self.workspace_path("v1") + f"projects/{quote(item['project_id'], safe='')}/states/")
+            item["state"] = next((row for row in states if row.get("id") == item["state_id"]), {})
+            require(item["state"].get("group"), "Cannot resolve current state group; no writes performed.")
+        require("labels" in raw or "label_ids" in raw, "Cannot resolve current acceptance labels; no writes performed.")
+        labels = raw.get("labels", raw.get("label_ids", []))
+        require(isinstance(labels, list), "Invalid Plane labels response.")
+        unresolved = [label for label in labels if not isinstance(label, dict)]
+        if unresolved:
+            rows = self.records(self.workspace_path("v1") + f"projects/{quote(item['project_id'], safe='')}/labels/")
+            names = {row["id"]: row for row in rows}
+            require(all(label in names for label in unresolved), "Cannot resolve acceptance labels; no writes performed.")
+            labels = [names[label] if not isinstance(label, dict) else label for label in labels]
+        require(all(isinstance(label.get("name"), str) for label in labels), "Cannot resolve acceptance label names.")
+        item["labels"] = labels
+        return item
 
-    def item_path(self, item):
-        return self.workspace_path() + f"projects/{quote(item['project_id'], safe='')}/work-items/{quote(item['id'], safe='')}/"
+    def item_path(self, item, version=None):
+        return self.workspace_path(version) + f"projects/{quote(item['project_id'], safe='')}/work-items/{quote(item['id'], safe='')}/"
 
     def update_state(self, item, state_id):
-        return self.request("PATCH", self.item_path(item), {"state_id": state_id})
+        key = "state" if self.api_version == "v1" else "state_id"
+        return self.request("PATCH", self.item_path(item), {key: state_id})
 
     def upsert_comment(self, item, external_id, comment_html):
-        return self.request("POST", self.item_path(item) + "comments/upsert/", {
+        # v1 has no documented atomic upsert. Use v2 only for this capability.
+        return self.request("POST", self.item_path(item, "v2") + "comments/upsert/", {
             "comment_html": comment_html, "access": "INTERNAL",
             "external_source": "plane-for-codex", "external_id": external_id})
 
@@ -204,6 +289,8 @@ def phase(pr):
 
 
 def target_state(config, pr, item):
+    if not state_sync_enabled(config):
+        return None
     states = config["states"]
     current = item.get("state_id")
     state = item.get("state") or {}
@@ -255,6 +342,8 @@ def github_snapshot(event, token):
 
 def sync_event(event, config, client=None, *, dry_run=False):
     pr = validate_event(event, config)
+    if sync_provider(config) == "native":
+        return {"status": "skipped", "reason": "native_provider_owns_pr_events"}
     if pr["base"].get("ref") != config["github"]["base_branch"]:
         return {"status": "skipped", "reason": "different_base_branch"}
     task = pr_task(pr, config)
@@ -282,6 +371,8 @@ def sync_event(event, config, client=None, *, dry_run=False):
               "review": "PR is ready for review. Implementation and acceptance are tracked separately.",
               "merged": "Code merged; manual acceptance is still required." if manual else "PR merged into the configured base branch.",
               "closed": "PR closed without merging; the task has not been marked complete."}[phase(pr)]
+    if not state_sync_enabled(config):
+        detail = "Task state synchronization is disabled; the current Plane state is unchanged."
     text = f'<p><strong>GitHub: {html.escape(phase(pr))}</strong></p><p><a href="{html.escape(pr["html_url"], quote=True)}">{html.escape(pr.get("title") or str(pr["number"]))}</a></p><p>{detail}</p>'
     external_id = f'{config["github"]["repository"]}:pr:{pr["number"]}:lifecycle'
     client.upsert_comment(item, external_id, text)
@@ -306,7 +397,7 @@ def main(argv=None):
         if args.apply and args.refresh_github:
             require(os.getenv("GITHUB_TOKEN"), "GITHUB_TOKEN is missing for current PR verification.")
             event = github_snapshot(event, os.environ["GITHUB_TOKEN"])
-        client = PlaneClient(config, os.getenv("PLANE_API_KEY"), allow_localhost=args.allow_localhost) if args.apply else None
+        client = PlaneClient(config, os.getenv("PLANE_API_KEY"), allow_localhost=args.allow_localhost) if args.apply and sync_provider(config) == "actions" else None
         print(json.dumps(sync_event(event, config, client, dry_run=not args.apply), ensure_ascii=False, indent=2))
         return 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:

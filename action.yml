@@ -3,8 +3,8 @@ description: Synchronize one primary Plane task from a GitHub PR using trusted r
 author: Plane for Codex contributors
 inputs:
   plane-api-key:
-    description: Plane personal API key stored as a repository Secret.
-    required: true
+    description: Plane personal API key stored as a repository Secret; required only in Actions mode.
+    required: false
   github-token:
     description: GitHub token with contents and pull-requests read permission.
     required: true

@@ -12,12 +12,12 @@ from urllib.error import HTTPError, URLError
 
 from plane_sync import (CONFIG_NAME, REPO_RE, VERSION, NoRedirect, PlaneClient,
                         WorkflowError, github_snapshot, require, sync_event, validate_config,
-                        validate_event)
+                        validate_event, sync_provider)
 
 
 def fetch_config(event, token):
     repo = event["repository"]["full_name"]
-    sha = event["pull_request"]["base"]["sha"]
+    sha = os.getenv("PLANE_CONFIG_SHA") or event["pull_request"]["base"]["sha"]
     require(REPO_RE.fullmatch(repo) and re.fullmatch(r"[0-9a-fA-F]{40}", sha),
             "Invalid base repository or commit.")
     url = f"https://api.github.com/repos/{repo}/contents/{quote(CONFIG_NAME)}?ref={sha}"
@@ -31,6 +31,40 @@ def fetch_config(event, token):
         return validate_config(json.loads(base64.b64decode(record["content"])))
     except (HTTPError, URLError, OSError, ValueError, KeyError):
         raise WorkflowError("Cannot read valid mapping from the trusted PR base commit. Merge setup first.") from None
+
+
+def check_connection(event, repository, token, plane_key):
+    """Read-only PAT/project/state check, deliberately no task or comment writes."""
+    repo = (event.get("repository") or {}).get("full_name", "")
+    require(REPO_RE.fullmatch(repo) and repo.lower() == repository.lower(), "Action repository mismatch.")
+    default = event["repository"].get("default_branch")
+    require(default and event.get("ref") == "refs/heads/" + default,
+            "Run the connection check on the trusted default branch.")
+    require(token and os.getenv("PLANE_CONFIG_SHA"), "Trusted commit and GitHub token are required.")
+    config = fetch_config(event, token)
+    require(config["github"]["repository"].lower() == repo.lower(), "Mapping repository mismatch.")
+    require(sync_provider(config) == "actions", "Native mode does not use an Actions connection check; verify the official integration mapping.")
+    client = PlaneClient(config, plane_key)
+    path = client.workspace_path() + "projects/" + config["plane"]["project_id"] + "/"
+    project = client.request("GET", path)
+    require(project.get("id") == config["plane"]["project_id"] and not project.get("archived_at"),
+            "Configured Plane project is inaccessible or archived.")
+    states, cursor, seen = set(), None, set()
+    for _ in range(100):
+        page = client.request("GET", path + "states/", query={"cursor": cursor} if cursor else None)
+        records = page if isinstance(page, list) else page.get("results", [])
+        states.update(record["id"] for record in records)
+        if isinstance(page, list) or not page.get("next_page_results"):
+            break
+        cursor = page.get("next_cursor")
+        require(cursor and cursor not in seen, "Invalid state pagination; cannot verify targets.")
+        seen.add(cursor)
+    else:
+        raise WorkflowError("State pagination exceeded its limit; cannot verify targets.")
+    require(set(config["states"].values()) <= states, "Configured state targets no longer exist. Reconfigure rules.")
+    return {"status": "connection_verified", "project": config["plane"]["project_identifier"],
+            "state_targets_valid": True, "writes_performed": False,
+            "note": "Project/state reads verified. A linked PR event must separately verify actual write permissions."}
 
 
 def run_action(event, repository, token, plane_key):
@@ -51,9 +85,11 @@ def run_action(event, repository, token, plane_key):
 
 def main():
     try:
-        require(os.getenv("GITHUB_EVENT_NAME") == "pull_request_target", "Run this Action on pull_request_target.")
+        kind = os.getenv("GITHUB_EVENT_NAME")
+        require(kind in {"pull_request_target", "workflow_dispatch"}, "Run on pull_request_target or workflow_dispatch.")
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
-        result = run_action(event, os.environ["GITHUB_REPOSITORY"], os.getenv("GITHUB_TOKEN"), os.getenv("PLANE_API_KEY"))
+        handler = check_connection if kind == "workflow_dispatch" else run_action
+        result = handler(event, os.environ["GITHUB_REPOSITORY"], os.getenv("GITHUB_TOKEN"), os.getenv("PLANE_API_KEY"))
         print(json.dumps(result, indent=2))
         return 0
     except (WorkflowError, OSError, ValueError, KeyError, TypeError) as error:

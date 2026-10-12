@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import copy
+from contextlib import contextmanager
 import getpass
 import hashlib
 import json
@@ -12,16 +14,19 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import uuid
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 from plane_sync import (CONFIG_NAME, VERSION, WorkflowError, binding, parse_task,
-                        read_config, require, sync_event, validate_config)
+                        read_config, require, sync_provider, api_version, state_sync_enabled, sync_event, validate_config)
 
 
 def run(args, cwd=None, *, check=True, input_text=None):
     try:
-        result = subprocess.run(args, cwd=cwd, input=input_text, capture_output=True, text=True)
+        result = subprocess.run(args, cwd=cwd, input=input_text, capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        raise WorkflowError(f"{args[0]} timed out. Inspect current state before retrying a write.") from None
     except OSError:
         raise WorkflowError(f"Cannot run {args[0]}. Check installation.") from None
     if check and result.returncode:
@@ -71,16 +76,31 @@ def doctor(path):
         report["repository"] = None
     config_path = root / CONFIG_NAME
     if config_path.exists():
-        config = read_config(config_path)
-        require(report["repository"] and report["repository"].lower() == config["github"]["repository"].lower(),
-                "Config repository does not match origin.")
-        report.update(configured=True, workspace=config["plane"]["workspace"],
-                      project=config["plane"]["project_identifier"], completion=config["completion"]["policy"])
+        report["config_sha256"] = snapshot(config_path)[1]
+        try:
+            config = read_config(config_path)
+            report.update(configured=True, config_valid=True, config_version=config["version"],
+                          repository_matches=bool(report["repository"] and report["repository"].lower() ==
+                                                  config["github"]["repository"].lower()),
+                          workspace=config["plane"]["workspace"], project=config["plane"]["project_identifier"],
+                          completion=config["completion"]["policy"], state_sync=state_sync_enabled(config),
+                          sync_provider=sync_provider(config), api_version=api_version(config))
+        except WorkflowError as error:
+            report.update(configured=True, config_valid=False, config_error=str(error))
     else:
-        report["configured"] = False
+        report.update(configured=False, config_sha256="missing")
     if shutil.which("gh"):
         report["github_authenticated"] = run(["gh", "auth", "status"], check=False).returncode == 0
     report["plane_mcp"] = "Check the bundled Plane MCP connection in Codex; doctor does not read OAuth credentials."
+    if report.get("config_valid"):
+        from github_setup import assess, bundled_files
+        files = bundled_files()
+        local = all((root / name).is_file() and (root / name).read_bytes() == data for name, data in files.items())
+        if sync_provider(config) == "native":
+            from github_setup import check
+            report["setup"] = check(root)
+        else:
+            report["setup"] = assess(config, local_files=local)
     return report
 
 
@@ -93,32 +113,194 @@ def write_new_or_same(path, content):
     return True
 
 
+def snapshot(path):
+    require(not path.is_symlink(), "Configuration must be a regular file, not a symlink.")
+    data = path.read_bytes() if path.exists() else None
+    return data, hashlib.sha256(data).hexdigest() if data is not None else "missing"
+
+
+def read_mcp_json(path):
+    data = json.loads(Path(path).read_text())
+    if isinstance(data, dict) and "result" in data:
+        data = data["result"]
+    return data
+
+
+def project_options(path, projects_file, workspace_file):
+    """Format MCP data for selection; repository names only rank recommendations."""
+    root = repo_root(path)
+    workspace = read_mcp_json(workspace_file)
+    require(isinstance(workspace, dict) and workspace.get("slug"), "Read the connected workspace through MCP first.")
+    data = read_mcp_json(projects_file)
+    if isinstance(data, dict):
+        require(not data.get("next_page_results") and not data.get("has_more") and not data.get("next"),
+                "Read all project pages before presenting the selection.")
+        data = data.get("results", data.get("data"))
+    require(isinstance(data, list), "Expected project list from MCP.")
+    try:
+        name = actual_repository(root).split("/")[-1]
+    except WorkflowError:
+        name = root.name
+    normalize = lambda value: re.sub(r"[\W_]", "", value.casefold())
+    choices = []
+    for project in data:
+        require(isinstance(project, dict) and all(isinstance(project.get(k), str) for k in ("id", "name", "identifier")),
+                "Project list is missing IDs, names or identifiers.")
+        uuid.UUID(project["id"])
+        if not project.get("archived_at"):
+            choices.append({"id": project["id"], "name": project["name"], "identifier": project["identifier"],
+                            "recommended": normalize(name) in {normalize(project["name"]), normalize(project["identifier"])}})
+    choices.sort(key=lambda p: (not p["recommended"], p["name"].casefold()))
+    proposed_key = re.sub(r"[^A-Z0-9]", "", name.upper())[:12] or "PROJECT"
+    if not proposed_key[0].isalpha():
+        proposed_key = "P" + proposed_key[:11]
+    return {"workspace": {k: workspace.get(k) for k in ("slug", "name")}, "projects": choices,
+            "can_create": True, "selection_required": True,
+            "create_defaults": {"name": name, "identifier": proposed_key}}
+
+
+@contextmanager
+def configuration_lock(root):
+    common = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], root).stdout.strip())
+    directory = common / "plane-for-codex"
+    directory.mkdir(exist_ok=True)
+    lock = directory / "configure.lock"
+    try:
+        fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    except FileExistsError:
+        raise WorkflowError("Another setup is applying configuration. Retry when it finishes; inspect a stale Git metadata lock before removing it.") from None
+    try:
+        os.close(fd)
+        yield directory
+    finally:
+        lock.unlink()
+
+
+def atomic_write(path, content):
+    fd, temporary = tempfile.mkstemp(prefix=".plane-config-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
 def configure(args):
     root = repo_root(args.repo)
-    config = validate_config({
-        "version": 1,
-        "plane": {"api_url": args.api_url, "app_url": args.app_url,
+    path = root / CONFIG_NAME
+    old_bytes, old_hash = snapshot(path)
+    replacing = getattr(args, "replace", False)
+    expected = getattr(args, "expected_config_sha256", None)
+    if expected is not None:
+        require(expected == old_hash, "Configuration changed since the plan. Read it and plan again.")
+    old = None
+    if old_bytes is not None:
+        try:
+            old = validate_config(json.loads(old_bytes))
+        except (WorkflowError, ValueError, TypeError):
+            require(replacing, "Existing configuration is invalid. Use the reconfigure flow; do not delete it.")
+    plane = {"api_url": args.api_url, "app_url": args.app_url,
                   "workspace": args.workspace, "project_id": args.project_id,
-                  "project_identifier": args.project_key.upper()},
-        "github": {"repository": actual_repository(root), "base_branch": args.base,
-                   "branch_prefix": args.branch_prefix},
-        "states": {"in_progress": args.in_progress, "in_review": args.in_review, "done": args.done},
-        "completion": {"policy": args.completion, "manual_label": "manual-acceptance"}})
-    content = json.dumps(config, ensure_ascii=False, indent=2) + "\n"
+                  "project_identifier": args.project_key.upper()}
+    same_project = old is not None and all(old["plane"][key] == plane[key]
+                                          for key in ("api_url", "app_url", "workspace", "project_id"))
+    selected_file = getattr(args, "project_file", None)
+    workspace_file = getattr(args, "workspace_file", None)
+    require(bool(selected_file) == bool(workspace_file), "Provide both MCP project and workspace snapshots.")
+    if selected_file:
+        project, workspace = read_mcp_json(selected_file), read_mcp_json(workspace_file)
+        require(isinstance(project, dict) and isinstance(workspace, dict) and
+                project.get("id") == plane["project_id"] and project.get("identifier") == plane["project_identifier"] and
+                workspace.get("slug") == plane["workspace"] and not project.get("archived_at") and
+                (not project.get("workspace") or not workspace.get("id") or project["workspace"] == workspace["id"]),
+                "Selected project/workspace does not match the live MCP snapshots.")
+    previous_github = old["github"] if old else {}
+    base = args.base or previous_github.get("base_branch")
+    if not base:
+        ref = run(["git", "symbolic-ref", "refs/remotes/origin/HEAD"], root, check=False)
+        require(ref.returncode == 0, "Resolve the GitHub default branch and pass --base; do not assume main.")
+        base = ref.stdout.strip().removeprefix("refs/remotes/origin/")
+    states = {key: getattr(args, key, None) for key in ("in_progress", "in_review", "done")}
+    require(not any(states.values()) or all(states.values()), "Provide all legacy state targets or none.")
+    disabled = getattr(args, "disable_state_sync", False)
+    require(not disabled or not any(states.values()), "Do not supply state targets when disabling state sync.")
+    if same_project and not any(states.values()) and not disabled:
+        config = copy.deepcopy(old)
+    elif all(states.values()):
+        config = {"version": 1, "states": states}
+    else:
+        config = {"version": 2, "states": {}, "status_sync": {"enabled": False}}
+    config.update(plane=plane,
+                  github={"repository": actual_repository(root), "base_branch": base,
+                          "branch_prefix": args.branch_prefix or previous_github.get("branch_prefix", "codex")},
+                  completion={"policy": args.completion or (old["completion"]["policy"] if old else "manual"),
+                              "manual_label": old["completion"].get("manual_label", "manual-acceptance") if old else "manual-acceptance"})
+    if old and "sync" in old and "sync" not in config:
+        config["sync"] = copy.deepcopy(old["sync"])
+    provider = getattr(args, "sync_provider", None)
+    version = getattr(args, "api_version", None)
+    if provider or version:
+        selected = {"provider": provider or sync_provider(config),
+                    "api_version": version or api_version(config)}
+        if not old or "sync" in config or selected != {"provider": "actions", "api_version": "v1"}:
+            config["sync"] = selected
+    validate_config(config)
+    changed = old != config
+    require(old_bytes is None or not changed or replacing,
+            "Different configuration exists. Use --replace to plan reconfiguration.")
+    if args.apply and old_bytes is not None and changed:
+        require(expected is not None, "Apply reconfiguration with --expected-config-sha256 from the reviewed plan.")
+    content = old_bytes if old == config else (json.dumps(config, ensure_ascii=False, indent=2) + "\n").encode()
     result = {"status": "applied" if args.apply else "planned", "config": config,
-              "files": [str(root / CONFIG_NAME)]}
+              "files": [str(path)], "expected_config_sha256": old_hash,
+              "changed": changed, "project_changed": old is not None and not same_project,
+              "changes": {key: {"before": old.get(key) if old else None, "after": config.get(key)}
+                          for key in set(config) | set(old or {}) if (old or {}).get(key) != config.get(key)},
+              "live_selection_checked": bool(selected_file)}
+    workflow_path = root / ".github/workflows/plane-for-codex.yml"
+    workflow_in_base = False
+    if changed:
+        old_base = old["github"]["base_branch"] if old else config["github"]["base_branch"]
+        for ref in ("origin/" + old_base, old_base):
+            if run(["git", "cat-file", "-e", ref + ":.github/workflows/plane-for-codex.yml"], root, check=False).returncode == 0:
+                workflow_in_base = True
+    if changed and old is not None:
+        branch = run(["git", "branch", "--show-current"], root).stdout.strip()
+        old_prefix = old["github"].get("branch_prefix", "codex") + "/" + old["plane"]["project_identifier"].lower() + "-"
+        require(not branch.lower().startswith(old_prefix),
+                "Reconfigure in the setup/base checkout, not an existing task branch; preserve its original association.")
+    require(not (changed and (old_bytes is not None or not state_sync_enabled(config)) and
+                 (workflow_path.exists() or workflow_in_base)),
+            "Existing event workflow must be disabled in a reviewed GitHub change before replacing this mapping. No files changed.")
+    workflow_content = None
     if args.action_source:
-        workflow = caller_workflow(args.action_source)
-        result["files"].append(str(root / ".github/workflows/plane-for-codex.yml"))
-    # Preflight all files before any write.
-    files = [(root / CONFIG_NAME, content)]
-    if args.action_source:
-        files.append((root / ".github/workflows/plane-for-codex.yml", workflow))
-    for path, text in files:
-        require(not path.exists() or path.read_text() == text,
-                f"{path.name} already contains different settings. Inspect and edit it explicitly.")
+        require(state_sync_enabled(config), "Actions setup for new basic mappings is deferred; keep basic mode without a PAT.")
+        require(not changed or old_bytes is None, "Configure mapping separately before enabling the event workflow.")
+        workflow_content = caller_workflow(args.action_source)
+        require(not workflow_path.exists() or workflow_path.read_text() == workflow_content,
+                "Existing event workflow differs. Inspect it explicitly.")
+        result["files"].append(str(workflow_path))
     if args.apply:
-        result["created"] = [str(path) for path, text in files if write_new_or_same(path, text)]
+        with configuration_lock(root) as metadata:
+            require(snapshot(path)[1] == old_hash, "Configuration changed during setup. Plan again; nothing was replaced.")
+            result["created"] = []
+            if changed:
+                if old_bytes is not None:
+                    backups = metadata / "backups"
+                    backups.mkdir(exist_ok=True)
+                    backup = backups / (old_hash + "-" + uuid.uuid4().hex + ".json")
+                    atomic_write(backup, old_bytes)
+                    result["backup"] = str(backup)
+                require(snapshot(path)[1] == old_hash, "Configuration changed before replacement. Plan again.")
+                atomic_write(path, content)
+                result["created"].append(str(path))
+            if workflow_content is not None:
+                write_new_or_same(workflow_path, workflow_content)
+        result["state_sync"] = state_sync_enabled(config)
     return result
 
 
@@ -262,8 +444,47 @@ def delivery(path, task, title, body_file, *, apply=False):
 BINDING_MARKER = "<!-- plane-for-codex "
 
 
+def credential_guide(path, *, step="plane"):
+    """Return non-secret browser guidance; verification reads Secret metadata only."""
+    root, config = repo_config(path)
+    if sync_provider(config) == "native":
+        return {"status": "skipped", "provider": "native", "reason": "native_does_not_need_runner_pat"}
+    require(step in {"plane", "github", "verify"}, "Choose plane, github or verify credential step.")
+    repo = config["github"]["repository"]
+    plane = config["plane"]
+    result = {"provider": "actions", "repository": repo, "step": step,
+              "secret_name": "PLANE_API_KEY", "writes_performed": False}
+    if step == "plane":
+        result.update(status="awaiting_user", url=plane["app_url"].rstrip("/") + "/" + quote(plane["workspace"], safe="") + "/",
+                      navigation=["Open user menu", "Settings", "Personal Access Tokens", "Add access token"],
+                      suggested_title="Plane for Codex: " + repo,
+                      suggested_description="GitHub Actions synchronization for " + repo,
+                      expiry="User chooses an explicit expiry suitable for this automation.",
+                      handoff="User generates and copies the PAT on Plane. Do not observe the generated value.",
+                      next_step="github", advance_when="User confirms a PAT was created or already has a suitable PAT.")
+    elif step == "github":
+        result.update(status="awaiting_user", url="https://github.com/" + repo + "/settings/secrets/actions/new",
+                      settings_url="https://github.com/" + repo + "/settings/secrets/actions",
+                      navigation=["Settings", "Secrets and variables", "Actions", "New repository secret"],
+                      name_field="PLANE_API_KEY",
+                      handoff="User pastes the PAT into Secret and saves it on GitHub. No token in chat, screenshots, tool output or clipboard reads.",
+                      next_step="verify", advance_when="User confirms the repository Secret was saved.")
+    else:
+        from setup_errors import github_json
+        records = github_json(["gh", "secret", "list", "--repo", repo, "--json", "name,updatedAt"], root, "secret_metadata")
+        require(isinstance(records, list) and all(isinstance(row, dict) for row in records),
+                "GitHub returned invalid Secret metadata; cannot verify storage.")
+        found = next((row for row in records if row.get("name") == "PLANE_API_KEY"), None)
+        result.update(status="secret_present" if found is not None else "secret_missing",
+                      secret_present=found is not None, secret_updated_at=found.get("updatedAt") if found is not None else None,
+                      credential_value_read=False, next_step="activation" if found is not None else "github",
+                      note="Secret presence is not proof of PAT validity or workflow connection. Continue check-github and trusted default-branch activation.")
+    return result
+
+
 def set_secret(path):
     _, config = repo_config(path)
+    require(sync_provider(config) == "actions", "Native mode does not need a runner PAT Secret.")
     require(sys.stdin.isatty(), "Run set-secret directly in an interactive terminal, or use GitHub's repository Secrets page.")
     token = getpass.getpass("Plane PAT (hidden; sent only to GitHub repository Secret): ")
     require(bool(token.strip()), "No token supplied.")
@@ -350,15 +571,28 @@ def main(argv=None):
     p.add_argument("--repo", default=".")
     p = sub.add_parser("configure", help="Plan or write project mapping; IDs are resolved by the setup Skill.")
     p.add_argument("--repo", default=".")
-    for key in ("workspace", "project-id", "project-key", "in-progress", "in-review", "done"):
+    for key in ("workspace", "project-id", "project-key"):
         p.add_argument("--" + key, required=True)
-    p.add_argument("--base", default="main")
-    p.add_argument("--branch-prefix", default="codex")
+    for key in ("in-progress", "in-review", "done"):
+        p.add_argument("--" + key)
+    p.add_argument("--base")
+    p.add_argument("--branch-prefix")
     p.add_argument("--api-url", default="https://api.plane.so")
     p.add_argument("--app-url", default="https://app.plane.so")
-    p.add_argument("--completion", choices=["on_merge", "manual"], default="manual")
+    p.add_argument("--completion", choices=["on_merge", "manual"])
     p.add_argument("--action-source")
+    p.add_argument("--sync-provider", choices=["actions", "native"])
+    p.add_argument("--api-version", choices=["v1", "v2"])
+    p.add_argument("--replace", action="store_true")
+    p.add_argument("--expected-config-sha256")
+    p.add_argument("--disable-state-sync", action="store_true")
+    p.add_argument("--project-file")
+    p.add_argument("--workspace-file")
     p.add_argument("--apply", action="store_true")
+    p = sub.add_parser("project-options", help="Present MCP projects for user selection; never auto-bind a recommendation.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--projects-file", required=True)
+    p.add_argument("--workspace-file", required=True)
     p = sub.add_parser("prepare", help="Plan or prepare a task branch/worktree.")
     p.add_argument("task")
     p.add_argument("--repo", default=".")
@@ -377,8 +611,32 @@ def main(argv=None):
     p.add_argument("--title", required=True)
     p.add_argument("--body-file", required=True)
     p.add_argument("--apply", action="store_true")
+    p = sub.add_parser("credential-guide", help="Guide Plane PAT creation, GitHub storage, and metadata-only verification.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--step", choices=["plane", "github", "verify"], default="plane")
+    p = sub.add_parser("setup-progress", help="Inspect capabilities, resume setup and optionally save non-secret progress in Git metadata.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--offline", action="store_true", help="Leave remote checks unknown; never reuse cached success as current evidence.")
+    p.add_argument("--surface", action="append", choices=["browser-control", "app-control", "url-opener"], default=[],
+                   help="Report only tools actually available in this host; defaults to manual links.")
+    p.add_argument("--event", choices=["pat-ready", "pat-unavailable", "secret-saved"])
+    p.add_argument("--apply", action="store_true", help="Persist non-secret progress; no external writes.")
+    p = sub.add_parser("setup-capabilities", help="Inspect local prerequisites and reported host surfaces without a repository or account.")
+    p.add_argument("--surface", action="append", choices=["browser-control", "app-control", "url-opener"], default=[])
     p = sub.add_parser("set-secret", help="Read a Plane PAT through hidden terminal input and store it in GitHub.")
     p.add_argument("--repo", default=".")
+    p = sub.add_parser("setup-github", help="Prepare bundled PR synchronization and a read-only connection check.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--apply", action="store_true")
+    p.add_argument("--upgrade", action="store_true")
+    p.add_argument("--expected-files-sha256")
+    p = sub.add_parser("check-github", help="Check remote setup readiness; Secret values are never read.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--native-evidence-file")
+    p = sub.add_parser("record-native", help="Record observed official integration mapping; no automatic discovery claim.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--evidence-file", required=True)
+    p.add_argument("--apply", action="store_true")
     p = sub.add_parser("demo", help="Run an isolated end-to-end offline demo; no accounts needed.")
     p.add_argument("--output")
     args = parser.parse_args(argv)
@@ -387,6 +645,8 @@ def main(argv=None):
             result = doctor(args.repo)
         elif args.command == "configure":
             result = configure(args)
+        elif args.command == "project-options":
+            result = project_options(args.repo, args.projects_file, args.workspace_file)
         elif args.command == "prepare":
             result = prepare(args.repo, args.task, worktree=args.worktree, apply=args.apply)
         elif args.command == "render-report":
@@ -398,8 +658,25 @@ def main(argv=None):
             result = {"status": "written", "output": str(output.resolve()), "sha256": hashlib.sha256(text.encode()).hexdigest()}
         elif args.command == "deliver":
             result = delivery(args.repo, args.task, args.title, args.body_file, apply=args.apply)
+        elif args.command == "credential-guide":
+            result = credential_guide(args.repo, step=args.step)
+        elif args.command == "setup-progress":
+            from onboarding import progress
+            result = progress(args.repo, surfaces=args.surface, offline=args.offline, event=args.event, apply=args.apply)
+        elif args.command == "setup-capabilities":
+            from onboarding import capabilities
+            result = capabilities(args.surface)
         elif args.command == "set-secret":
             result = set_secret(args.repo)
+        elif args.command == "setup-github":
+            from github_setup import install
+            result = install(args.repo, apply=args.apply, upgrade=args.upgrade, expected_files_sha256=args.expected_files_sha256)
+        elif args.command == "check-github":
+            from github_setup import check
+            result = check(args.repo, native_evidence_file=args.native_evidence_file)
+        elif args.command == "record-native":
+            from github_setup import record_native
+            result = record_native(args.repo, args.evidence_file, apply=args.apply)
         else:
             result = demo(args.output)
         print(json.dumps(result, ensure_ascii=False, indent=2))

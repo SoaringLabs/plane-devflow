@@ -27,7 +27,8 @@ def validate():
         assert (skill.parent / "agents/openai.yaml").is_file()
         for target in re.findall(r"\]\(([^)]+)\)", text):
             assert (skill.parent / target).is_file(), target
-    validate_config(json.loads((ROOT / "examples/plane-for-codex.example.json").read_text()))
+    for example in (ROOT / "examples").glob("plane-for-codex*.json"):
+        validate_config(json.loads(example.read_text()))
     assert (ROOT / "action.yml").is_file()
     print("Plugin manifests, versions, Skill references and example mapping valid.")
 

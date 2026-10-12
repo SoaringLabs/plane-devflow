@@ -199,16 +199,17 @@ class HTTPTests(unittest.TestCase):
         response.__enter__.return_value.read.return_value = json.dumps(value).encode()
         return response
 
-    def test_rest_v2_methods_bodies_and_header(self):
-        self.opener.open.return_value = self.response({})
+    def test_default_v1_task_state_and_v2_comment_routing(self):
         item = MemoryPlane().item
+        self.opener.open.return_value = self.response(item)
         self.client.work_item("DEMO-12")
         self.client.update_state(item, config()["states"]["done"])
         self.client.upsert_comment(item, "example/demo-project:pr:7:lifecycle", "<p>ok</p>")
         reqs = [call.args[0] for call in self.opener.open.call_args_list]
-        self.assertIn("/api/v2/workspaces/example-workspace/work-items/DEMO-12/", reqs[0].full_url)
+        self.assertIn("/api/v1/workspaces/example-workspace/work-items/DEMO-12/", reqs[0].full_url)
         self.assertIn("expand=state%2Clabels", reqs[0].full_url)
-        self.assertEqual(json.loads(reqs[1].data), {"state_id": config()["states"]["done"]})
+        self.assertEqual(json.loads(reqs[1].data), {"state": config()["states"]["done"]})
+        self.assertIn("/api/v2/", reqs[2].full_url)
         self.assertEqual(reqs[1].method, "PATCH")
         self.assertTrue(reqs[2].full_url.endswith("/comments/upsert/"))
         self.assertEqual(json.loads(reqs[2].data)["external_source"], "plane-for-codex")
@@ -217,8 +218,10 @@ class HTTPTests(unittest.TestCase):
     def test_rate_limit_bounded_retry(self):
         err = HTTPError("https://api.plane.so", 429, "rate", {"Retry-After": "1000"}, io.BytesIO(b"secret"))
         self.opener.open.side_effect = [err, self.response({"ok": True})]
-        self.assertTrue(self.client.work_item("DEMO-12")["ok"])
-        self.client.sleep.assert_called_once_with(20)
+        with self.assertRaisesRegex(sync.WorkflowError, "Retry-After was not shortened"):
+            self.client.work_item("DEMO-12")
+        self.client.sleep.assert_not_called()
+        self.assertEqual(self.opener.open.call_count, 1)
 
     def test_ambiguous_write_is_not_replayed(self):
         self.opener.open.side_effect = URLError("sentinel-secret")
@@ -226,6 +229,22 @@ class HTTPTests(unittest.TestCase):
             self.client.upsert_comment(MemoryPlane().item, "id", "comment")
         self.assertEqual(self.opener.open.call_count, 1)
         self.assertNotIn("sentinel-secret", str(context.exception))
+
+    def test_server_failure_retries_reads_but_never_ambiguous_writes(self):
+        for method in ['POST', 'PATCH', 'DELETE']:
+            for code in [502, 503, 504]:
+                self.opener.open.reset_mock()
+                self.client.sleep.reset_mock()
+                self.opener.open.side_effect = HTTPError('https://api.plane.so', code, 'private-response', {}, io.BytesIO(b'private-response'))
+                with self.subTest(method=method, code=code), self.assertRaisesRegex(sync.WorkflowError, 'ambiguous') as context:
+                    self.client.request(method, '/example/', {'name':'fixture'})
+                self.assertEqual(self.opener.open.call_count, 1)
+                self.client.sleep.assert_not_called()
+                self.assertNotIn('private-response', str(context.exception))
+        self.opener.open.reset_mock()
+        self.opener.open.side_effect = [HTTPError('https://api.plane.so', 503, '', {}, io.BytesIO()), self.response({'ok':True})]
+        self.assertEqual(self.client.request('GET', '/example/'), {'ok':True})
+        self.assertEqual(self.opener.open.call_count, 2)
 
     def test_permission_plan_error_sanitized(self):
         for code in [401, 402, 403]:

@@ -1,0 +1,189 @@
+"""Observable setup/readiness and read-only verification invariants."""
+import base64
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+import github_setup as setup
+import plane_workflow as workflow
+import plane_sync as sync
+import action_runner as runner
+
+
+def config():
+    return json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+
+
+class ReadinessTests(unittest.TestCase):
+    def evidence(self):
+        return {k: True for k in ("actions_enabled", "workflow_active", "remote_files_match",
+                                  "remote_config_matches", "secret_present", "connection_verified")}
+
+    def test_local_files_and_oauth_cannot_mark_setup_complete(self):
+        result = setup.assess(config(), local_files=True)
+        self.assertEqual(result["initialization"], "partial")
+        self.assertEqual(result["github_sync"], "not_ready")
+        self.assertTrue(result["required"])
+
+    def test_missing_secret_explains_loss_of_automatic_updates(self):
+        evidence = self.evidence()
+        evidence["secret_present"] = False
+        result = setup.assess(config(), online=evidence)
+        self.assertEqual(result["initialization"], "partial")
+        self.assertIn("无法自动同步到 Plane", result["impact"])
+        self.assertIn("Codex", result["impact"])
+        self.assertTrue(result["resume"])
+
+    def test_each_unknown_or_failed_check_is_incomplete(self):
+        for key in self.evidence():
+            for value in (False, None):
+                evidence = self.evidence()
+                evidence[key] = value
+                with self.subTest(key=key, value=value):
+                    self.assertEqual(setup.assess(config(), online=evidence)["initialization"], "partial")
+
+    def test_complete_connection_does_not_fabricate_event_writeback(self):
+        result = setup.assess(config(), online=self.evidence())
+        self.assertEqual(result["initialization"], "complete")
+        self.assertFalse(result["event_run_observed"])
+
+    def test_basic_background_sync_does_not_enable_states(self):
+        cfg = config()
+        cfg.update(version=2, states={}, status_sync={"enabled": False})
+        result = setup.assess(cfg, online=self.evidence())
+        self.assertFalse(result["state_sync"])
+        self.assertTrue(result["state_note"])
+
+
+class RepositoryTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        for args in (("init", "-b", "main"), ("remote", "add", "origin", "https://github.com/example/demo-project.git")):
+            workflow.run(["git", *args], self.root)
+        (self.root / sync.CONFIG_NAME).write_text(json.dumps(config()))
+
+    def test_plan_and_repeated_apply_preserve_mapping(self):
+        before = (self.root / sync.CONFIG_NAME).read_bytes()
+        setup.install(self.root)
+        self.assertFalse((self.root / setup.WORKFLOW).exists())
+        setup.install(self.root, apply=True)
+        setup.install(self.root, apply=True)
+        self.assertEqual((self.root / sync.CONFIG_NAME).read_bytes(), before)
+        for name, data in setup.bundled_files().items():
+            self.assertEqual((self.root / name).read_bytes(), data)
+
+    def test_preflight_conflict_does_not_write_other_files(self):
+        path = self.root / setup.BUNDLE / "plane_sync.py"
+        path.parent.mkdir(parents=True)
+        path.write_text("user customization")
+        with self.assertRaises(sync.WorkflowError):
+            setup.install(self.root, apply=True)
+        self.assertFalse((self.root / setup.WORKFLOW).exists())
+        self.assertEqual(path.read_text(), "user customization")
+
+    def test_symlink_destination_rejected(self):
+        target = self.root / "unrelated"
+        target.write_text("keep")
+        path = self.root / setup.BUNDLE / "plane_sync.py"
+        path.parent.mkdir(parents=True)
+        path.symlink_to(target)
+        with self.assertRaises(sync.WorkflowError):
+            setup.install(self.root, apply=True)
+        self.assertEqual(target.read_text(), "keep")
+
+    def remote_check(self, *, conclusions=("success",), remote_sha="a" * 40, run_sha="a" * 40, secret=True,
+                     secret_updated="2026-10-10T00:00:00Z"):
+        real_run = workflow.run
+        files = setup.bundled_files() | {sync.CONFIG_NAME: json.dumps(config()).encode()}
+        def fake_run(args, *pos, **kw):
+            if args[0] != "gh":
+                return real_run(args, *pos, **kw)
+            if args[1:3] == ["secret", "list"]:
+                data = [{"name": "PLANE_API_KEY", "updatedAt": secret_updated}] if secret else []
+            else:
+                suffix = args[2].removeprefix("repos/example/demo-project")
+                if not suffix:
+                    data = {"default_branch": "main"}
+                elif suffix == "/commits/main":
+                    data = {"sha": remote_sha}
+                elif suffix.startswith("/contents/"):
+                    name, query = suffix.removeprefix("/contents/").split("?")
+                    self.assertEqual(query, "ref=" + remote_sha)
+                    data = {"content": base64.b64encode(files[name]).decode()}
+                elif suffix == "/actions/permissions":
+                    data = {"enabled": True}
+                elif suffix == "/actions/workflows/plane-for-codex.yml":
+                    data = {"state": "active"}
+                else:
+                    data = {"workflow_runs": [{"id": i, "event": "workflow_dispatch", "head_sha": run_sha,
+                              "head_branch": "main", "conclusion": c, "run_started_at": "2026-10-10T01:00:00Z",
+                              "html_url": f"https://github.com/example/demo-project/actions/runs/{i}"}
+                              for i, c in enumerate(conclusions, 1)]}
+            return subprocess.CompletedProcess(args, 0, json.dumps(data), "")
+        with patch.object(workflow, "run", side_effect=fake_run):
+            return setup.check(self.root)
+
+    def test_remote_current_success_is_ready(self):
+        self.assertEqual(self.remote_check()["github_sync"], "ready")
+
+    def test_old_success_does_not_cover_current_commit(self):
+        self.assertEqual(self.remote_check(run_sha="b" * 40)["initialization"], "partial")
+
+    def test_new_failure_supersedes_old_success(self):
+        self.assertEqual(self.remote_check(conclusions=("success", "failure"))["initialization"], "partial")
+
+    def test_secret_missing_keeps_verified_files_incomplete(self):
+        self.assertEqual(self.remote_check(secret=False)["initialization"], "partial")
+
+    def test_secret_replacement_invalidates_older_connection_check(self):
+        self.assertEqual(self.remote_check(secret_updated="2026-10-10T02:00:00Z")["initialization"], "partial")
+
+
+class ConnectionTests(unittest.TestCase):
+    def event(self):
+        return {"repository": {"full_name": "example/demo-project", "default_branch": "main"}, "ref": "refs/heads/main"}
+
+    def test_check_reads_only_project_and_all_states(self):
+        cfg = config()
+        client = MagicMock()
+        ids = list(cfg["states"].values())
+        client.request.side_effect = [{"id": cfg["plane"]["project_id"]},
+            {"results": [{"id": ids[0]}], "next_page_results": True, "next_cursor": "page2"},
+            {"results": [{"id": i} for i in ids[1:]], "next_page_results": False}]
+        with patch.dict(os.environ, {"PLANE_CONFIG_SHA": "a" * 40}), \
+             patch.object(runner, "fetch_config", return_value=cfg), patch.object(runner, "PlaneClient", return_value=client):
+            result = runner.check_connection(self.event(), "example/demo-project", "token", "key")
+        self.assertFalse(result["writes_performed"])
+        self.assertTrue(all(call.args[0] == "GET" for call in client.request.call_args_list))
+        client.update_state.assert_not_called()
+        client.upsert_comment.assert_not_called()
+
+    def test_non_default_dispatch_rejected_before_credential_use(self):
+        event = self.event()
+        event["ref"] = "refs/heads/untrusted"
+        with patch.object(runner, "fetch_config") as fetch:
+            with self.assertRaises(sync.WorkflowError):
+                runner.check_connection(event, "example/demo-project", "token", "key")
+        fetch.assert_not_called()
+
+    def test_invalid_targets_fail_check(self):
+        cfg = config()
+        client = MagicMock()
+        client.request.side_effect = [{"id": cfg["plane"]["project_id"]}, []]
+        with patch.dict(os.environ, {"PLANE_CONFIG_SHA": "a" * 40}), \
+             patch.object(runner, "fetch_config", return_value=cfg), patch.object(runner, "PlaneClient", return_value=client):
+            with self.assertRaisesRegex(sync.WorkflowError, "targets"):
+                runner.check_connection(self.event(), "example/demo-project", "token", "key")
+
+
+if __name__ == "__main__":
+    unittest.main()
