@@ -34,3 +34,11 @@ Validation separates offline behavior, mocked HTTP contracts, real OAuth/read ch
 Primary references: [Codex plugins](https://developers.openai.com/codex/plugins/), [Plane MCP](https://developers.plane.so/dev-tools/mcp-server), [Plane API](https://developers.plane.so/api-reference/introduction), [GitHub pull_request_target](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target).
 
 Explicit v2 routing retains a fresh v1 state/label safety read. Normalization resolves UUID relations using complete collections before terminal/manual-acceptance decisions. API retry delays are bounded without shortening Retry-After. Reviewed bundled-file upgrades bind file/config hashes and preserve old bytes in Git metadata.
+
+## Task execution receipts (0.5.0)
+
+Start and Deliver now require a brief/design decision, scoped verification and self-review before ordinary PR delivery. task_progress.py stores per-task version 1 receipts in shared Git metadata, with project/repo/base identity, expected-content digest, atomic updates, previous snapshots, and current evidence gates. It performs no remote mutations or task state transitions. User-source fields are declarations verified by the Skill against original human context; they are not cryptographic proof or permission by themselves.
+
+Review checks bind current requirements and HEAD; report stamps also bind the receipt digest. A Draft can carry blockers, while ordinary delivery checks current evidence before pushing. Merge and completion read live GitHub PR/required checks; completion additionally requires a fresh normalized Plane MCP task/label snapshot. Exact PR head remains the evidence version after squash merging. Schema versions 1/2, binding protocol 1, existing completion policies and native/Actions ownership are preserved; custom action/state rules remain unimplemented.
+
+Installing a plugin updates its local package only. Business repositories retain their copied runner/synchronizer versions until a separately reviewed upgrade. Agent behavior and semantic coverage still require representative conversation and actual product acceptance; deterministic tests validate receipt/gate behavior, not language understanding.

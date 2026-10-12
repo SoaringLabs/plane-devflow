@@ -394,7 +394,7 @@ def render_report(path, task, summary, checks, remaining):
             f"<!-- plane-for-codex {record} -->\n")
 
 
-def delivery(path, task, title, body_file, *, apply=False):
+def delivery(path, task, title, body_file, *, apply=False, draft=False):
     root, config = repo_config(path)
     task = parse_task(task, config)
     branch = run(["git", "branch", "--show-current"], root).stdout.strip()
@@ -414,6 +414,14 @@ def delivery(path, task, title, body_file, *, apply=False):
             "Task branch contains no commits ahead of the base branch.")
     result = {"status": "planned", "task": task, "branch": branch, "base": base,
               "repository": config["github"]["repository"], "title": pr_title}
+    from task_progress import check_task
+    gate = check_task(root, task, "review")
+    result.update(delivery_check=gate, draft=draft)
+    require(draft or gate["ready"], "Task is not ready for acceptance. Inspect check-task --stage review; deliver --draft for incomplete work.")
+    if not draft:
+        from task_progress import progress, digest, verify_report
+        receipt = progress(root, task)
+        verify_report(body, receipt["record_sha256"], gate["head"], digest(receipt["record"]["data"]["brief"]))
     if not apply:
         return result
     repo = config["github"]["repository"]
@@ -426,18 +434,36 @@ def delivery(path, task, title, body_file, *, apply=False):
             "Task branch has a closed PR. Decide whether to reopen it before creating another PR.")
     open_prs = [pr for pr in existing if pr["state"] == "OPEN"]
     require(len(open_prs) <= 1, "Multiple open PRs found for this task branch.")
-    run(["git", "push", "--set-upstream", "origin", branch], root)
+    require(run(["git", "rev-parse", "HEAD"], root).stdout.strip() == gate["head"] and
+            run(["git", "branch", "--show-current"], root).stdout.strip() == branch and
+            not run(["git", "status", "--porcelain"], root).stdout.strip(),
+            "Task checkout changed during delivery. Inspect and rerun its gate.")
+    from task_progress import progress
+    require(progress(root, task)["record_sha256"] == gate["record_sha256"],
+            "Task evidence changed during delivery. Regenerate the report before pushing.")
     if open_prs:
         pr = open_prs[0]
+        readiness = json.loads(run(["gh", "pr", "view", str(pr["number"]), "--repo", repo,
+                                    "--json", "isDraft"], root).stdout)
+        require(type(readiness.get("isDraft")) is bool, "Cannot resolve existing PR review readiness.")
+        result["draft"] = draft or readiness["isDraft"]
+        if draft and not readiness["isDraft"]:
+            run(["gh", "pr", "ready", str(pr["number"]), "--repo", repo, "--undo"], root)
+        # A passed gate does not silently publish an existing Draft for review.
+    run(["git", "push", "--set-upstream", "origin", branch], root)
+    if open_prs:
         run(["gh", "pr", "edit", str(pr["number"]), "--repo", repo,
              "--title", pr_title, "--body-file", str(Path(body_file).resolve())], root)
         result.update(status="updated", pr=pr["url"], number=pr["number"])
     else:
-        url = run(["gh", "pr", "create", "--repo", repo, "--base", base,
-                   "--head", branch, "--title", pr_title, "--body-file", str(Path(body_file).resolve())], root).stdout.strip()
+        command = ["gh", "pr", "create", "--repo", repo, "--base", base,
+                   "--head", branch, "--title", pr_title, "--body-file", str(Path(body_file).resolve())]
+        if draft:
+            command.append("--draft")
+        url = run(command, root).stdout.strip()
         require(re.fullmatch(r"https://github.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/pull/[0-9]+", url), "GitHub returned an unexpected PR URL. Inspect existing PRs before retrying.")
         result.update(status="created", pr=url, number=int(url.rsplit("/", 1)[1]))
-    result["plane_writeback"] = "pending: use Plane MCP to write the delivery report and review state"
+    result["plane_writeback"] = "pending: use Plane MCP for the delivery report; preserve task state for Draft PRs"
     return result
 
 
@@ -520,7 +546,18 @@ def demo(output=None):
     (checkout / "hello.txt").write_text("Hello, Plane for Codex\n")
     run(["git", "add", "hello.txt"], checkout)
     run(["git", "commit", "-m", "DEMO-1: update greeting"], checkout)
-    body = render_report(checkout, "DEMO-1", "Add the project greeting.", "Greeting checked in the isolated demo.", "")
+    from task_progress import progress, digest, report, check_task
+    head = run(["git", "rev-parse", "HEAD"], checkout).stdout.strip()
+    brief = {"goal": "Update the project greeting", "scope": ["hello.txt"], "out_of_scope": [],
+             "scenarios": ["Read the updated greeting"],
+             "criteria": [{"id": "greeting", "description": "Greeting contains the project name", "required": True, "stage": "review"}]}
+    evidence = {"head": head, "brief_sha256": digest(brief), "evidence": "Read hello.txt in the isolated demo"}
+    progress(checkout, "DEMO-1", update={"brief": brief,
+             "design": {"required": False, "status": "not_required", "evidence": "Text-only demo", "brief_sha256": digest(brief)},
+             "checks": [{**evidence, "id": "read-greeting", "criteria": ["greeting"], "kind": "test", "status": "passed"}],
+             "self_review": {**evidence, "evidence": "Reviewed the isolated greeting diff"}}, expected="missing", apply=True)
+    review_check = check_task(checkout, "DEMO-1", "review")
+    body = report(checkout, "DEMO-1", "Add the project greeting.")
     report_path = directory / "pull-request.md"
     report_path.write_text(body)
     deliver = delivery(checkout, "DEMO-1", "Add the project greeting", report_path)
@@ -555,10 +592,10 @@ def demo(output=None):
     plane.item.update(state_id=states["in_progress"], labels=[{"name": "manual-acceptance"}])
     manual = sync_event(event, config, plane)
     record = {"mode": "offline_demo", "live_services_called": False, "directory": str(directory),
-              "start": start, "resume": resume, "delivery": deliver, "pr_open": opened,
+              "start": start, "resume": resume, "delivery": deliver, "review_check": review_check, "pr_open": opened,
               "pr_merged": merged, "repeat_merge": repeated, "manual_acceptance": manual,
               "lifecycle_comment_count": len(plane.comments), "report": str(report_path)}
-    require(resume["operation"] == "resume" and len(plane.comments) == 1 and manual["manual_acceptance"], "Demo invariant failed.")
+    require(resume["operation"] == "resume" and review_check["ready"] and len(plane.comments) == 1 and manual["manual_acceptance"], "Demo invariant failed.")
     (directory / "result.json").write_text(json.dumps(record, ensure_ascii=False, indent=2) + "\n")
     return record
 
@@ -602,7 +639,10 @@ def main(argv=None):
     p.add_argument("task")
     p.add_argument("--repo", default=".")
     p.add_argument("--summary-file", required=True)
-    p.add_argument("--checks-file", required=True)
+    p.add_argument("--checks-file")
+    p.add_argument("--from-progress", action="store_true", help="Render current task receipt instead of free-text checks/acceptance.")
+    p.add_argument("--stage", choices=["review", "merge", "complete"], default="review")
+    p.add_argument("--workitem-file", help="Fresh normalized Plane MCP task snapshot for completion checks.")
     p.add_argument("--remaining-file")
     p.add_argument("--output", required=True)
     p = sub.add_parser("deliver", help="Plan or push and create/update a PR; Plane writeback uses MCP.")
@@ -611,6 +651,18 @@ def main(argv=None):
     p.add_argument("--title", required=True)
     p.add_argument("--body-file", required=True)
     p.add_argument("--apply", action="store_true")
+    p.add_argument("--draft", action="store_true", help="Deliver incomplete work without declaring it ready for acceptance.")
+    p = sub.add_parser("task-progress", help="Inspect or plan/apply a task receipt in shared Git metadata.")
+    p.add_argument("task")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--record-file")
+    p.add_argument("--expected-record-sha256")
+    p.add_argument("--apply", action="store_true")
+    p = sub.add_parser("check-task", help="Check implementation, review, merge or completion evidence; no writes.")
+    p.add_argument("task")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--stage", choices=["implement", "review", "merge", "complete"], required=True)
+    p.add_argument("--workitem-file", help="Fresh normalized Plane MCP task snapshot for completion checks.")
     p = sub.add_parser("credential-guide", help="Guide Plane PAT creation, GitHub storage, and metadata-only verification.")
     p.add_argument("--repo", default=".")
     p.add_argument("--step", choices=["plane", "github", "verify"], default="plane")
@@ -650,14 +702,28 @@ def main(argv=None):
         elif args.command == "prepare":
             result = prepare(args.repo, args.task, worktree=args.worktree, apply=args.apply)
         elif args.command == "render-report":
-            text = render_report(args.repo, args.task, Path(args.summary_file).read_text(), Path(args.checks_file).read_text(),
-                                 Path(args.remaining_file).read_text() if args.remaining_file else "")
+            if args.from_progress:
+                from task_progress import report
+                text = report(args.repo, args.task, Path(args.summary_file).read_text(), stage=args.stage,
+                              workitem=json.loads(Path(args.workitem_file).read_text()) if args.workitem_file else None)
+            else:
+                require(args.checks_file is not None, "Supply --checks-file or use --from-progress.")
+                text = render_report(args.repo, args.task, Path(args.summary_file).read_text(), Path(args.checks_file).read_text(),
+                                     Path(args.remaining_file).read_text() if args.remaining_file else "")
             output = Path(args.output)
             require(not output.exists(), "Report output already exists. Choose another path or edit it explicitly.")
             output.write_text(text)
             result = {"status": "written", "output": str(output.resolve()), "sha256": hashlib.sha256(text.encode()).hexdigest()}
         elif args.command == "deliver":
-            result = delivery(args.repo, args.task, args.title, args.body_file, apply=args.apply)
+            result = delivery(args.repo, args.task, args.title, args.body_file, apply=args.apply, draft=args.draft)
+        elif args.command == "task-progress":
+            from task_progress import progress
+            result = progress(args.repo, args.task, update=json.loads(Path(args.record_file).read_text()) if args.record_file else None,
+                              expected=args.expected_record_sha256, apply=args.apply)
+        elif args.command == "check-task":
+            from task_progress import check_task
+            result = check_task(args.repo, args.task, args.stage,
+                                workitem=json.loads(Path(args.workitem_file).read_text()) if args.workitem_file else None)
         elif args.command == "credential-guide":
             result = credential_guide(args.repo, step=args.step)
         elif args.command == "setup-progress":
@@ -680,7 +746,7 @@ def main(argv=None):
         else:
             result = demo(args.output)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 0
+        return 2 if args.command == "check-task" and not result["ready"] else 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
         print(f"plane-for-codex: {error}", file=sys.stderr)
         return 1

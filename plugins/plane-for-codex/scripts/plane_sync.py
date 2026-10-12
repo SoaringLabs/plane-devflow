@@ -18,7 +18,7 @@ from urllib.parse import quote, urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 CONFIG_NAME = ".plane-for-codex.json"
-VERSION = "0.4.2"
+VERSION = "0.5.0"
 REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 PROJECT_RE = re.compile(r"[A-Z][A-Z0-9_-]{0,29}\Z")
 BINDING_RE = re.compile(r"<!--\s*plane-for-codex\s+(\{.*?\})\s*-->", re.S)
@@ -369,7 +369,7 @@ def sync_event(event, config, client=None, *, dry_run=False):
     manual = config["completion"]["policy"] == "manual" or config["completion"].get("manual_label", "manual-acceptance") in label_names
     detail = {"draft": "Draft PR; implementation is in progress.",
               "review": "PR is ready for review. Implementation and acceptance are tracked separately.",
-              "merged": "Code merged; manual acceptance is still required." if manual else "PR merged into the configured base branch.",
+              "merged": "Code merged; human acceptance and remaining completion conditions are checked separately in Codex." if manual else "PR merged into the configured base branch.",
               "closed": "PR closed without merging; the task has not been marked complete."}[phase(pr)]
     if not state_sync_enabled(config):
         detail = "Task state synchronization is disabled; the current Plane state is unchanged."

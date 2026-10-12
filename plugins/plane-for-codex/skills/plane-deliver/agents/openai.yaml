@@ -1,4 +1,4 @@
 interface:
   display_name: "Plane: 交付任务"
-  short_description: "创建或更新 GitHub PR，回写 Plane 链接、检查结果与验收状态"
+  short_description: "检查交付证据，创建或更新 PR，记录验收并核对完成条件"
   default_prompt: "使用 $plane-for-codex:plane-deliver。"

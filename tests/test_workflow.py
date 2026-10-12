@@ -16,6 +16,8 @@ sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
 import plane_sync as sync
 import plane_workflow as workflow
 import action_runner as action
+import task_progress as task_receipts
+from test_task_progress import ready_data
 
 
 def config():
@@ -133,6 +135,12 @@ class LifecycleTests(unittest.TestCase):
         result = sync.sync_event(event(merged=True), self.cfg, self.client)
         self.assertTrue(result["manual_acceptance"])
         self.assertEqual(self.client.item["state_id"], self.cfg["states"]["in_review"])
+
+    def test_manual_lifecycle_does_not_claim_user_has_not_accepted(self):
+        sync.sync_event(event(merged=True, state="closed"), self.cfg, self.client)
+        body = next(iter(self.client.comments.values()))
+        self.assertNotIn("manual acceptance is still required", body)
+        self.assertIn("checked separately in Codex", body)
 
     def test_closed_without_merge_preserves(self):
         sync.sync_event(event(state="closed"), self.cfg, self.client)
@@ -287,7 +295,8 @@ class GitTests(unittest.TestCase):
         self.git("add", "file.txt")
         self.git("commit", "-m", "task")
         body = Path(self.temp.name) / "body.md"
-        body.write_text(workflow.render_report(self.root, "DEMO-12", "Update greeting", "Checked", ""))
+        task_receipts.progress(self.root, "DEMO-12", update=ready_data(self.git("rev-parse", "HEAD")), expected="missing", apply=True)
+        body.write_text(task_receipts.report(self.root, "DEMO-12", "Update greeting"))
         return body
 
     def test_plan_read_only_then_resume(self):
@@ -346,7 +355,9 @@ class GitTests(unittest.TestCase):
         def fake_run(args, cwd=None, **kwargs):
             if args[0] == "gh":
                 mutations.append(args)
-                data = [{"number": 7, "url": "https://github.com/example/demo-project/pull/7", "state": "OPEN", "isCrossRepository": False}] if args[1:3] == ["pr", "list"] else ""
+                data = [{"number": 7, "url": "https://github.com/example/demo-project/pull/7", "state": "OPEN", "isCrossRepository": False}] if args[1:3] == ["pr", "list"] else {"isDraft": False} if args[1:3] == ["pr", "view"] else ""
+                if isinstance(data, dict):
+                    return subprocess.CompletedProcess(args, 0, json.dumps(data), "")
                 return subprocess.CompletedProcess(args, 0, json.dumps(data) if isinstance(data, list) else data, "")
             if args[1] == "push":
                 mutations.append(args)

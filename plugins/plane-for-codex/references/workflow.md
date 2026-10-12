@@ -6,6 +6,8 @@
 
 # Workflow reference
 
+Start/Deliver must also read [task execution](task-execution.md) for requirement/design decisions, task receipts and the implement/review/merge/complete gates. Existing state configuration and synchronization ownership remain unchanged.
+
 Run these commands with the absolute path of the installed plugin script. They affect the application repository selected by `--repo`.
 
 ## Start or resume
@@ -25,19 +27,19 @@ Read task description, comments and acceptance criteria through the official MCP
 
 ## Create a report and deliver
 
-Keep summary/checks/acceptance source files outside the working tree or in a suitable ignored local directory. Record what actually ran, and keep outstanding device, visual or business acceptance visible.
+Keep summary/update source files outside the working tree or in a suitable ignored local directory; record checks and acceptance in task-progress. Record what actually ran, and keep outstanding device, visual or business acceptance visible.
 
 ```sh
 python3 /absolute/plugin/scripts/plane_workflow.py render-report PROJECT-123 \
   --repo /absolute/application/repo --summary-file /tmp/summary.md \
-  --checks-file /tmp/checks.md --remaining-file /tmp/remaining.md \
+  --from-progress \
   --output /tmp/project-123-pr.md
 python3 /absolute/plugin/scripts/plane_workflow.py deliver PROJECT-123 \
   --repo /absolute/application/repo --title "Describe the resulting behavior" \
   --body-file /tmp/project-123-pr.md
 ```
 
-After committing only intended task changes, repeat deliver with `--apply`. It pushes the branch and creates/updates a PR using `--body-file`. Multiple open PRs, previously merged/closed task PRs, another task branch or dirty checkout require resolution before delivery. V0.1 delivers branches in the mapped origin repository; forks are outside the delivery helper's scope.
+After committing only intended task changes and recording current evidence, run the review gate and repeat deliver with `--apply`. Incomplete work uses `--draft`; Draft delivery preserves the current task state. Existing Drafts require an explicit ready-for-review operation after the gate passes. It pushes the branch and creates/updates a PR using `--body-file`. Multiple open PRs, previously merged/closed task PRs, another task branch or dirty checkout require resolution before delivery. V0.1 delivers branches in the mapped origin repository; forks are outside the delivery helper's scope.
 
 The body carries a visible `[PROJECT-123]` and one hidden JSON binding with workspace, project UUID and task. Do not remove the binding. Only one bracketed primary task is supported; mention related tasks in plain text. The Action validates repository, base branch, workspace and project before writes.
 
