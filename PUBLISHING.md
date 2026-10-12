@@ -14,7 +14,15 @@ This repository is a generic plugin; no real user/project mapping or credential 
 
 When changing a release, update `plugin.json` version and `plane_sync.VERSION` together, test compatibility, and reinstall the plugin to refresh its cached package. Keep the marketplace name stable. Onboarding should remain conversational and require only necessary account consent and project selection.
 
+Record version changes in [CHANGELOG.md](CHANGELOG.md). Keep the README focused on current capabilities, installation and usage, with a link to the changelog instead of inline version history.
+
 The repository's validation workflow runs tests, package validation and the offline demo on Python 3.10 and 3.14. After pushing, confirm repository visibility, the default branch, remote commit identity and both CI jobs. Source publication is separate from creating a version tag or GitHub Release.
+
+## GitHub Marketplace
+
+The root `action.yml` describes the backward-compatible composite Action, so GitHub may show a banner inviting publication to GitHub Marketplace. This is an optional Action listing, separate from distributing the Codex plugin. Current Actions setup copies a workflow and synchronization scripts into the business repository; it does not require this Marketplace listing.
+
+Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
 

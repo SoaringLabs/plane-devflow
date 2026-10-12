@@ -2,6 +2,8 @@
 
 一个社区维护的开源 Codex 插件，把 Plane 任务、开发分支、GitHub PR 和交付记录串起来。
 
+版本更新见 [CHANGELOG.md](CHANGELOG.md)。
+
 当前 v0.4.2 支持 **选择或创建 Plane 项目 → 关联仓库 → 配置 GitHub 后台同步 → 验证初始化**，并支持检查、安全重新配置和继续未完成的配置。每个仓库有自己的映射，支持个人账号和组织仓库。Python 脚本只使用标准库；无需部署服务。完整目标见 [工作流方案](docs/workflow-plan.md)，Cycle、任务创建和上下文自动推进尚未实现。
 
 ## 基本使用
@@ -109,19 +111,3 @@ python3 -m unittest discover -s tests -v
 Plane for Codex links Plane projects and tasks to repositories and PRs. Select **Plane: 初始化** (Setup) without extra prose. Reuse account consent, choose an existing project or create one, and check or safely reconfigure an existing mapping. Repository names recommend projects rather than auto-binding. Empty projects are supported. Replacement verifies a reviewed file hash, backs up original bytes in Git metadata and writes atomically. **Plane: 开始任务** starts an existing task; **Plane: 交付任务** delivers it. Picker shortcuts depend on the client; no custom slash aliases are registered.
 
 New basic config version 2 requires no state targets and leaves states unchanged. Same-project legacy version 1 keeps its existing state and acceptance rules. Full setup requires verified native GitHub integration or Actions synchronization. Actions requires bundled workflow/scripts, a separate Plane PAT in GitHub Secrets, and a successful connection check on the current default-branch commit. Native mode uses observed integration mapping/rules and needs no runner Secret. Missing prerequisites mean resumable partial setup. Resolve existing workflows before replacing their mapping. Cycle/task creation and custom status rules are future work. The offline demo makes no external service calls.
-
-### v0.4 API 与模式配置
-
-`sync.provider` 支持 `actions`（默认）和 `native`。`sync.api_version` 默认 `v1`，评论 upsert 单独调用 `v2`；显式选择 v2 时，状态与标签仍用 v1 新鲜读取作安全检查。配置文件的 `version: 1/2` 是映射格式，和 API 版本无关。未知/无法解析的状态或验收标签会阻止写入。较长的 Retry-After 不会被截短后提前重试。
-
-免费用户重新初始化时，沿用现有项目、状态 UUID 和完成规则，审阅升级仓库内同步文件，然后配置该业务仓库自己的 `PLANE_API_KEY`。测试仓库的 Secret 不会自动转移。连接检查、实际 PR 回写分别报告。
-
-### v0.4.1 凭证引导
-
-选择 Actions 后，缺少 Secret 时按 **Plane 创建 PAT → 当前仓库的 GitHub Secret → 读取 Secret 名称确认 → 激活与连接检查** 引导。具备浏览器或 computer use 能力时，插件会打开页面、导航到相关表单；没有该能力时提供完整路径与动态仓库链接，不要求安装额外浏览器插件。PAT 的生成、复制、粘贴和保存由用户直接在服务页面完成，不经过聊天或 agent 的剪贴板读取。合并授权是独立步骤，不再把它和 PAT 配置捆成一句提示。
-
-### v0.4.2 能力检测与中断恢复
-
-初始化先检测当前工具能力，支持浏览器／App 导航、仅打开网页和完整人工链接。无需安装 Plane 桌面 App；没有 GitHub CLI 时仍能按网页引导配置 Secret，自动远端验证保持待完成。`setup-capabilities` 不需要仓库或账号；`setup-progress` 在已有映射下重查服务证据，并可在 Git 元数据保存非敏感进度。自然回复可以继续当前步骤；换会话后不会把历史验证当成当前成功，也不会因无法读取 Secret 而要求再创建 Token。
-
-权限、登录、限流、网络失败和无效响应返回分阶段的恢复建议。原生模式跳过 runner 凭据，配置变化保留原进度并重新核对；不确定的服务端写入失败先核对结果再重试。完整兼容与验证范围见 [0.4.2 验证记录](docs/validation-0.4.2.md)。
