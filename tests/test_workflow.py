@@ -291,6 +291,10 @@ class GitTests(unittest.TestCase):
 
     def task_commit(self):
         workflow.prepare(self.root, "DEMO-12", apply=True)
+        import checkout_workflow
+        context = checkout_workflow.context(self.root, "DEMO-12")
+        checkout_workflow.context(self.root, "DEMO-12", allowed_paths=["file.txt"],
+                                  expected=context["context_sha256"], apply=True)
         (self.root / "file.txt").write_text("after\n")
         self.git("add", "file.txt")
         self.git("commit", "-m", "task")

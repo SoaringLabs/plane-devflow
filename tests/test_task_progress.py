@@ -47,6 +47,9 @@ class TaskProgressTests(unittest.TestCase):
         self.git("add", ".")
         self.git("commit", "-m", "initial")
         self.head = self.git("rev-parse", "HEAD")
+        self.git("switch", "--create", "codex/demo-12")
+        import checkout_workflow
+        checkout_workflow.capture(self.root, self.cfg, "DEMO-12", allowed_paths=["**"], expected="missing", apply=True)
         self.data = ready_data(self.head)
 
     def git(self, *args):
@@ -90,7 +93,7 @@ class TaskProgressTests(unittest.TestCase):
             return progress.check_task(self.root, "DEMO-12", stage, workitem=workitem)
 
     def test_inspection_and_plan_leave_git_metadata_unchanged(self):
-        metadata = self.root / ".git/plane-for-codex"
+        metadata = self.root / ".git/plane-for-codex/tasks"
         progress.progress(self.root, "DEMO-12")
         progress.progress(self.root, "DEMO-12", update=self.data)
         self.assertFalse(metadata.exists())
@@ -98,7 +101,7 @@ class TaskProgressTests(unittest.TestCase):
     def test_apply_requires_inspected_digest(self):
         with self.assertRaises(sync.WorkflowError):
             progress.progress(self.root, "DEMO-12", update=self.data, apply=True)
-        self.assertFalse((self.root / ".git/plane-for-codex").exists())
+        self.assertFalse((self.root / ".git/plane-for-codex/tasks").exists())
 
     def test_receipt_shared_across_worktrees_but_not_projects(self):
         first = self.save()

@@ -380,6 +380,15 @@ def prepare(path, task, *, worktree=None, apply=False):
             run(["git", "switch", "--create", branch, base], root)
         elif operation == "switch":
             run(["git", "switch", branch], root)
+        from checkout_workflow import capture, inspect
+        # The immutable starting commit is recorded before any implementation.
+        context = capture(target, config, key, base_sha=base_sha if not exists else None)
+        context = capture(target, config, key, base_sha=base_sha if not exists else None,
+                          expected=context["expected_context_sha256"], apply=True)
+        result["checkout_context"] = context
+        blockers = inspect(target, config, key)["blockers"]
+        require(not any(b != "task_file_scope_missing" for b in blockers),
+                "Task checkout or accumulated changes need inspection before resuming. Run task-context.")
     return result
 
 
@@ -417,6 +426,8 @@ def delivery(path, task, title, body_file, *, apply=False, draft=False):
     from task_progress import check_task
     gate = check_task(root, task, "review")
     result.update(delivery_check=gate, draft=draft)
+    require(not gate["checkout_check"]["blockers"],
+            "Task branch, checkout or file scope changed. Inspect task-context before any delivery, including Drafts.")
     require(draft or gate["ready"], "Task is not ready for acceptance. Inspect check-task --stage review; deliver --draft for incomplete work.")
     if not draft:
         from task_progress import progress, digest, verify_report
@@ -441,6 +452,10 @@ def delivery(path, task, title, body_file, *, apply=False, draft=False):
     from task_progress import progress
     require(progress(root, task)["record_sha256"] == gate["record_sha256"],
             "Task evidence changed during delivery. Regenerate the report before pushing.")
+    from checkout_workflow import inspect
+    checkout = inspect(root, config, task)
+    require(checkout["ready"] and checkout["context_sha256"] == gate["checkout_check"]["context_sha256"],
+            "Task checkout/scope changed during delivery. Inspect before pushing.")
     if open_prs:
         pr = open_prs[0]
         readiness = json.loads(run(["gh", "pr", "view", str(pr["number"]), "--repo", repo,
@@ -543,6 +558,9 @@ def demo(output=None):
     run(["git", "commit", "-m", "Initialize demo"], checkout)
     start = prepare(checkout, "DEMO-1", apply=True)
     resume = prepare(checkout, "DEMO-1", apply=True)
+    from checkout_workflow import context
+    context(checkout, "DEMO-1", allowed_paths=["hello.txt"],
+            expected=context(checkout, "DEMO-1")["context_sha256"], apply=True)
     (checkout / "hello.txt").write_text("Hello, Plane for Codex\n")
     run(["git", "add", "hello.txt"], checkout)
     run(["git", "commit", "-m", "DEMO-1: update greeting"], checkout)
@@ -658,6 +676,17 @@ def main(argv=None):
     p.add_argument("--record-file")
     p.add_argument("--expected-record-sha256")
     p.add_argument("--apply", action="store_true")
+    p = sub.add_parser("task-context", help="Check task checkout/scope or plan/apply its authorized file scope.")
+    p.add_argument("task")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--scope-file", help="JSON array of authorized repository-relative paths/glob patterns.")
+    p.add_argument("--expected-context-sha256")
+    p.add_argument("--apply", action="store_true")
+    p = sub.add_parser("finish-task", help="After confirmed task completion, update the primary checkout to the configured base.")
+    p.add_argument("task")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--workitem-file", required=True, help="Fresh completed Plane task snapshot after readback.")
+    p.add_argument("--apply", action="store_true")
     p = sub.add_parser("check-task", help="Check implementation, review, merge or completion evidence; no writes.")
     p.add_argument("task")
     p.add_argument("--repo", default=".")
@@ -720,6 +749,14 @@ def main(argv=None):
             from task_progress import progress
             result = progress(args.repo, args.task, update=json.loads(Path(args.record_file).read_text()) if args.record_file else None,
                               expected=args.expected_record_sha256, apply=args.apply)
+        elif args.command == "task-context":
+            from checkout_workflow import context
+            result = context(args.repo, args.task,
+                             allowed_paths=json.loads(Path(args.scope_file).read_text()) if args.scope_file else None,
+                             expected=args.expected_context_sha256, apply=args.apply)
+        elif args.command == "finish-task":
+            from checkout_workflow import finish
+            result = finish(args.repo, args.task, workitem=json.loads(Path(args.workitem_file).read_text()), apply=args.apply)
         elif args.command == "check-task":
             from task_progress import check_task
             result = check_task(args.repo, args.task, args.stage,
@@ -746,7 +783,7 @@ def main(argv=None):
         else:
             result = demo(args.output)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 2 if args.command == "check-task" and not result["ready"] else 0
+        return 2 if args.command in {"check-task", "finish-task", "task-context"} and result.get("ready") is False else 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
         print(f"plane-for-codex: {error}", file=sys.stderr)
         return 1

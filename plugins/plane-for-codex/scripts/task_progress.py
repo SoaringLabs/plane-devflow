@@ -325,6 +325,10 @@ def check_task(path, task, stage, *, workitem=None):
             except (WorkflowError, ValueError, KeyError, TypeError):
                 remote_blockers.append("live_pr_or_checks_unverified")
     result = gates(data, head, stage, manual=manual)
+    if stage != "complete":
+        from checkout_workflow import inspect
+        result["checkout_check"] = inspect(root, config, task)
+        result["blockers"].extend(result["checkout_check"]["blockers"])
     if stage in {"review", "merge"} and run(["git", "status", "--porcelain"], root).stdout.strip():
         result["blockers"].append("uncommitted_changes_not_covered")
     result["blockers"].extend(remote_blockers)

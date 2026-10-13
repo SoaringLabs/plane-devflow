@@ -2,6 +2,8 @@
 
 Use this reference during Start/Deliver and when resuming, accepting or completing a task. The existing project config versions, state targets and provider ownership remain unchanged. Task receipts use their own version 1 format.
 
+Before coding, resumed edits, commits or delivery, also read [checkout checks](checkout.md). Implement/review/merge gates include directory, task branch and cumulative file-scope checks. After completed-task readback, the same reference defines the automatic base checkout handoff; its failure never reverses task completion.
+
 ## Brief and design
 
 Before implementation, record a short goal, scope, exclusions, scenarios and acceptance criteria. Simple fixes need only a short brief. Important UI changes cover empty/populated and error states together; inspect existing icons, typography, spacing, feedback, long text and accessibility. A criterion's `stage` is `review` (must pass before review) or `complete` (may remain pending during review). `required=false` records an optional/follow-up item without silently waiving a required check.

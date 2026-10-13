@@ -8,6 +8,8 @@
 
 Start/Deliver must also read [task execution](task-execution.md) for requirement/design decisions, task receipts and the implement/review/merge/complete gates. Existing state configuration and synchronization ownership remain unchanged.
 
+Read [checkout checks](checkout.md) for recording task paths/scope, checking every resumed development turn and preparing the primary base checkout after completion.
+
 Run these commands with the absolute path of the installed plugin script. They affect the application repository selected by `--repo`.
 
 ## Start or resume

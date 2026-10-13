@@ -2,7 +2,7 @@
 
 Public source: [SoaringLabs/plane-for-codex](https://github.com/SoaringLabs/plane-for-codex). This is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.5.0. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.6.0. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Validate and publish source
 
@@ -26,6 +26,6 @@ Consider a listing if the composite Action is promoted as a standalone reusable 
 
 ## Verification scope
 
-The [v0.5.0 validation](docs/validation-0.5.0.md) covers task receipts, evidence gates and the local installation. Version validation notes are historical records. The [v0.4.2 validation](docs/validation-0.4.2.md) includes the pre-publication rerun. The [live capability summary](docs/plane-github-capability-verification.md) is redacted; its raw private logs are not publicly accessible. An offline pass does not certify every host UI, self-hosted deployment, native integration or real PR writeback.
+The [v0.6.0 validation](docs/validation-0.6.0.md) covers checkout guards, completion handoff and local installation. The [v0.5.0 validation](docs/validation-0.5.0.md) covers task receipts and evidence gates. Version validation notes are historical records. The [v0.4.2 validation](docs/validation-0.4.2.md) includes the pre-publication rerun. The [live capability summary](docs/plane-github-capability-verification.md) is redacted; its raw private logs are not publicly accessible. An offline pass does not certify every host UI, self-hosted deployment, native integration or real PR writeback.
 
 Report bugs with sanitized config shape, script version, operation and observed behavior. Do not include OAuth tokens, PATs, private task content or credential-bearing remotes. Contributions should preserve credential separation, idempotent delivery and manual-acceptance semantics.
