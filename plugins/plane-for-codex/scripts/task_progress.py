@@ -294,7 +294,7 @@ def check_task(path, task, stage, *, workitem=None):
         else:
             try:
                 pr = json.loads(run(["gh", "pr", "view", url, "--json",
-                                     "url,state,isDraft,headRefOid,baseRefName,mergeCommit,title,body,isCrossRepository,mergeable,mergeStateStatus"], root).stdout)
+                                     "url,state,isDraft,headRefOid,baseRefName,baseRefOid,mergeCommit,title,body,isCrossRepository,mergeable,mergeStateStatus"], root).stdout)
                 from plane_sync import pr_task
                 require(pr["url"] == url and pr["baseRefName"] == config["github"]["base_branch"] and
                         not pr["isCrossRepository"] and pr_task(pr, config) == parse_task(task, config),
@@ -320,6 +320,13 @@ def check_task(path, task, stage, *, workitem=None):
                         remote_blockers.append("pr_not_open_ready_for_merge")
                     if pr.get("mergeable") != "MERGEABLE" or pr.get("mergeStateStatus") not in {"CLEAN", "UNSTABLE"}:
                         remote_blockers.append("pr_mergeability_unverified_or_blocked")
+                    from checkout_workflow import base_ref
+                    live_base = pr.get("baseRefOid", "")
+                    known_base = run(["git", "rev-parse", base_ref(root, config)], root).stdout.strip()
+                    if not SHA.fullmatch(live_base) or live_base != known_base:
+                        remote_blockers.append("live_base_changed_refresh_required")
+                    elif run(["git", "merge-base", "--is-ancestor", live_base, local_head], root, check=False).returncode:
+                        remote_blockers.append("task_base_update_required")
                 elif pr["state"] != "MERGED" or not (pr.get("mergeCommit") or {}).get("oid"):
                     remote_blockers.append("pr_not_merged")
             except (WorkflowError, ValueError, KeyError, TypeError):
@@ -331,6 +338,10 @@ def check_task(path, task, stage, *, workitem=None):
         result["blockers"].extend(result["checkout_check"]["blockers"])
     if stage in {"review", "merge"} and run(["git", "status", "--porcelain"], root).stdout.strip():
         result["blockers"].append("uncommitted_changes_not_covered")
+    if stage in {"review", "merge"}:
+        from checkout_workflow import merge_state
+        if merge_state(root, config)["operations"]:
+            result["blockers"].append("task_git_operation_in_progress")
     result["blockers"].extend(remote_blockers)
     result.update(ready=not result["blockers"], task=parse_task(task, config), head=head, pr=pr,
                   provider=sync_provider(config), state_sync=state_sync_enabled(config),

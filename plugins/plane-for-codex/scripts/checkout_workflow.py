@@ -118,11 +118,19 @@ def inspect(root, config, task):
         blockers.append("task_base_history_changed")
     else:
         paths = set()
-        committed = set(filter(None, run(["git", "diff", "--name-only", "--no-renames", "-z", baseline, "HEAD", "--"], root).stdout.split("\0")))
+        base = base_ref(root, config)
+        require(run(["git", "merge-base", "--is-ancestor", baseline, base], root, check=False).returncode == 0,
+                "Configured base history changed. Inspect the original task baseline before recovery.")
+        comparison = run(["git", "merge-base", base, "HEAD"], root).stdout.strip()
+        result["comparison_base_sha"] = comparison
+        integration = merge_state(root, config)
+        result["integration"] = integration
+        work_reference = integration["merge_head"] if integration["is_base_merge"] else "HEAD"
+        committed = set(filter(None, run(["git", "diff", "--name-only", "--no-renames", "-z", comparison, "HEAD", "--"], root).stdout.split("\0")))
         # --no-renames accounts for both source and destination paths of a rename.
-        for args in (["diff", "--name-only", "--no-renames", "-z", baseline, "HEAD", "--"],
-                     ["diff", "--name-only", "--no-renames", "-z", "HEAD", "--"],
-                     ["diff", "--name-only", "--no-renames", "-z", "--cached", "--"],
+        for args in (["diff", "--name-only", "--no-renames", "-z", comparison, "HEAD", "--"],
+                     ["diff", "--name-only", "--no-renames", "-z", work_reference, "--"],
+                     ["diff", "--name-only", "--no-renames", "-z", "--cached", work_reference, "--"],
                      ["ls-files", "--others", "--exclude-standard", "-z"]):
             paths.update(filter(None, run(["git", *args], root).stdout.split("\0")))
         result["changed_paths"] = sorted(paths)
@@ -140,6 +148,24 @@ def inspect(root, config, task):
                 blockers.append("task_head_already_in_base")
     result["ready"] = not blockers
     return result
+
+
+def merge_state(root, config):
+    from plane_workflow import run
+    operations = []
+    incoming = None
+    for name in ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "sequencer"):
+        marker = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-path", name], root).stdout.strip())
+        if marker.exists():
+            operations.append(name)
+            if name == "MERGE_HEAD":
+                value = marker.read_text().strip()
+                if SHA.fullmatch(value):
+                    incoming = value
+    is_base = bool(incoming and operations == ["MERGE_HEAD"] and run(
+        ["git", "merge-base", "--is-ancestor", incoming, base_ref(root, config)], root, check=False).returncode == 0)
+    conflicts = sorted(filter(None, run(["git", "diff", "--name-only", "--diff-filter=U", "-z"], root).stdout.split("\0")))
+    return {"operations": operations, "merge_head": incoming, "is_base_merge": is_base, "conflicted_paths": conflicts}
 
 
 def context(path, task, *, allowed_paths=None, expected=None, apply=False):

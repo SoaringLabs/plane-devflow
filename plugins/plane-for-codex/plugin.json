@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "plane-for-codex",
-  "version": "0.6.1",
-  "description": "Connect Plane projects to repositories, check task ownership before saving requirement plans, and deliver linked pull requests in Codex.",
+  "version": "0.7.0",
+  "description": "Develop independent Plane tasks across chats using isolated main-based worktrees, resolve base conflicts, and deliver linked pull requests in Codex.",
   "extensions": {
     "com.openai": {
       "onboardingSkill": "./skills/plane-setup/SKILL.md",

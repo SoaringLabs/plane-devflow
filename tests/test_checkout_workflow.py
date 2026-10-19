@@ -34,7 +34,7 @@ class CheckoutFixture(unittest.TestCase):
         self.git("add", ".")
         self.git("commit", "-m", "initial")
         self.baseline = self.git("rev-parse", "HEAD")
-        workflow.prepare(self.root, "DEMO-12", apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
 
     def git(self, *args, cwd=None):
         return workflow.run(["git", *args], cwd or self.root).stdout.strip()
@@ -100,7 +100,7 @@ class CheckoutTests(CheckoutFixture):
         self.git("update-ref", "refs/remotes/origin/main", head)
         self.assertIn("task_head_already_in_base", checkout.context(self.root, "DEMO-12")["blockers"])
         with self.assertRaisesRegex(sync.WorkflowError, "inspection"):
-            workflow.prepare(self.root, "DEMO-12", apply=True)
+            workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
 
     def test_squash_integration_detected_even_with_newer_unrelated_base_content(self):
         self.scope()

@@ -334,7 +334,40 @@ def branch_name(task, config):
     return f'{config["github"].get("branch_prefix", "codex")}/{parse_task(task, config).lower()}'
 
 
-def prepare(path, task, *, worktree=None, apply=False):
+def prepare(path, task, *, worktree=None, in_place=False, apply=False):
+    require(not (in_place and worktree), "Choose --in-place or --worktree, not both.")
+    if in_place:
+        from task_workspaces import workspace_lock
+        if apply:
+            with workspace_lock(repo_root(path)):
+                return _prepare_in_place(path, task, apply=True)
+        return _prepare_in_place(path, task)
+    from task_workspaces import prepare_workspace
+    return prepare_workspace(path, task, worktree=worktree, apply=apply)
+
+
+def _prepare_in_place(path, task, *, apply=False):
+    root, config = repo_config(path)
+    head = run(["git", "rev-parse", "HEAD"], root).stdout.strip()
+    branch = run(["git", "branch", "--show-current"], root).stdout.strip()
+    require(branch in {"", config["github"]["base_branch"], branch_name(task, config)},
+            "Caller checkout belongs to another task. Use the default isolated workspace.")
+    if apply:
+        base = config["github"]["base_branch"]
+        run(["git", "fetch", "origin", f"refs/heads/{base}:refs/remotes/origin/{base}"], root)
+        require(repo_config(root)[1] == config and run(["git", "rev-parse", "HEAD"], root).stdout.strip() == head and
+                run(["git", "branch", "--show-current"], root).stdout.strip() == branch,
+                "Caller checkout changed during preparation. Inspect before switching branches.")
+        if not branch:
+            require(run(["git", "merge-base", "--is-ancestor", head, "refs/remotes/origin/" + base], root,
+                        check=False).returncode == 0,
+                    "Detached checkout has unique commits. Preserve them before naming or changing its task branch.")
+    result = _prepare_checkout(root, task, apply=apply)
+    result.update(execution_path=str(root), caller_path=str(root), base_freshness="fetched" if apply else "unverified")
+    return result
+
+
+def _prepare_checkout(path, task, *, worktree=None, apply=False):
     root, config = repo_config(path)
     key = parse_task(task, config)
     branch = branch_name(key, config)
@@ -556,8 +589,9 @@ def demo(output=None):
     (checkout / "hello.txt").write_text("Hello\n")
     run(["git", "add", "."], checkout)
     run(["git", "commit", "-m", "Initialize demo"], checkout)
-    start = prepare(checkout, "DEMO-1", apply=True)
-    resume = prepare(checkout, "DEMO-1", apply=True)
+    # This legacy offline fixture deliberately uses no network-backed preparation.
+    start = _prepare_checkout(checkout, "DEMO-1", apply=True)
+    resume = _prepare_checkout(checkout, "DEMO-1", apply=True)
     from checkout_workflow import context
     context(checkout, "DEMO-1", allowed_paths=["hello.txt"],
             expected=context(checkout, "DEMO-1")["context_sha256"], apply=True)
@@ -652,6 +686,7 @@ def main(argv=None):
     p.add_argument("task")
     p.add_argument("--repo", default=".")
     p.add_argument("--worktree")
+    p.add_argument("--in-place", action="store_true", help="Explicitly prepare in the caller checkout, e.g. a fresh Codex-managed worktree.")
     p.add_argument("--apply", action="store_true")
     p = sub.add_parser("render-report", help="Create a linked PR body from observed results.")
     p.add_argument("task")
@@ -687,6 +722,10 @@ def main(argv=None):
     p.add_argument("--repo", default=".")
     p.add_argument("--mode", choices=["discussion", "write"], required=True)
     p.add_argument("--path", action="append", default=[], help="Concrete repository-relative file to write; repeat for multiple files.")
+    p = sub.add_parser("sync-task", help="Plan or merge the latest configured base into this task; preserve conflicts for resolution.")
+    p.add_argument("task")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--apply", action="store_true")
     p = sub.add_parser("finish-task", help="After confirmed task completion, update the primary checkout to the configured base.")
     p.add_argument("task")
     p.add_argument("--repo", default=".")
@@ -734,7 +773,7 @@ def main(argv=None):
         elif args.command == "project-options":
             result = project_options(args.repo, args.projects_file, args.workspace_file)
         elif args.command == "prepare":
-            result = prepare(args.repo, args.task, worktree=args.worktree, apply=args.apply)
+            result = prepare(args.repo, args.task, worktree=args.worktree, in_place=args.in_place, apply=args.apply)
         elif args.command == "render-report":
             if args.from_progress:
                 from task_progress import report
@@ -762,6 +801,9 @@ def main(argv=None):
         elif args.command == "write-context":
             from checkout_workflow import write_context
             result = write_context(args.repo, args.task, mode=args.mode, planned_paths=args.path)
+        elif args.command == "sync-task":
+            from task_workspaces import sync_task
+            result = sync_task(args.repo, args.task, apply=args.apply)
         elif args.command == "finish-task":
             from checkout_workflow import finish
             result = finish(args.repo, args.task, workitem=json.loads(Path(args.workitem_file).read_text()), apply=args.apply)
@@ -791,7 +833,7 @@ def main(argv=None):
         else:
             result = demo(args.output)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 2 if args.command in {"check-task", "finish-task", "task-context", "write-context"} and result.get("ready") is False else 0
+        return 2 if args.command in {"check-task", "finish-task", "task-context", "write-context", "sync-task"} and result.get("ready") is False else 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
         print(f"plane-for-codex: {error}", file=sys.stderr)
         return 1

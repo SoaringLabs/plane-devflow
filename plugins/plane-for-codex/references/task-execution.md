@@ -1,5 +1,7 @@
 # Task execution and evidence
 
+All commands below use the selected task execution directory returned by `prepare` as `/absolute/task-directory`, even if the chat started in the primary checkout.
+
 Use this reference during Start/Deliver and when resuming, accepting or completing a task. The existing project config versions, state targets and provider ownership remain unchanged. Task receipts use their own version 1 format.
 
 Before coding, resumed edits, commits or delivery, also read [checkout checks](checkout.md). Implement/review/merge gates include directory, task branch and cumulative file-scope checks. After completed-task readback, the same reference defines the automatic base checkout handoff; its failure never reverses task completion.
@@ -15,9 +17,9 @@ Record `design.required` plus status: `not_required` with rationale for ordinary
 `task-progress` reads a receipt under the repository's Git common metadata, keyed by workspace/project/repository/base/task. Worktrees share it; reassociating the repository does not retarget it. It contains no credentials and is not committed. A plan/read creates no files. Each update replaces the supplied sections, preserves unspecified sections, and retains the previous snapshot as history. History is not used as current evidence. Repeating an identical update is idempotent.
 
 ```sh
-python3 /absolute/plugin/scripts/plane_workflow.py task-progress PROJECT-123 --repo /absolute/repo
-python3 /absolute/plugin/scripts/plane_workflow.py task-progress PROJECT-123 --repo /absolute/repo --record-file /tmp/task-update.json
-python3 /absolute/plugin/scripts/plane_workflow.py task-progress PROJECT-123 --repo /absolute/repo --record-file /tmp/task-update.json --expected-record-sha256 DIGEST_FROM_PLAN --apply
+python3 /absolute/plugin/scripts/plane_workflow.py task-progress PROJECT-123 --repo /absolute/task-directory
+python3 /absolute/plugin/scripts/plane_workflow.py task-progress PROJECT-123 --repo /absolute/task-directory --record-file /tmp/task-update.json
+python3 /absolute/plugin/scripts/plane_workflow.py task-progress PROJECT-123 --repo /absolute/task-directory --record-file /tmp/task-update.json --expected-record-sha256 DIGEST_FROM_PLAN --apply
 ```
 
 The first inspected digest is `missing`. Later applies require the exact inspected digest and hold the existing shared metadata lock while rechecking it. Mapping changes, concurrent updates, corrupt receipts and symlink metadata stop the write; preserve the receipt and inspect before recovery. A removed lock is never an automatic recovery strategy.
@@ -69,17 +71,17 @@ Environment owners: agent, user, existing. Disposition: keep, cleanup, cleaned. 
 ## Gates and live completion facts
 
 ```sh
-python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/repo --stage implement
-python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/repo --stage review
-python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/repo --stage merge
-python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/repo --stage complete --workitem-file /tmp/live-task.json
+python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/task-directory --stage implement
+python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/task-directory --stage review
+python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/task-directory --stage merge
+python3 /absolute/plugin/scripts/plane_workflow.py check-task PROJECT-123 --repo /absolute/task-directory --stage complete --workitem-file /tmp/live-task.json
 ```
 
 All gates are read-only. `ready=false` exits 2; inspect the JSON blockers and limitations, rather than treating a successful process invocation as authorization.
 
 - implement: sufficient brief and current design decision.
 - review: current self_review and required review criteria; dirty/uncommitted changes are not covered by HEAD evidence.
-- merge: review checks, exact-head merge authorization, live bound non-Draft OPEN PR and passed required GitHub checks. Inspect mergeability and original authorization before merging with an exact-head guard. Ready is eligibility, not consent.
+- merge: review checks, exact-head merge authorization, live bound non-Draft OPEN PR, a known live base integrated in the checked head, and passed required GitHub checks. Use `sync-task` in the task directory for base updates/conflict resolution, then reverify and update the existing PR. Inspect mergeability and original authorization before merging with an exact-head guard. Ready is eligibility, not consent.
 - complete: all required criteria, scoped human acceptance when required by existing policy/label, live merged primary PR, fresh Plane task/labels, confirmed delivery writeback and resource cleanup/handoff. Actual PR head controls evidence even after a squash merge changes local main's SHA. Verify merged content separately. The gate neither merges nor writes Plane state.
 
 For completion, read the live task through MCP and save this normalized snapshot outside the tracked worktree immediately before checking:
@@ -99,8 +101,8 @@ Only snapshots within five minutes and for the mapped task/project are accepted.
 ## Delivery report and partial success
 
 ```sh
-python3 /absolute/plugin/scripts/plane_workflow.py render-report PROJECT-123 --repo /absolute/repo --summary-file /tmp/summary.md --from-progress --output /tmp/report.md
-python3 /absolute/plugin/scripts/plane_workflow.py deliver PROJECT-123 --repo /absolute/repo --title "Resulting behavior" --body-file /tmp/report.md --apply
+python3 /absolute/plugin/scripts/plane_workflow.py render-report PROJECT-123 --repo /absolute/task-directory --summary-file /tmp/summary.md --from-progress --output /tmp/report.md
+python3 /absolute/plugin/scripts/plane_workflow.py deliver PROJECT-123 --repo /absolute/task-directory --title "Resulting behavior" --body-file /tmp/report.md --apply
 ```
 
 Summary describes resulting behavior, not historical PR status. The structured renderer derives checks/staleness, accepted criterion scope, blockers, limitations and environment from current data; original human quotes and history stay private. At completion use `--stage complete --workitem-file /tmp/live-task.json` to include newly observed PR facts. Regenerate the current Plane delivery report rather than appending obsolete status paragraphs. Codex writes implementation/acceptance reports; Actions writes separate lifecycle facts. Custom state rules and background acceptance inference are not added.

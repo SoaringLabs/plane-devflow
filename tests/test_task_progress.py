@@ -62,7 +62,7 @@ class TaskProgressTests(unittest.TestCase):
 
     def live(self, state="MERGED", **extra):
         return {"url": "https://github.com/example/demo-project/pull/7", "state": state, "isDraft": False,
-                "headRefOid": self.head, "baseRefName": "main", "mergeCommit": {"oid": "a" * 40},
+                "headRefOid": self.head, "baseRefName": "main", "baseRefOid": self.git("rev-parse", "main"), "mergeCommit": {"oid": "a" * 40},
                 "title": "[DEMO-12] Location entry", "body": "<!-- plane-for-codex " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->",
                 "isCrossRepository": False, "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN", **extra}
 
@@ -293,7 +293,7 @@ class TaskProgressTests(unittest.TestCase):
         self.assertIn("stale", progress.report(self.root, "DEMO-12", "Resulting behavior"))
 
     def test_non_draft_delivery_blocked_before_any_external_write(self):
-        workflow.prepare(self.root, "DEMO-12", apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
         (self.root / "file.txt").write_text("task")
         self.git("add", "file.txt")
         self.git("commit", "-m", "task")
@@ -305,7 +305,7 @@ class TaskProgressTests(unittest.TestCase):
 
 
     def test_old_report_rejected_even_when_current_checks_pass(self):
-        workflow.prepare(self.root, "DEMO-12", apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
         (self.root / "file.txt").write_text("task")
         self.git("add", "file.txt")
         self.git("commit", "-m", "task")
@@ -369,7 +369,7 @@ class TaskProgressTests(unittest.TestCase):
         self.assertEqual(subprocess.run(command, capture_output=True).returncode, 0)
 
     def test_draft_delivery_converts_existing_review_pr_and_reuses_it(self):
-        workflow.prepare(self.root, "DEMO-12", apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
         (self.root / "file.txt").write_text("task")
         self.git("add", "file.txt")
         self.git("commit", "-m", "task")
@@ -412,7 +412,7 @@ class TaskProgressTests(unittest.TestCase):
             self.save(data)
 
     def test_ready_existing_draft_is_not_silently_promoted(self):
-        workflow.prepare(self.root, "DEMO-12", apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
         (self.root / "file.txt").write_text("task")
         self.git("add", "file.txt")
         self.git("commit", "-m", "task")
@@ -458,6 +458,22 @@ class TaskProgressTests(unittest.TestCase):
         for status in ("BLOCKED", "UNKNOWN", "BEHIND", "DIRTY"):
             result = self.check_live("merge", pr=self.live("OPEN", mergeStateStatus=status))
             self.assertIn("pr_mergeability_unverified_or_blocked", result["blockers"])
+
+    def test_live_base_must_be_known_and_integrated_before_merge(self):
+        (self.root / "file.txt").write_text("B change")
+        self.git("add", "file.txt")
+        self.git("commit", "-m", "B")
+        self.head = self.git("rev-parse", "HEAD")
+        self.data = ready_data(self.head)
+        self.save(self.finalized_data())
+        self.assertIn("live_base_changed_refresh_required", self.check_live(
+            "merge", pr=self.live("OPEN", baseRefOid="f" * 40))["blockers"])
+        self.git("switch", "main")
+        (self.root / "a.txt").write_text("A merged")
+        self.git("add", "a.txt")
+        self.git("commit", "-m", "A")
+        self.git("switch", "codex/demo-12")
+        self.assertIn("task_base_update_required", self.check_live("merge", pr=self.live("OPEN"))["blockers"])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
 interface:
   display_name: "Plane: 开始任务"
-  short_description: "讨论、调研与规划先判断任务归属，写入前准备并检查分支"
+  short_description: "同项目各任务独立工作目录和分支，讨论与写入前检查归属"
   default_prompt: "使用 $plane-for-codex:plane-start。"

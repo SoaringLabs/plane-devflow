@@ -294,7 +294,7 @@ class SetupTests(unittest.TestCase):
         self.git("add", ".")
         self.git("commit", "-m", "basic setup")
         target = Path(self.temp.name) / "task"
-        workflow.prepare(self.root, "DEMO-1", worktree=target, apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-1", worktree=target, apply=True)
         self.assertEqual(sync.read_config(target / sync.CONFIG_NAME), basic())
 
 

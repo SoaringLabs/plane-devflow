@@ -69,7 +69,7 @@ class WriteContextTests(CheckoutFixture):
         self.scope()
         old_head = self.commit()
         self.assertFalse(self.check("DEMO-13")["ready"])
-        prepared = workflow.prepare(self.root, "DEMO-13", apply=True)
+        prepared = workflow._prepare_checkout(self.root, "DEMO-13", apply=True)
         self.assertEqual(prepared["base_sha"], self.baseline)
         self.assertEqual(self.git("rev-parse", "HEAD"), self.baseline)
         self.assertNotEqual(self.git("rev-parse", "HEAD"), old_head)

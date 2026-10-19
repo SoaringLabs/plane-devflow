@@ -290,7 +290,7 @@ class GitTests(unittest.TestCase):
         return workflow.run(["git", *args], self.root).stdout.strip()
 
     def task_commit(self):
-        workflow.prepare(self.root, "DEMO-12", apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
         import checkout_workflow
         context = checkout_workflow.context(self.root, "DEMO-12")
         checkout_workflow.context(self.root, "DEMO-12", allowed_paths=["file.txt"],
@@ -304,33 +304,33 @@ class GitTests(unittest.TestCase):
         return body
 
     def test_plan_read_only_then_resume(self):
-        self.assertEqual(workflow.prepare(self.root, "DEMO-12")["status"], "planned")
+        self.assertEqual(workflow._prepare_checkout(self.root, "DEMO-12")["status"], "planned")
         self.assertEqual(self.git("branch", "--show-current"), "main")
-        workflow.prepare(self.root, "DEMO-12", apply=True)
-        self.assertEqual(workflow.prepare(self.root, "DEMO-12", apply=True)["operation"], "resume")
+        workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
+        self.assertEqual(workflow._prepare_checkout(self.root, "DEMO-12", apply=True)["operation"], "resume")
 
     def test_dirty_other_branch_not_switched(self):
         (self.root / "file.txt").write_text("unrelated\n")
         with self.assertRaises(sync.WorkflowError):
-            workflow.prepare(self.root, "DEMO-12", apply=True)
+            workflow._prepare_checkout(self.root, "DEMO-12", apply=True)
         self.assertEqual(self.git("branch", "--show-current"), "main")
         self.assertEqual((self.root / "file.txt").read_text(), "unrelated\n")
 
     def test_dirty_worktree_isolated_and_resume(self):
         (self.root / "file.txt").write_text("unrelated\n")
         target = Path(self.temp.name) / "task"
-        result = workflow.prepare(self.root, "DEMO-12", worktree=target, apply=True)
+        result = workflow._prepare_checkout(self.root, "DEMO-12", worktree=target, apply=True)
         self.assertEqual((self.root / "file.txt").read_text(), "unrelated\n")
         self.assertEqual((target / "file.txt").read_text(), "before\n")
         self.assertTrue((target / sync.CONFIG_NAME).exists())
         self.assertEqual(result["operation"], "worktree")
-        self.assertEqual(workflow.prepare(self.root, "DEMO-12", worktree=target, apply=True)["operation"], "resume")
+        self.assertEqual(workflow._prepare_checkout(self.root, "DEMO-12", worktree=target, apply=True)["operation"], "resume")
 
     def test_worktree_path_wrong_task_preserved(self):
         target = Path(self.temp.name) / "task"
-        workflow.prepare(self.root, "DEMO-12", worktree=target, apply=True)
+        workflow._prepare_checkout(self.root, "DEMO-12", worktree=target, apply=True)
         with self.assertRaises(sync.WorkflowError):
-            workflow.prepare(self.root, "DEMO-13", worktree=target, apply=True)
+            workflow._prepare_checkout(self.root, "DEMO-13", worktree=target, apply=True)
         self.assertEqual(workflow.run(["git", "branch", "--show-current"], target).stdout.strip(), "codex/demo-12")
 
     def test_mapping_missing_in_base_rejected(self):
@@ -338,12 +338,12 @@ class GitTests(unittest.TestCase):
         self.git("commit", "-m", "remove mapping")
         (self.root / sync.CONFIG_NAME).write_text(json.dumps(config()))
         with self.assertRaisesRegex(sync.WorkflowError, "Commit and merge"):
-            workflow.prepare(self.root, "DEMO-12", worktree=Path(self.temp.name) / "task", apply=True)
+            workflow._prepare_checkout(self.root, "DEMO-12", worktree=Path(self.temp.name) / "task", apply=True)
 
     def test_origin_mismatch(self):
         self.git("remote", "set-url", "origin", "https://github.com/other/repo.git")
         with self.assertRaises(sync.WorkflowError):
-            workflow.prepare(self.root, "DEMO-12")
+            workflow._prepare_checkout(self.root, "DEMO-12")
 
     def test_deliver_plan_and_body_binding(self):
         body = self.task_commit()
