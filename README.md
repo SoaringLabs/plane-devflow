@@ -2,7 +2,7 @@
 
 把 Plane 任务、Codex 开发和 GitHub PR 串成一条工作流的社区开源插件。
 
-**关联项目 → 开始任务 → 开发与验证 → 交付 PR → 验收与收尾**
+**关联项目 → 独立工作区开发与验证 → 交付 PR → 按需准备验收环境 → 人工验收与收尾**
 
 - 在 Codex 中选择或创建 Plane 项目，关联当前代码仓库。
 - 为不同任务准备独立工作目录和分支，让多个聊天可以同时开发。
@@ -35,13 +35,19 @@ codex mcp login plane
 | --- | --- | --- |
 | **Plane: 初始化** | 首次使用，或检查、调整已有配置 | 引导选择项目、关联仓库并配置 GitHub 同步 |
 | **Plane: 开始任务** | 准备处理一个已有任务 | 读取需求，准备独立目录与分支；再次开始时恢复原任务 |
-| **Plane: 交付任务** | 改动准备好后 | 检查验证与验收情况，创建或更新 PR，回写交付记录 |
+| **Plane: 交付任务** | 交付改动、准备人工试用或记录验收时 | 按请求交付 PR、从任务工作区准备验收入口，或核对验收与完成条件 |
 
 初始化直接选择并发送即可；开始任务时可附上任务编号或链接。初始化生成的 `.plane-for-codex.json` 需要进入仓库的目标基础分支，之后才能创建独立任务分支。
 
 也可使用完整技能标识：`$plane-for-codex:plane-setup`、`$plane-for-codex:plane-start`、`$plane-for-codex:plane-deliver`。这些是 Skill 入口，没有单独的 `/plane` 命令或配置页面。
 
 开发前会整理需求和验收标准，交付时检查当前改动的验证记录。任务合并并确认完成后，会尝试更新主工作目录；遇到未提交改动等阻碍时保留现场。详细规则见 [任务执行与验收](plugins/plane-for-codex/references/task-execution.md)。
+
+### 按需准备人工验收
+
+交付 PR 后，可以说“帮我运行 PROJECT-123 的工作区代码，我来验收”。Codex 会根据项目自身的说明准备运行入口、命令或产物，从任务工作区执行并核对实际加载的分支/提交，再提供入口与测试步骤。主工作目录继续保留原来的分支，其他任务的运行资源按归属隔离或协调使用。
+
+只交付 PR 或表示稍后再测时，不会强制启动环境。需要持续运行的验收资源会按交接约定保留，测试结束后清理；启动成功与用户验收分别记录。具体工具、构建和运行方式由项目决定，详见 [验收环境交接](plugins/plane-for-codex/references/acceptance-environment.md)。
 
 ## GitHub 同步
 
@@ -70,6 +76,7 @@ codex mcp login plane
 | 初始化、重新配置与同步 | [配置指南](plugins/plane-for-codex/references/setup.md) · [中断后继续配置](plugins/plane-for-codex/references/recovery.md) |
 | 需求、验证、验收与交付 | [任务执行与验收](plugins/plane-for-codex/references/task-execution.md) |
 | 多聊天开发与合并冲突 | [并行任务](plugins/plane-for-codex/references/parallel-tasks.md) |
+| 按需运行任务结果供人工验收 | [验收环境交接](plugins/plane-for-codex/references/acceptance-environment.md) |
 | 分支检查与完成后收尾 | [工作目录管理](plugins/plane-for-codex/references/checkout.md) |
 | 配置文件格式 | [基础配置示例](examples/plane-for-codex.basic.json) · [旧配置示例](examples/plane-for-codex.example.json) |
 | 版本、架构与贡献发布 | [更新记录](CHANGELOG.md) · [架构](docs/architecture.md) · [发布指南](PUBLISHING.md) |

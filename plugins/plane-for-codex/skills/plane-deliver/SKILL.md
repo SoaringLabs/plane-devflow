@@ -1,13 +1,13 @@
 ---
 name: plane-deliver
-description: Deliver a linked task PR with verification checks, record scoped user acceptance, or finalize after authorized merge and completion checks.
+description: Deliver a linked task PR, prepare its result to run for manual acceptance on request, record scoped user acceptance, or finalize after authorized merge and completion checks.
 ---
 
 # Deliver a Plane task
 
 Resolve `../../scripts/plane_workflow.py` relative to this file and invoke its absolute path. Read [the workflow reference](../../references/workflow.md) for PR/writeback operations, [task execution](../../references/task-execution.md) for evidence gates, and [checkout checks and handoff](../../references/checkout.md) before delivery and after finalization. Read [parallel tasks and conflicts](../../references/parallel-tasks.md) before base updates or merging a task PR. All commands and edits use the selected task's recorded directory, even if the chat initially opens the primary checkout.
 
-Resolve the current task from mapping, task branch, bound PR and user context. Ask only if those conflict or no single task is identifiable. Selecting delivery requests the normal scoped commit/push/PR and MCP writeback workflow; narrower user limits still apply. Acceptance and merge authorization are separate facts, and existing authorization is reused.
+Resolve the current task from mapping, task branch, bound PR and user context. Ask only if those conflict or no single task is identifiable. Classify the request as implementation delivery, acceptance-environment preparation, or acceptance/finalization. Implementation delivery requests the normal scoped commit/push/PR and MCP writeback workflow; an environment-only request does not. Narrower user limits still apply. Acceptance and merge authorization are separate facts, and existing authorization is reused.
 
 ## Deliver or update implementation
 
@@ -15,7 +15,11 @@ Resolve the current task from mapping, task branch, bound PR and user context. A
 2. Refresh the configured origin base and run `task-context` before edits/commits and delivery. Resolve directory/branch drift, unrelated changes or already integrated code before proceeding, including Draft delivery. Reconstruct a missing legacy checkout only from inspected evidence. Commit only intended task files. Before final verification, plan/apply `sync-task` in this task directory to integrate the latest configured base. Resolve reported conflicts here, stage only reviewed scoped resolutions and commit the local merge; preserve both the accepted base behavior and this task's requirements. Rerun `sync-task` and affected checks/review before pushing or updating the existing PR. Never pick all of one side automatically or change another task checkout to resolve a conflict. Bind checks and self_review to the final commit and current brief digest. Record observed results rather than planned tests. Required checks can be waived only as an accepted_limit with a direct user-message source; deferred items remain visible and do not satisfy required criteria. Verify the original message and its scope before recording a waiver.
 3. Run `check-task --stage review`. When ready, render the current report with `render-report --from-progress`, then plan/apply delivery. If incomplete work should be published, use `deliver --draft` and report blockers; preserve its current state rather than moving it into review. A passed gate does not silently promote an existing Draft: inspect and mark it ready only within the authorized review request after all review blockers are resolved. Reuse the existing PR and attach newly created PRs through the host tool.
 4. Record the exact PR URL/head with plane_writeback=pending. Through MCP, add/reuse its link and upsert the stable delivery comment `plane-for-codex:<repository>:<PR number>:delivery` with the current report. Re-read to verify writeback, then mark it confirmed. Preserve prior history separately rather than appending obsolete current-status paragraphs. Move to in_review only for a non-Draft PR under legacy Actions synchronization and when not terminal; native/basic keep their existing ownership rules. If GitHub succeeds but Plane fails, retain the PR and resume only writeback.
-5. Report the current commit, observed checks, remaining criteria, viewing/reproduction steps and environment handoff. Clean up only agent-owned resources designated for cleanup, or record an agreed keep disposition. Tests, generated previews and device/user acceptance are distinct.
+5. Report the actual task directory/branch/commit, observed checks, remaining criteria and how to request or use the acceptance entry point. Distinguish PR delivery from a running result: when an environment has not been requested or verified, state that preparation is pending rather than asking the user to test an unavailable version. For an agreed runnable handoff, follow the preparation section below. Tests, runtime readiness and user acceptance are distinct.
+
+## Prepare the result for manual acceptance
+
+When the user asks to run, preview or try the task's result, read [on-demand acceptance environments](../../references/acceptance-environment.md). Prepare the project-appropriate entry point from the recorded task worktree, verify its source/version and usability, and hand it to the user with acceptance steps and resource retention. Keep the primary checkout unchanged. Use existing `environment` and version-bound `checks` records; this mode adds no fixed launcher, mandatory environment startup for every PR, or new merge/completion rule. Stop after the requested handoff unless the user also authorized another delivery action.
 
 ## Record acceptance or finalize
 

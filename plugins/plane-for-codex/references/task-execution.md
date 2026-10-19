@@ -66,7 +66,9 @@ Check kinds: test, lint, build, visual, device, business, code_review, sync. A s
 
 Checks and self_review are recorded for the final intended commit. Head/brief changes mark old evidence stale. Re-run affected work; unaffected evidence may be rebound only after documenting a real comparison, and acceptance can be rebound only when the original scope still applies. The helper does not infer semantic equivalence from a new SHA. Partial user acceptance lists only accepted criterion IDs and cannot satisfy the complete gate for other required criteria.
 
-Environment owners: agent, user, existing. Disposition: keep, cleanup, cleaned. Inspect existing resources before starting new ones, preferably using isolated data/devices. Record exact resources owned by the agent. Cleanup never implies permission to kill user/existing resources. The complete gate blocks agent resources still marked cleanup; keep requires an agreed handoff in evidence. PID/port alone is not proof of process identity: recheck before stopping.
+Environment owners: agent, user, existing. Disposition: keep, cleanup, cleaned. Inspect existing resources before starting new ones, preferably using isolated resources and test data. Record exact resources owned by the agent. Cleanup never implies permission to kill user/existing resources. The complete gate blocks agent resources still marked cleanup; keep requires an agreed handoff in evidence. PID/port alone is not proof of process identity: recheck before stopping.
+
+Preparing a runnable result for manual acceptance is an on-demand `plane-deliver` operation, separate from PR delivery and human acceptance. When requested, follow [acceptance environments](acceptance-environment.md) and record launch/entry/source evidence in `environment`, plus any executed version-bound `checks`. These existing fields do not gain new schema requirements. Neither a passed review gate nor the task's review state establishes that a usable environment is running.
 
 ## Gates and live completion facts
 
