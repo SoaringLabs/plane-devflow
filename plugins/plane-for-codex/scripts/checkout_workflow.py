@@ -151,6 +151,71 @@ def context(path, task, *, allowed_paths=None, expected=None, apply=False):
     return inspect(root, config, task)
 
 
+def write_context(path, task=None, *, mode, planned_paths=None):
+    """Read-only routing before repository writes, including not-yet-created documents."""
+    from plane_workflow import repo_config, branch_name, run
+    root, config = repo_config(path)
+    require(mode in {"discussion", "write"}, "Choose discussion or write mode.")
+    paths = [] if planned_paths is None else planned_paths
+    require(isinstance(paths, list), "Planned write paths must be a list of repository-relative files.")
+    for name in paths:
+        require(isinstance(name, str) and name not in {"", "."} and
+                not PurePosixPath(name).is_absolute() and
+                not any(part in {"..", ".git"} for part in PurePosixPath(name).parts) and
+                "\\" not in name and "\0" not in name,
+                "Planned write paths must stay inside the repository and outside Git metadata.")
+        candidate = root / name
+        require(candidate.resolve().is_relative_to(root) and not any(
+            p.is_symlink() for p in (candidate, *candidate.parents) if p.is_relative_to(root)),
+            "Planned artifact paths must not traverse symlinks; use the actual scoped path.")
+    from plane_sync import parse_task
+    key = parse_task(task, config) if task is not None else None
+    result = {"ready": False, "repository_writes_allowed": False, "mode": mode, "task": key,
+              "path": str(root), "branch": run(["git", "branch", "--show-current"], root).stdout.strip(),
+              "base": config["github"]["base_branch"], "base_freshness": "unverified",
+              "planned_paths": paths, "planned_outside_scope": [], "planned_ignored_paths": [], "blockers": []}
+    blockers = result["blockers"]
+    if mode == "discussion":
+        if paths:
+            blockers.append("discussion_does_not_allow_repository_writes")
+        result.update(ready=not blockers, next_action="discuss_without_repository_writes")
+        return result
+    if not paths:
+        blockers.append("planned_write_paths_missing")
+    if key is None:
+        blockers.append("task_selection_required")
+        result["next_action"] = "resolve_task_before_repository_writes"
+        return result
+    result["expected_branch"] = branch_name(key, config)
+    if paths:
+        ignored = run(["git", "check-ignore", "--stdin", "-z"], root, check=False,
+                      input_text="\0".join(paths) + "\0")
+        require(ignored.returncode in {0, 1}, "Cannot check planned artifact paths against Git ignore rules.")
+        result["planned_ignored_paths"] = sorted(filter(None, ignored.stdout.split("\0")))
+        if result["planned_ignored_paths"]:
+            blockers.append("planned_artifacts_are_git_ignored")
+    checkout = inspect(root, config, key)
+    result["checkout_context"] = checkout
+    blockers.extend(checkout["blockers"])
+    allowed = checkout.get("checkout", {}).get("allowed_paths", [])
+    result["planned_outside_scope"] = sorted(p for p in paths if not any(
+        fnmatch.fnmatchcase(p, pattern) for pattern in allowed))
+    if allowed and result["planned_outside_scope"]:
+        blockers.append("planned_writes_outside_task_scope")
+    if "planned_artifacts_are_git_ignored" in blockers:
+        action = "choose_tracked_artifact_path_or_external_output"
+    elif any(b in blockers for b in ("task_branch_mismatch", "task_checkout_missing")):
+        action = "prepare_selected_task_checkout"
+    elif any(b not in {"task_file_scope_missing", "planned_writes_outside_task_scope"} for b in blockers):
+        action = "inspect_task_context_blockers"
+    elif "task_file_scope_missing" in blockers or "planned_writes_outside_task_scope" in blockers:
+        action = "review_and_record_task_scope"
+    else:
+        action = "write_in_selected_task_checkout"
+    result.update(ready=not blockers, repository_writes_allowed=not blockers, next_action=action)
+    return result
+
+
 def worktrees(root):
     from plane_workflow import run
     records = run(["git", "worktree", "list", "--porcelain", "-z"], root).stdout.split("\0\0")

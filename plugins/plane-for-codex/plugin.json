@@ -1,15 +1,15 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "plane-for-codex",
-  "version": "0.6.0",
-  "description": "Select or create a Plane project, safely reconfigure its repository association, and deliver linked task pull requests in Codex.",
+  "version": "0.6.1",
+  "description": "Connect Plane projects to repositories, check task ownership before saving requirement plans, and deliver linked pull requests in Codex.",
   "extensions": {
     "com.openai": {
       "onboardingSkill": "./skills/plane-setup/SKILL.md",
       "interface": {
         "displayName": "Plane for Codex",
         "shortDescription": "关联 Plane 项目，选择原生或 Actions 同步并交付 PR",
-        "longDescription": "Community open-source Plane workflow for Codex. Connect a repository, choose verified native or Actions GitHub synchronization, start a work item, and deliver a linked pull request. Incomplete setup remains resumable.",
+        "longDescription": "Community open-source Plane workflow for Codex. Connect a repository, discuss and research requirements, verify the task branch before saving documents or code, and deliver a linked pull request. Choose verified native or Actions GitHub synchronization; incomplete setup remains resumable.",
         "developerName": "SoaringLabs",
         "websiteURL": "https://github.com/SoaringLabs/plane-for-codex",
         "logo": "./assets/icon.png",

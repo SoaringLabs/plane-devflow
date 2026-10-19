@@ -682,6 +682,11 @@ def main(argv=None):
     p.add_argument("--scope-file", help="JSON array of authorized repository-relative paths/glob patterns.")
     p.add_argument("--expected-context-sha256")
     p.add_argument("--apply", action="store_true")
+    p = sub.add_parser("write-context", help="Read-only task routing before any repository write, including plans/research.")
+    p.add_argument("task", nargs="?")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--mode", choices=["discussion", "write"], required=True)
+    p.add_argument("--path", action="append", default=[], help="Concrete repository-relative file to write; repeat for multiple files.")
     p = sub.add_parser("finish-task", help="After confirmed task completion, update the primary checkout to the configured base.")
     p.add_argument("task")
     p.add_argument("--repo", default=".")
@@ -754,6 +759,9 @@ def main(argv=None):
             result = context(args.repo, args.task,
                              allowed_paths=json.loads(Path(args.scope_file).read_text()) if args.scope_file else None,
                              expected=args.expected_context_sha256, apply=args.apply)
+        elif args.command == "write-context":
+            from checkout_workflow import write_context
+            result = write_context(args.repo, args.task, mode=args.mode, planned_paths=args.path)
         elif args.command == "finish-task":
             from checkout_workflow import finish
             result = finish(args.repo, args.task, workitem=json.loads(Path(args.workitem_file).read_text()), apply=args.apply)
@@ -783,7 +791,7 @@ def main(argv=None):
         else:
             result = demo(args.output)
         print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 2 if args.command in {"check-task", "finish-task", "task-context"} and result.get("ready") is False else 0
+        return 2 if args.command in {"check-task", "finish-task", "task-context", "write-context"} and result.get("ready") is False else 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
         print(f"plane-for-codex: {error}", file=sys.stderr)
         return 1

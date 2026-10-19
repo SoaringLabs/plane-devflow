@@ -26,7 +26,7 @@ def validate():
         assert text.startswith("---\nname: " + name + "\n")
         assert (skill.parent / "agents/openai.yaml").is_file()
         for target in re.findall(r"\]\(([^)]+)\)", text):
-            assert (skill.parent / target).is_file(), target
+            assert (skill.parent / target.split("#", 1)[0]).is_file(), target
     for example in (ROOT / "examples").glob("plane-for-codex*.json"):
         validate_config(json.loads(example.read_text()))
     assert (ROOT / "action.yml").is_file()

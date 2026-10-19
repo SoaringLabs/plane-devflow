@@ -10,6 +10,8 @@ Start/Deliver must also read [task execution](task-execution.md) for requirement
 
 Read [checkout checks](checkout.md) for recording task paths/scope, checking every resumed development turn and preparing the primary base checkout after completion.
 
+For mapped-repository requirement discussion, research or planning, enter `plane-start` before saving any repository artifact. Its [first-write check](checkout.md#before-the-first-repository-write) keeps pure discussion outside the checkout and prepares/verifies task ownership before document writes. A document-only request does not start implementation or change Plane state.
+
 Run these commands with the absolute path of the installed plugin script. They affect the application repository selected by `--repo`.
 
 ## Start or resume
@@ -21,7 +23,7 @@ python3 /absolute/plugin/scripts/plane_workflow.py prepare PROJECT-123 --repo /a
 python3 /absolute/plugin/scripts/plane_workflow.py prepare PROJECT-123 --repo /absolute/application/repo --apply
 ```
 
-After reading the live task, fetch the configured base branch with `git fetch origin BASE_BRANCH` before preparing a new branch. If fetching fails, report the stale-base risk instead of silently treating local state as current. The repository mapping must already be committed in the base branch.
+After reading the live task, fetch the configured base branch with `git fetch origin BASE_BRANCH` before preparing a new branch. If fetching fails, report the stale-base risk instead of silently treating local state as current; resolve it or obtain explicit acceptance of that limitation before new-branch writes. The repository mapping must already be committed in the base branch.
 
 Branch names default to `codex/project-123`. Repeated starts resume that branch. With unrelated uncommitted changes, use `--worktree /absolute/new/directory`; the original checkout and its changes remain intact. Reusing a worktree requires both the same Git common directory and task branch. No reset, cleaning, stashing or forced checkout is performed.
 

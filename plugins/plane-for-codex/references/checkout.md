@@ -1,12 +1,32 @@
 # Task checkout and completion handoff
 
-Read this during task preparation, every resumed development turn, before committing/delivering, and after confirmed task completion. The configured base is used throughout; it is usually `main`. These checks leave existing state rules and acceptance/merge authorization unchanged.
+Read this before saving any task artifact in the repository, during task preparation, every resumed write turn, before committing/delivering, and after confirmed task completion. The configured base is used throughout; it is usually `main`. These checks leave existing acceptance/merge authorization unchanged.
+
+## Before the first repository write
+
+Plans, research notes, designs and tests are repository changes just like application code, including new untracked or ignored files. Resolve task ownership before their first write; a new chat or the currently checked-out branch is insufficient evidence of a new/resumed task. When the request is discussion or analysis only, return the answer in chat. Use temporary storage outside the checkout if needed, including for another skill's default Markdown output. A request for a saved artifact authorizes that artifact, not implementation, Plane state changes, merge or publication.
+
+`write-context` is a read-only preflight. It does not select a task from the current branch, create files/metadata, fetch, switch branches or start a task. Discussion succeeds without task selection but grants no repository writes. Write mode requires an explicitly resolved task, an existing checkout binding, authorized file scope, and concrete planned paths; it checks both accumulated changes and files that do not exist yet. A failing check exits 2 and supplies blockers/next action. Success describes current state, not durable authorization or a filesystem interceptor; rerun immediately before edits and review semantic ownership within permitted files.
+
+Save authored task artifacts at trackable paths. Planned Git-ignored artifacts are blocked even when already present: Git branch/scope history cannot establish their ownership across switches. Use external temporary storage or a trackable document path instead. Planned paths also reject symlinks in the file or parent directories; use the actual scoped target to keep path ownership meaningful. These checks examine only requested artifact paths; they do not inventory dependencies/build caches or change existing ignore rules.
+
+```sh
+python3 /absolute/plugin/scripts/plane_workflow.py write-context \
+  --repo /absolute/application/repo --mode discussion
+python3 /absolute/plugin/scripts/plane_workflow.py write-context PROJECT-123 \
+  --repo /absolute/application/repo --mode write \
+  --path docs/research/requirement.md --path docs/plans/implementation.md
+```
+
+If the task is unknown, continue discussion outside the checkout and resolve only the missing identity before saving. For a new task, fetch the configured origin base, plan/apply `prepare`, record scope through `task-context`, then rerun the write preflight. New task branches derive from that base rather than the previous task's HEAD; there is no required intermediate switch to local `main`. If a branch/context already exists, inspect and resume it. Dirty or differently owned checkouts retain all files and branches; use the existing isolation/recovery rules rather than moving documents or stashing automatically. Fetch failures leave base freshness unverified and must be resolved or explicitly accepted before new-branch writes.
+
+For a requested planning document, the checkout/scope/write checks are sufficient; implementation brief/design gates apply before coding. Existing task-state transitions remain limited to authorized implementation. Pass the selected task, directory, allowed paths and discussion/write mode to any delegated work or other skill so its output stays in the same scope.
 
 ## Bind and check development
 
 `prepare --apply` records the selected task directory, branch and original base commit under shared Git metadata. Resume preserves this baseline and file scope. Before new preparation or resumed work, fetch the configured base using `git fetch origin BASE`; a failed fetch leaves remote freshness unverified. A branch-only request can stop after preparation with file scope still pending.
 
-Before coding, derive an explicit list of repository-relative paths/glob patterns from the agreed task scope and inspected code, including relevant tests. Save the JSON array outside the tracked checkout. Broad patterns need a real broad requirement; generating a scope from all observed changed files would silently adopt unrelated work. This is an agent implementation choice within authorized scope, not another human approval step.
+Before the first repository write, derive an explicit list of repository-relative paths/glob patterns from the agreed task scope and inspected code, including planned artifacts and relevant tests. Save the JSON array outside the tracked checkout. Broad patterns need a real broad requirement; generating a scope from all observed changed files would silently adopt unrelated work. This is an agent implementation choice within authorized scope, not another human approval step.
 
 ```sh
 python3 /absolute/plugin/scripts/plane_workflow.py task-context PROJECT-123 --repo /absolute/application/repo
