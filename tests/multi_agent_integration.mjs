@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import spawn from 'cross-spawn';
 import { discoverSkills, inventory } from '../lib/installer.mjs';
 import { withNativeSkillHome } from './native_profile_fixture.mjs';
+import { createCredentialIsolation, credentialEnvironment, profileMetadata } from './credential_isolation.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane multi agent ')));
@@ -18,17 +19,10 @@ const realHome = os.homedir();
 const protectedPaths = ['.codex/config.toml', '.codex/auth.json', '.claude.json', '.claude/settings.json', '.claude/.credentials.json',
   '.cursor/mcp.json', '.cursor/cli-config.json', '.config/opencode/opencode.json', '.local/share/opencode/auth.json', '.npmrc'];
 const digest = file => fs.existsSync(file) ? crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') : null;
-const before = protectedPaths.map(file => digest(path.join(realHome, file)));
-let sandbox = [];
-if (process.platform === 'darwin') {
-  const quoted = value => JSON.stringify(value);
-  const denied = [...protectedPaths.map(file => `(literal ${quoted(path.join(realHome, file))})`),
-    ...['.claude', '.cursor', '.config', '.agents', 'Library/Keychains'].map(folder => `(subpath ${quoted(path.join(realHome, folder))})`)];
-  fs.writeFileSync(path.join(root, 'sandbox.sb'), `(version 1)\n(allow default)\n(deny file-write* (subpath ${quoted(realHome)}))\n` +
-    `(deny file-read* ${denied.join(' ')})\n(deny mach-lookup (global-name "com.apple.securityd"))\n`);
-  sandbox = ['/usr/bin/sandbox-exec', '-f', path.join(root, 'sandbox.sb')];
-}
-for (const name of ['npm-userconfig', 'npm-globalconfig']) fs.writeFileSync(path.join(root, name), '');
+const protectedFiles = protectedPaths.map(file => path.join(realHome, file));
+const before = profileMetadata(protectedFiles);
+const isolation = createCredentialIsolation(root, { protectedFiles });
+isolation.assertProtected();
 const write = (file, value) => { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, `${JSON.stringify(value, null, 2)}\n`); };
 function profile(host) {
   const home = path.join(root, host, 'home');
@@ -42,20 +36,11 @@ function profile(host) {
     retained: { type: 'remote', url: 'https://example.invalid/mcp', enabled: false } } });
   write(path.join(home, '.local/share/opencode/auth.json'), {});
   write(path.join(project, '.plane-for-codex.json'), { fixture: 'business mapping remains untouched' });
-  const env = { PATH: process.env.PATH, HOME: home, USERPROFILE: home, CODEX_HOME: state, CLAUDE_CONFIG_DIR: path.join(home, '.claude'),
-    XDG_CONFIG_HOME: path.join(home, '.config'), XDG_CACHE_HOME: path.join(home, '.cache'), XDG_DATA_HOME: path.join(home, '.local/share'),
-    XDG_STATE_HOME: path.join(home, '.local/state'), OPENCODE_CONFIG_DIR: path.join(home, '.config/opencode'),
-    OPENCODE_DISABLE_AUTOUPDATE: 'true', OPENCODE_DISABLE_DEFAULT_PLUGINS: 'true', OPENCODE_DISABLE_LSP_DOWNLOAD: 'true',
-    OPENCODE_DISABLE_MODELS_FETCH: 'true', CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
-    DISABLE_AUTOUPDATER: '1', NO_OPEN_BROWSER: '1', DISABLE_TELEMETRY: '1', DO_NOT_TRACK: '1',
-    NO_COLOR: '1', CI: 'true', TERM: 'xterm-256color', TMPDIR: root, TEMP: root, TMP: root, GIT_CONFIG_NOSYSTEM: '1',
-    SystemRoot: process.env.SystemRoot, COMSPEC: process.env.COMSPEC, PATHEXT: process.env.PATHEXT,
-    npm_config_cache: path.join(root, 'npm-cache'), npm_config_userconfig: path.join(root, 'npm-userconfig'),
-    npm_config_globalconfig: path.join(root, 'npm-globalconfig'), npm_config_registry: 'https://registry.npmjs.org/' };
+  const env = credentialEnvironment(root, home);
   return { host, home, project, state, env };
 }
 function run(label, command, args, target, { optional = false, timeout = 90_000 } = {}) {
-  const all = [...sandbox, command, ...args];
+  const all = [...isolation.prefix, command, ...args];
   const result = spawn.sync(all[0], all.slice(1), { cwd: target.project, env: target.env, encoding: 'utf8', timeout, maxBuffer: 12 * 1024 * 1024 });
   const record = { command, args, status: result.status, stdout: result.stdout || '', stderr: result.stderr || '', error: result.error?.message };
   write(path.join(root, `${target.host}-${label}.json`), record);
@@ -63,13 +48,10 @@ function run(label, command, args, target, { optional = false, timeout = 90_000 
   return record;
 }
 async function codexSkills(target) {
-  if (!sandbox.length) return withNativeSkillHome(target.home, () => discoverSkills({ cwd: target.project, env: target.env }));
-  const resolved = spawn.sync('which', ['codex'], { encoding: 'utf8' }).stdout.trim();
-  const bin = path.join(root, 'codex-wrapper'); fs.mkdirSync(bin, { recursive: true });
-  const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
-  fs.writeFileSync(path.join(bin, 'codex'), `#!/bin/sh\nexec ${sandbox.map(quote).join(' ')} ${quote(resolved)} "$@"\n`, { mode: 0o755 });
-  return discoverSkills({ cwd: target.project, env: { ...target.env, PATH: `${bin}${path.delimiter}${target.env.PATH}` } });
+  const env = isolation.discoveryEnvironment(target.env);
+  return withNativeSkillHome(target.home, () => discoverSkills({ cwd: target.project, env }));
 }
+
 const source = path.join(root, 'candidate');
 fs.cpSync(path.join(repo, 'skills'), path.join(source, 'skills'), { recursive: true,
   filter: p => !p.includes('__pycache__') && !p.endsWith('.pyc') });
@@ -163,8 +145,8 @@ try {
     summary.agents[host] = result;
     console.log(`${host}: ${JSON.stringify(result)}`);
   }
-  assert.deepEqual(protectedPaths.map(file => digest(path.join(realHome, file))), before);
-  summary.originalProfilesUnchanged = true; summary.evidence = root;
+  assert.deepEqual(profileMetadata(protectedFiles), before);
+  summary.originalProfileMetadataUnchanged = true; summary.evidence = root;
   write(path.join(root, 'summary.json'), summary);
   console.log(JSON.stringify(summary, null, 2));
 } catch (error) { console.error(`Multi-agent evidence retained at ${root}`); throw error; }

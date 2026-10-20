@@ -17,7 +17,7 @@
     "plugins/plane-for-codex/skills/*/agents/openai.yaml"
   ],
   "scripts": {
-    "test": "node --test tests/installer.test.mjs",
+    "test": "node --test tests/installer.test.mjs tests/credential_isolation.test.mjs",
     "test:integration": "node tests/npx_integration.mjs",
     "test:skills": "node tests/skills_cli_integration.mjs",
     "test:agents": "node tests/multi_agent_integration.mjs"

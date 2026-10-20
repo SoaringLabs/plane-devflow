@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import spawn from 'cross-spawn';
 import { discoverSkills, inventory } from '../lib/installer.mjs';
 import { withNativeSkillHome } from './native_profile_fixture.mjs';
+import { createCredentialIsolation, credentialEnvironment, profileMetadata } from './credential_isolation.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane skills add ')));
@@ -17,34 +18,20 @@ const digest = file => fs.existsSync(file) ? crypto.createHash('sha256').update(
 const realHome = os.homedir();
 const realState = process.env.CODEX_HOME || path.join(realHome, '.codex');
 const protectedFiles = [path.join(realState, 'config.toml'), path.join(realState, 'auth.json'), path.join(realHome, '.npmrc')];
-const before = protectedFiles.map(digest);
-for (const name of ['npm-userconfig', 'npm-globalconfig']) fs.writeFileSync(path.join(root, name), '');
-let sandbox = [];
-if (process.platform === 'darwin') {
-  const quoted = value => JSON.stringify(value);
-  const rules = `(version 1)\n(allow default)\n(deny file-write* (subpath ${quoted(realHome)}))\n` +
-    `(deny file-read* ${protectedFiles.map(file => `(literal ${quoted(file)})`).join(' ')} ` +
-    `(subpath ${quoted(path.join(realHome, 'Library/Keychains'))}))\n`;
-  fs.writeFileSync(path.join(root, 'sandbox.sb'), rules);
-  sandbox = ['/usr/bin/sandbox-exec', '-f', path.join(root, 'sandbox.sb')];
-}
+const before = profileMetadata(protectedFiles);
+const isolation = createCredentialIsolation(root, { protectedFiles });
+isolation.assertProtected();
 function profile(label) {
   const home = path.join(root, label, 'home');
   const state = path.join(home, '.codex');
   const project = path.join(root, label, 'project');
   for (const directory of [home, state, project]) fs.mkdirSync(directory, { recursive: true });
   fs.writeFileSync(path.join(state, 'config.toml'), 'cli_auth_credentials_store = "file"\nmcp_oauth_credentials_store = "file"\n[analytics]\nenabled = false\n');
-  // HOME and CODEX_HOME intentionally isolate the tested programs' user configuration.
-  const env = { PATH: process.env.PATH, HOME: home, USERPROFILE: home, CODEX_HOME: state,
-    SystemRoot: process.env.SystemRoot, COMSPEC: process.env.COMSPEC, PATHEXT: process.env.PATHEXT,
-    TMPDIR: root, TEMP: root, TMP: root, LANG: 'en_US.UTF-8', CI: 'true', NO_COLOR: '1',
-    DISABLE_TELEMETRY: '1', DO_NOT_TRACK: '1', GIT_CONFIG_NOSYSTEM: '1',
-    npm_config_cache: path.join(root, 'npm-cache'), npm_config_userconfig: path.join(root, 'npm-userconfig'),
-    npm_config_globalconfig: path.join(root, 'npm-globalconfig'), npm_config_registry: 'https://registry.npmjs.org/' };
+  const env = credentialEnvironment(root, home);
   return { home, state, project, env };
 }
 function run(label, command, args, target, { json = false, cwd = target.project, oauthPending = false } = {}) {
-  const all = [...sandbox, command, ...args];
+  const all = [...isolation.prefix, command, ...args];
   const result = spawn.sync(all[0], all.slice(1), { cwd, env: target.env, encoding: 'utf8',
     timeout: oauthPending ? 20_000 : 180_000, maxBuffer: 16 * 1024 * 1024 });
   fs.writeFileSync(path.join(root, `${label}.json`), JSON.stringify({ command, args, status: result.status,
@@ -57,15 +44,7 @@ function run(label, command, args, target, { json = false, cwd = target.project,
   return json ? JSON.parse(result.stdout) : result.stdout;
 }
 async function loaded(label, target, expected) {
-  // Launch through the same sandbox without depending on an inherited user profile.
-  const wrapper = path.join(root, 'bin'); fs.mkdirSync(wrapper, { recursive: true });
-  let env = target.env;
-  if (sandbox.length) {
-    const resolved = run('resolve-codex', '/usr/bin/which', ['codex'], target).trim();
-    const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
-    fs.writeFileSync(path.join(wrapper, 'codex'), `#!/bin/sh\nexec ${sandbox.map(quote).join(' ')} ${quote(resolved)} "$@"\n`, { mode: 0o755 });
-    env = { ...env, PATH: `${wrapper}${path.delimiter}${env.PATH}` };
-  }
+  const env = isolation.discoveryEnvironment(target.env);
   const result = await withNativeSkillHome(target.home, () => discoverSkills({ cwd: target.project, env }));
   fs.writeFileSync(path.join(root, `${label}.json`), JSON.stringify(result, null, 2));
   const skills = result.data.flatMap(item => item.skills).filter(skill => names.includes(skill.name));
@@ -160,7 +139,7 @@ try {
   await loaded('after-skill-removal', global, []);
   assert.equal(digest(path.join(global.state, 'config.toml')), mcpHash);
   assert.equal(fs.existsSync(path.join(global.state, 'auth.json')), false);
-  assert.deepEqual(protectedFiles.map(digest), before);
+  assert.deepEqual(profileMetadata(protectedFiles), before);
   const summary = { upstreamSkillsVersion: '1.7.4', candidateOnly: true, localGitSource: true, globalInstallation: true,
     projectSelectedInstallation: true, eachSkillAlone: true, repeat: true, changedGitSourceReinstall: true,
     upstreamAutomaticUpdateVerified: false, upstreamUpdateLimit: 'file source has no GitHub tracking; public candidate is unpublished',
@@ -168,7 +147,7 @@ try {
     nativeSkills: native, mcpDependencyParsed: true, skillsCliDoesNotRegisterMcp: true,
     nativeMcpConfigurationReadback: true, registrationViaNativeCommand: liveMcp, transportProbe,
     removalPreservesMcp: true, oauthPerformed: false,
-    originalProfileUnchanged: true, evidence: root };
+    originalProfileMetadataUnchanged: true, evidence: root };
   fs.writeFileSync(path.join(root, 'summary.json'), JSON.stringify(summary, null, 2));
   console.log(JSON.stringify(summary, null, 2));
 } catch (error) { console.error(`Skills CLI integration evidence retained at ${root}`); throw error; }

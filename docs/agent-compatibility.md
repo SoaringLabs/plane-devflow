@@ -28,6 +28,14 @@ Skill installation scope and MCP configuration scope are independent. Preserve e
 
 The same file-scope preflight, task binding, human acceptance and merge authorization apply across hosts. Existing branch-prefix defaults, task receipts, comment markers, copied Actions files and native/basic/legacy state ownership remain unchanged. A workflow installation does not grant extra business writes or session orchestration. Use the existing Git preparation path when host-managed worktrees are unavailable.
 
+## Credential isolation in compatibility tests
+
+`test:integration`, `test:skills` and `test:agents` share a disposable environment allowlist, with temporary home/config/cache paths and no inherited provider tokens or SSH agent. Existing user configuration and authentication files are checked through filesystem metadata without reading their contents; byte-preservation checks use synthetic credentials inside the fixtures.
+
+On macOS every native-client subprocess, including the Codex discovery loader and descendants, runs under the same sandbox. It denies execution of `/usr/bin/security`, access to the real credential files and Keychains directory, and connections to the legacy `com.apple.SecurityServer`, modern security services and `com.apple.security.agent` UI service. The old `com.apple.securityd` rule alone did not block the legacy service. A harmless `security help` preflight must be denied before any native client starts; sandbox failure stops the test rather than falling back to an unguarded process. No keychain is created, reset, unlocked or modified for testing.
+
+`npm test` includes macOS regressions for direct, symlink and descendant command execution, native service lookup without a credential request, and synthetic real-profile read/write denial. Other platforms use the environment/file-store isolation and existing disposable Windows discovery fixture; the macOS sandbox checks are explicitly skipped there. Fresh-profile OAuth and authenticated model access remain separate, unverified checks.
+
 ## Verification matrix
 
 The 0.9.0 payload's per-agent installation, native discovery, MCP and unverified items are recorded below after actual isolated checks. File placement or an unauthenticated endpoint alone does not count as a successful native/model workflow.

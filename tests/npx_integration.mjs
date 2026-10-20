@@ -7,26 +7,29 @@ import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import spawn from 'cross-spawn';
 import { inventory } from '../lib/installer.mjs';
+import { createCredentialIsolation, credentialEnvironment, profileMetadata } from './credential_isolation.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane npx integration ')));
 const version = JSON.parse(fs.readFileSync(path.join(repo, 'package.json'))).version;
 const state = path.join(root, 'state');
 const cache = path.join(root, 'npm-cache');
+const home = path.join(root, 'home');
+fs.mkdirSync(home);
 for (const folder of [state, path.join(root, 'project')]) fs.mkdirSync(folder);
-for (const name of ['npm-userconfig', 'npm-globalconfig']) fs.writeFileSync(path.join(root, name), '');
 const original = 'cli_auth_credentials_store = "file"\nmcp_oauth_credentials_store = "file"\n[analytics]\nenabled = false\n';
 fs.writeFileSync(path.join(state, 'config.toml'), original);
-const env = { ...process.env, CODEX_HOME: state, npm_config_cache: cache,
-  npm_config_userconfig: path.join(root, 'npm-userconfig'), npm_config_globalconfig: path.join(root, 'npm-globalconfig'),
-  npm_config_registry: 'https://registry.npmjs.org/', npm_config_audit: 'false', npm_config_fund: 'false' };
+const env = { ...credentialEnvironment(root, home), CODEX_HOME: state };
 const digest = file => fs.existsSync(file) ? crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') : null;
 const realState = path.resolve(process.env.CODEX_HOME || path.join(os.homedir(), '.codex'));
 const protectedFiles = [path.join(realState, 'config.toml'), path.join(realState, 'auth.json'), path.join(os.homedir(), '.npmrc')];
-const before = protectedFiles.map(digest);
+const before = profileMetadata(protectedFiles);
+const isolation = createCredentialIsolation(root, { protectedFiles });
+isolation.assertProtected();
 
 function run(label, command, args, childEnv = env, cwd = path.join(root, 'project')) {
-  const result = spawn.sync(command, args, { cwd, env: childEnv, encoding: 'utf8', timeout: 180_000, maxBuffer: 16 * 1024 * 1024 });
+  const all = [...isolation.prefix, command, ...args];
+  const result = spawn.sync(all[0], all.slice(1), { cwd, env: childEnv, encoding: 'utf8', timeout: 180_000, maxBuffer: 16 * 1024 * 1024 });
   fs.writeFileSync(path.join(root, `${label}.json`), JSON.stringify({ command, args, status: result.status, stdout: result.stdout, stderr: result.stderr, error: result.error?.message }, null, 2));
   assert.equal(result.status, 0, `${label}: ${result.error?.message || result.stderr || result.stdout}`);
   return JSON.parse(result.stdout);
@@ -75,9 +78,9 @@ try {
   assert.equal(retainedDirectory.ino, originalDirectory.ino);
   assert.deepEqual(inventory(localRoot), localBefore);
   assert.equal(fs.existsSync(path.join(localState, 'marketplaces/plane-for-codex-npm')), false);
-  assert.deepEqual(protectedFiles.map(digest), before);
+  assert.deepEqual(profileMetadata(protectedFiles), before);
   const result = { version, packedFiles: packed.files.length, pluginFiles: first.payloadFiles, fresh: true, repeat: true,
-    cacheRemoval: true, check: true, retainedLocalSource: true, nativeSkills: first.skills, originalProfileUnchanged: true, evidence: root };
+    cacheRemoval: true, check: true, retainedLocalSource: true, nativeSkills: first.skills, originalProfileMetadataUnchanged: true, evidence: root };
   fs.writeFileSync(path.join(root, 'summary.json'), `${JSON.stringify(result, null, 2)}\n`);
   console.log(JSON.stringify(result, null, 2));
 } catch (error) {
