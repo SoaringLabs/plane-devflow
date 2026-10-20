@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import spawn from 'cross-spawn';
 import { discoverSkills, inventory } from '../lib/installer.mjs';
+import { withNativeSkillHome } from './native_profile_fixture.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane skills add ')));
@@ -65,7 +66,7 @@ async function loaded(label, target, expected) {
     fs.writeFileSync(path.join(wrapper, 'codex'), `#!/bin/sh\nexec ${sandbox.map(quote).join(' ')} ${quote(resolved)} "$@"\n`, { mode: 0o755 });
     env = { ...env, PATH: `${wrapper}${path.delimiter}${env.PATH}` };
   }
-  const result = await discoverSkills({ cwd: target.project, env });
+  const result = await withNativeSkillHome(target.home, () => discoverSkills({ cwd: target.project, env }));
   fs.writeFileSync(path.join(root, `${label}.json`), JSON.stringify(result, null, 2));
   const skills = result.data.flatMap(item => item.skills).filter(skill => names.includes(skill.name));
   assert.deepEqual(skills.map(skill => skill.name).sort(), [...expected].sort());

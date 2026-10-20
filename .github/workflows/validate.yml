@@ -4,6 +4,8 @@ permissions:
   contents: read
 jobs:
   skills:
+    env:
+      PLANE_DISPOSABLE_WINDOWS_PROFILE: '1'
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]

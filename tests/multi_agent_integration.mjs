@@ -7,6 +7,7 @@ import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import spawn from 'cross-spawn';
 import { discoverSkills, inventory } from '../lib/installer.mjs';
+import { withNativeSkillHome } from './native_profile_fixture.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane multi agent ')));
@@ -62,7 +63,7 @@ function run(label, command, args, target, { optional = false, timeout = 90_000 
   return record;
 }
 async function codexSkills(target) {
-  if (!sandbox.length) return discoverSkills({ cwd: target.project, env: target.env });
+  if (!sandbox.length) return withNativeSkillHome(target.home, () => discoverSkills({ cwd: target.project, env: target.env }));
   const resolved = spawn.sync('which', ['codex'], { encoding: 'utf8' }).stdout.trim();
   const bin = path.join(root, 'codex-wrapper'); fs.mkdirSync(bin, { recursive: true });
   const quote = value => `'${value.replaceAll("'", "'\\''")}'`;
