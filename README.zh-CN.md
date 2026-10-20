@@ -23,13 +23,12 @@
 复制这条命令到终端执行：
 
 ```sh
-codex plugin marketplace add SoaringLabs/plane-for-codex && \
-  codex plugin add plane-for-codex@plane-for-codex
+npx plane-for-codex@latest
 ```
 
-Codex 会获取仓库并安装完整插件，无需手动克隆、填写本地路径或安装 npm 引导程序。需要支持插件的 Codex CLI、Git 和 Python 3.10+；PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)。
+安装器包含完整插件，会保存到持久本地来源，再通过 Codex 安装并校验三个技能；已有 marketplace 注册和账号授权会保留。需要 [Node.js 20+](https://nodejs.org/)、npm 和支持插件的 Codex CLI（已用 0.163.0 验证）；运行辅助脚本需要 Python 3.10+，PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)。
 
-在**目标代码仓库新开一个 Codex 聊天**，选择 **Plane: 初始化**，按引导选择项目，并在需要时通过浏览器授权 Plane。账号授权与 GitHub 后台同步配置是两个步骤。已有本地 marketplace 安装的用户，请先看 [迁移说明](docs/installation.md#existing-local-marketplace-installations)。
+在**目标代码仓库新开一个 Codex 聊天**，选择 **Set Up Plane**，按引导选择项目，并在需要时通过浏览器授权 Plane。账号授权与 GitHub 后台同步配置是两个步骤。已有本地 marketplace 安装的用户，请先看 [迁移说明](docs/installation.md#existing-local-marketplace-installations)。
 
 ### 开始第一条任务
 
@@ -37,7 +36,7 @@ Codex 会获取仓库并安装完整插件，无需手动克隆、填写本地�
 
 | 步骤 | 在 Codex 中操作 | 应看到的结果 |
 | --- | --- | --- |
-| 关联 | 选择 **Plane: 初始化** | 已关联的项目，以及同步验证结果或具体待完成步骤 |
+| 关联 | 选择 **Set Up Plane** | 已关联的项目，以及同步验证结果或具体待完成步骤 |
 | 开发 | `$plane-for-codex:plane-start 开始 PROJECT-123` | 任务专属目录、分支、需求与验收范围 |
 | 交付 | `$plane-for-codex:plane-deliver 交付 PROJECT-123，先不要合并` | 关联 PR、实际检查结果和待验收项 |
 
@@ -58,13 +57,13 @@ Codex 会获取仓库并安装完整插件，无需手动克隆、填写本地�
 
 ## 技能入口
 
-在 Codex 的技能选择菜单中搜索 **Plane**。当前菜单标签为中文，完整技能标识在两种语言下均可使用。
+在 Codex 的技能选择菜单中搜索 **Plane**，选择下列英文入口，也可以直接使用完整技能标识。
 
 | 入口 | 什么时候用 |
 | --- | --- |
-| **Plane: 初始化** | 关联项目，检查或调整映射，继续同步配置 — `$plane-for-codex:plane-setup` |
-| **Plane: 开始任务** | 讨论、规划、开始或恢复已有任务 — `$plane-for-codex:plane-start` |
-| **Plane: 交付任务** | 交付 PR、准备试用、记录验收或按授权收尾 — `$plane-for-codex:plane-deliver` |
+| **Set Up Plane** | 关联项目，检查或调整映射，继续同步配置 — `$plane-for-codex:plane-setup` |
+| **Start Plane Task** | 讨论、规划、开始或恢复已有任务 — `$plane-for-codex:plane-start` |
+| **Deliver Plane Task** | 交付 PR、准备试用、记录验收或按授权收尾 — `$plane-for-codex:plane-deliver` |
 
 这些是 Skill 入口，没有独立的 `/plane` 命令或配置页面。请安装完整插件；当前不支持单独复制各个技能目录使用。
 
@@ -85,11 +84,13 @@ Codex 会获取仓库并安装完整插件，无需手动克隆、填写本地�
 
 ## 更新与移除
 
-刷新 Git 来源的 marketplace，再更新插件：
+再次执行安装命令即可更新；加上 `--check` 可只检查、不重新安装：
 
 ```sh
-codex plugin marketplace upgrade plane-for-codex && codex plugin add plane-for-codex@plane-for-codex
+npx plane-for-codex@latest --check
 ```
+
+npm 管理的安装使用安装器内附版本；已有 Git 来源按原配置刷新，开发目录的文件保留，需按原 Git 流程更新。
 
 随后新开聊天加载。移除插件使用 `codex plugin remove plane-for-codex@plane-for-codex`。插件更新或移除不会升级或删除业务仓库中的映射、已复制的 workflow/脚本、任务工作区或外部账号配置。切换已有本地安装来源前，请看 [安装与迁移说明](docs/installation.md)。
 

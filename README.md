@@ -23,13 +23,12 @@ An open-source community plugin that connects **Plane tasks, Codex development a
 Run this command in your terminal:
 
 ```sh
-codex plugin marketplace add SoaringLabs/plane-for-codex && \
-  codex plugin add plane-for-codex@plane-for-codex
+npx plane-for-codex@latest
 ```
 
-Codex fetches the repository and installs the complete plugin. No manual clone, local path or npm bootstrap is needed. Requires a plugin-enabled Codex CLI, Git and Python 3.10+; PR operations also need an authenticated [GitHub CLI](https://cli.github.com/).
+The installer includes the complete plugin, saves it to a persistent local source, then installs and verifies all three skills through Codex. Existing marketplace registrations and account authorization are retained. Requires [Node.js 20+](https://nodejs.org/), npm and a plugin-enabled Codex CLI (verified with 0.163.0); runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
 
-Open a **new Codex chat in your target repository**, select **Plane: 初始化**, and follow setup to choose a project and authorize Plane in your browser when needed. Account authorization and GitHub background-sync configuration are separate steps. Existing local-marketplace installs should follow the [migration guide](docs/installation.md#existing-local-marketplace-installations).
+Open a **new Codex chat in your target repository**, select **Set Up Plane**, and follow setup to choose a project and authorize Plane in your browser when needed. Account authorization and GitHub background-sync configuration are separate steps. Existing local-marketplace installs should follow the [migration guide](docs/installation.md#existing-local-marketplace-installations).
 
 ### Start your first task
 
@@ -37,7 +36,7 @@ Open a **new Codex chat in your target repository**, select **Plane: 初始化**
 
 | Step | In Codex | Expected result |
 | --- | --- | --- |
-| Connect | Select **Plane: 初始化** | Project association and verified sync, or the precise remaining setup step |
+| Connect | Select **Set Up Plane** | Project association and verified sync, or the precise remaining setup step |
 | Develop | `$plane-for-codex:plane-start Start PROJECT-123` | The task's own working directory, branch, requirements and acceptance scope |
 | Deliver | `$plane-for-codex:plane-deliver Deliver PROJECT-123; keep the PR open` | A linked PR, actual check results and outstanding acceptance items |
 
@@ -58,13 +57,13 @@ To try a delivered result, say: “Run PROJECT-123 from its task workspace so I 
 
 ## Skills
 
-Search **Plane** in Codex's skill picker. Display labels currently appear in Chinese; full identifiers work in either language.
+Search **Plane** in Codex's skill picker. Select an entry below or invoke it using its full identifier.
 
 | Skill | Use when |
 | --- | --- |
-| **Setup** · `Plane: 初始化` | Associate a project, inspect/reconfigure the mapping, or resume sync setup — `$plane-for-codex:plane-setup` |
-| **Start** · `Plane: 开始任务` | Discuss, plan, start or resume an existing task — `$plane-for-codex:plane-start` |
-| **Deliver** · `Plane: 交付任务` | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `$plane-for-codex:plane-deliver` |
+| **Set Up Plane** | Associate a project, inspect/reconfigure the mapping, or resume sync setup — `$plane-for-codex:plane-setup` |
+| **Start Plane Task** | Discuss, plan, start or resume an existing task — `$plane-for-codex:plane-start` |
+| **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `$plane-for-codex:plane-deliver` |
 
 These are skills, not a separate `/plane` command or settings page. Install the complete plugin; standalone copies of individual skill folders are not a supported installation.
 
@@ -85,11 +84,13 @@ Currently supports existing tasks, one primary PR per task, Plane Cloud and gith
 
 ## Update or remove
 
-Refresh the Git-backed marketplace and reinstall the plugin:
+Run the same installer again to update, or add `--check` to verify without reinstalling:
 
 ```sh
-codex plugin marketplace upgrade plane-for-codex && codex plugin add plane-for-codex@plane-for-codex
+npx plane-for-codex@latest --check
 ```
+
+Npm-managed installs use the version bundled with the installer. Existing Git sources refresh their configured ref; existing development checkouts keep their local files and update through your usual Git workflow.
 
 Then open a new chat. For removal, run `codex plugin remove plane-for-codex@plane-for-codex`. Plugin updates/removal do not update or delete business-repository mappings, copied workflows/scripts, task workspaces or external account configuration. See [installation and migration](docs/installation.md) before changing an existing local source.
 

@@ -18,7 +18,7 @@ class PackageValidationTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "source"
         shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns(
-            ".git", "__pycache__", "*.pyc", ".venv", "dist", ".plane-for-codex.local", ".env*"))
+            ".git", "node_modules", "__pycache__", "*.pyc", ".venv", "dist", ".plane-for-codex.local", ".env*"))
         self.plugin = self.root / "plugins/plane-for-codex"
         self.skill = self.plugin / "skills/plane-start/SKILL.md"
 
@@ -98,7 +98,7 @@ class PackageValidationTests(unittest.TestCase):
     def test_ui_types_and_wrong_invocation_rejected(self):
         ui = self.skill.parent / "agents/openai.yaml"
         original = ui.read_text()
-        for old, new in (('"Plane: 开始任务"', "false"), ("$plane-for-codex:plane-start", "$wrong")):
+        for old, new in (('"Start Plane Task"', "false"), ("$plane-for-codex:plane-start", "$wrong")):
             ui.write_text(original.replace(old, new))
             self.rejects("UI")
 
@@ -126,14 +126,12 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("Marketplace")
 
     def test_readme_install_identity_is_checked(self):
-        self.replace(self.root / "README.md", "codex plugin marketplace add SoaringLabs/plane-for-codex",
-                     "codex plugin marketplace add example/another")
-        self.rejects("marketplace source")
+        self.replace(self.root / "README.md", "npx plane-for-codex@latest", "npx another-package@latest")
+        self.rejects("npm installer mismatch")
 
     def test_localized_readme_installation_is_checked(self):
-        self.replace(self.root / "README.zh-CN.md", "codex plugin add plane-for-codex@plane-for-codex",
-                     "codex plugin add wrong@elsewhere")
-        self.rejects("selector mismatch")
+        self.replace(self.root / "README.zh-CN.md", "npx plane-for-codex@latest", "npx another-package@latest")
+        self.rejects("npm installer mismatch")
 
     def test_html_images_and_navigation_are_checked(self):
         hero = self.root / "docs/assets/workflow.svg"
@@ -145,7 +143,7 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("missing anchor")
 
     def test_installation_does_not_continue_after_registration_failure(self):
-        self.replace(self.root / "README.md", " && ", " ; ")
+        self.replace(self.root / "README.md", "npx plane-for-codex@latest", "npx plane-for-codex@latest ; echo success")
         self.rejects("stop if a step fails")
 
     def test_cli_failure_is_nonzero_even_with_python_optimization(self):

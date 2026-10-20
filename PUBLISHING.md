@@ -2,21 +2,29 @@
 
 Public source: [SoaringLabs/plane-for-codex](https://github.com/SoaringLabs/plane-for-codex). This is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.8.0. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.8.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Validate and publish source
 
-1. Install `requirements-dev.txt` in a development virtual environment, then run `python3 -m unittest discover -s tests -v` and `python3 scripts/validate_package.py`.
+1. Run `npm ci` and `npm test`; inspect `npm pack --dry-run --json` against the complete plugin file list. Install `requirements-dev.txt` in a development virtual environment, then run `python3 -m unittest discover -s tests -v` and `python3 scripts/validate_package.py`.
 2. Validate the behavior cases with `python3 evals/run.py --validate-only`; run affected fresh-session decision evals as described in [evals/README.md](evals/README.md), recording model/configuration, source digest and limits separately from live integration evidence. Run the offline demo and inspect its outputs. Live MCP and Actions checks are separate from offline tests.
 3. Review the exact publication file list and the reachable history of the branch being pushed. Remove private workspace/repository identities, real object IDs, private Actions run links and personal filesystem paths from public documents. Keep historical test totals, failures and limitations, and identify private evidence as unpublished. Exclude `.plane-for-codex.local/`, credentials, response snapshots, demo output and plugin caches; local Codex snapshot refs are not publication refs.
-4. Commit the reviewed source and push only the intended branch (normally `main`) to this repository. Do not use `--mirror` or publish local snapshot refs. Repository creation, push and optional release tagging require an explicit publication request; installation testing does not publish automatically. The README uses native Git-marketplace installation; contributor clone/local-marketplace and migration instructions live in docs/installation.md.
+4. Commit the reviewed source and push only the intended branch (normally `main`) to this repository. Do not use `--mirror` or publish local snapshot refs. Repository creation, push and optional release tagging require an explicit publication request; installation testing does not publish automatically. The README uses the npm installer; it bundles the complete plugin and registers a persistent native marketplace. Contributor clone/Git-marketplace and migration instructions live in docs/installation.md.
 5. Actions setup vendors two sync scripts and a workflow into each business repository; publishing this source is not needed for runtime. The official checkout dependency uses a verified full SHA. Existing users of the composite Action pin this repository's actual published commit SHA. Updating either copied scripts or a pin is a reviewed repository change; plugin installation cannot update other repositories' workflows automatically.
 
 When changing a release, update `plugin.json` version and `plane_sync.VERSION` together, test compatibility, and reinstall the plugin to refresh its cached package. Keep the marketplace name stable. Onboarding should remain conversational and require only necessary account consent and project selection.
 
 Record version changes in [CHANGELOG.md](CHANGELOG.md). Keep the README focused on current capabilities, installation and usage, with a link to the changelog instead of inline version history.
 
-The repository's validation workflow runs tests, package validation and the offline demo on Python 3.10 and 3.14. After pushing, confirm repository visibility, the default branch, remote commit identity and both CI jobs. Source publication is separate from creating a version tag or GitHub Release.
+The repository's validation workflow runs Python tests, package validation and the offline demo on Python 3.10 and 3.14; Node.js 20/24 installer checks include actual npx/native loading on macOS, Linux and Windows. After pushing, confirm repository visibility, the default branch, remote commit identity and every Python/installer CI job. Source publication is separate from creating a version tag or GitHub Release.
+
+## Publish the npm installer
+
+The public package is `plane-for-codex`; its version must match `plugin.json` and `plane_sync.VERSION`. Its executable is `bin/plane-for-codex.mjs`. The npm `files` allowlist includes the full plugin and excludes tests, evals, private evidence, development dependencies and Python bytecode.
+
+After all source checks, pack into an isolated output directory. Extract that exact tarball, compare every plugin file to the reviewed source, install via actual npx with a fresh Codex state, and verify repeat/check/retained-source behavior. Test native loading separately from mocked command tests. Preserve the user's real configuration/authentication; never copy credentials into the test profile.
+
+For an authorized publication, confirm npm identity with `npm whoami`, publish the reviewed tarball with public access, then read back its version, integrity and `latest` tag from the public registry. Finally run the exact public README command against a fresh cache/state and confirm native skill discovery. Browser login and any registry 2FA remain user actions; credentials never pass through chat. Keep npm publication, GitHub source/CI and any optional GitHub Release as separate read-back facts.
 
 ## GitHub Marketplace
 

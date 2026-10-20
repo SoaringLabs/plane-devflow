@@ -1,0 +1,31 @@
+{
+  "name": "plane-for-codex",
+  "version": "0.8.1",
+  "description": "Install the complete Plane for Codex plugin and verify its three skills.",
+  "type": "module",
+  "bin": { "plane-for-codex": "bin/plane-for-codex.mjs" },
+  "engines": { "node": ">=20" },
+  "files": [
+    "bin/",
+    "lib/",
+    "plugins/plane-for-codex/plugin.json",
+    "plugins/plane-for-codex/mcp.json",
+    "plugins/plane-for-codex/assets/icon.png",
+    "plugins/plane-for-codex/scripts/*.py",
+    "plugins/plane-for-codex/references/*.md",
+    "plugins/plane-for-codex/skills/*/SKILL.md",
+    "plugins/plane-for-codex/skills/*/agents/openai.yaml"
+  ],
+  "scripts": {
+    "test": "node --test tests/installer.test.mjs",
+    "test:integration": "node tests/npx_integration.mjs"
+  },
+  "dependencies": { "cross-spawn": "7.0.6" },
+  "license": "MIT",
+  "author": "SoaringLabs",
+  "repository": { "type": "git", "url": "https://github.com/SoaringLabs/plane-for-codex.git" },
+  "homepage": "https://github.com/SoaringLabs/plane-for-codex#readme",
+  "bugs": { "url": "https://github.com/SoaringLabs/plane-for-codex/issues" },
+  "keywords": ["codex", "plane", "plugin", "skills", "installer"],
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" }
+}

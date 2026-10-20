@@ -7,6 +7,7 @@ Keep changes scoped to the problem and preserve existing features, authorization
 - `plugins/plane-for-codex/skills/`: the three public agent entrypoints and their Codex UI metadata. Keep purpose, routing and essential boundaries in SKILL.md; link conditional procedures when the requested mode needs them.
 - `plugins/plane-for-codex/references/`: canonical workflows, contracts and recovery. Keep each detailed rule in one place rather than copying it into every entrypoint.
 - `plugins/plane-for-codex/scripts/`: standard-library runtime helpers. Preserve read/plan versus apply behavior, structured output, idempotency and protection of unrelated work.
+- `bin/` and `lib/`: the npm installer and its persistent-source/native verification boundary. Keep it separate from account authorization and business-repository mutation.
 - `tests/`: deterministic behavior and malformed-package regression tests.
 - `evals/`: prompts, fixtures, decision rubrics and the opt-in model evaluation runner. Raw transcripts stay outside tracked files.
 - `README.md` / `README.zh-CN.md`: matching English and Chinese public entrypoints, installation and first successful use. Contributor/release detail belongs here or in PUBLISHING.
@@ -15,9 +16,11 @@ Do not add skill directories or metadata only to match a template. The public in
 
 ## Local checks
 
-Use Python 3.10+ and a development virtual environment:
+Use Node.js 20+, Python 3.10+ and a development virtual environment:
 
 ```sh
+npm ci
+npm test
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m unittest discover -s tests -v
@@ -27,7 +30,7 @@ python3 -m venv .venv
 git diff --check
 ```
 
-PyYAML is a development-only dependency for real YAML parsing. Shipped plugin helpers still use only the standard library. CI runs offline checks on Python 3.10 and 3.14; model evals are opt-in and do not run automatically on forks/CI credentials.
+PyYAML is a development-only dependency for real YAML parsing. Shipped plugin helpers still use only the standard library. CI runs offline checks on Python 3.10 and 3.14 and installer checks on Node.js 20/24 across macOS, Linux and Windows. `npm run test:integration` packs the real npm tarball and calls the installed Codex CLI from fresh temporary state; it requires Codex but no login or model session. Model evals are opt-in and do not run automatically on forks/CI credentials.
 
 Package validation checks frontmatter types/limits, UI fields, explicit public inventory, versions/resources, reachable inline Markdown/HTML links, images and anchors, and repository installation identity. It rejects symlinks and plugin references escaping the payload. It is not a complete Markdown parser, remote URL checker, security scanner or agent-behavior proof. Extracted-payload tests exercise helper import/CLI startup without the source checkout.
 

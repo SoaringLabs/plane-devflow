@@ -148,9 +148,8 @@ def document_targets(text):
 
 def installation_steps(text):
     blocks = re.findall(r"```(?:sh|bash)\n(.*?)\n```", text, re.S)
-    installs = [b for b in blocks if "codex plugin marketplace add" in b]
-    require(len(installs) == 1, "README needs one primary installation command")
-    lexer = shlex.shlex(installs[0].replace("\\\n", ""), posix=True, punctuation_chars=";&|")
+    require(bool(blocks), "README needs a primary installation command")
+    lexer = shlex.shlex(blocks[0].replace("\\\n", ""), posix=True, punctuation_chars=";&|")
     lexer.whitespace_split = True
     steps = [[]]
     for token in lexer:
@@ -237,6 +236,12 @@ def validate(root=ROOT, *, payload_only=False):
         require(len(entries) == 1 and entries[0]["name"] == "plane-for-codex", "Unexpected marketplace inventory")
         require((root / entries[0]["source"]["path"]).resolve() == plugin, "Marketplace points outside plugin source")
         require((root / "action.yml").is_file() and (root / "LICENSE").is_file(), "Missing Action or license")
+        npm = json.loads((root / "package.json").read_text())
+        manifest = json.loads((plugin / "plugin.json").read_text())
+        require(npm.get("name") == "plane-for-codex", "Unexpected npm package name")
+        require(npm.get("version") == manifest.get("version"), "npm/plugin version mismatch")
+        require(npm.get("bin") == {"plane-for-codex": "bin/plane-for-codex.mjs"}, "Unexpected npm executable")
+        resource(root, npm["bin"]["plane-for-codex"], root)
         for example in (root / "examples").glob("plane-for-codex*.json"):
             validate_config(json.loads(example.read_text()))
         readmes = [resource(root, name, root) for name in ("README.md", "README.zh-CN.md")]
@@ -245,10 +250,7 @@ def validate(root=ROOT, *, payload_only=False):
         for path in readmes:
             text = path.read_text()
             steps = installation_steps(text)
-            require(len(steps) == 2 and steps[0] == ["codex", "plugin", "marketplace", "add",
-                    "SoaringLabs/plane-for-codex"], f"{path.name}: README marketplace source mismatch")
-            require(steps[1] == ["codex", "plugin", "add", "plane-for-codex@plane-for-codex"],
-                    f"{path.name}: README plugin selector mismatch")
+            require(steps == [["npx", "plane-for-codex@latest"]], f"{path.name}: README npm installer mismatch")
             for name in SKILLS:
                 require(f"$plane-for-codex:{name}" in text, f"{path.name}: missing skill identifier: {name}")
     return result

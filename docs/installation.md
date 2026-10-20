@@ -2,61 +2,58 @@
 
 [English README](../README.md) · [中文说明](../README.zh-CN.md)
 
-## Native installation
+## Install with npx
 
-For a new installation, paste:
+```sh
+npx plane-for-codex@latest
+```
+
+Requirements: Node.js 20+, npm and a plugin-enabled Codex CLI on PATH (verified with 0.163.0). Runtime Python helpers need Python 3.10+; PR operations need Git and an authenticated GitHub CLI. The installer does not install or replace those tools.
+
+The npm package includes the complete plugin: three skills, shared Python helpers and references, branding and Plane MCP configuration. On a fresh install it saves an immutable version under `~/.codex/marketplaces/plane-for-codex-npm/versions/<version>/plugin` (or the configured Codex state directory), then registers that persistent marketplace and installs through Codex. Registration never points into the disposable npm/npx cache. An official Codex directory listing is not required.
+
+Before reporting success, the installer checks the native installed/enabled result, compares the complete source and installed payload by SHA-256, and asks Codex's native loader to confirm all three enabled skills. A registration success alone is insufficient. Native loading does not verify live Plane access or business writeback.
+
+Open a new Codex chat in the target business repository and select **Set Up Plane**. Setup reuses existing authentication and asks for browser authorization only when missing or expired. Installation, account authorization, project association and background synchronization remain separate results.
+
+## Update or inspect
+
+Rerun the installation command to update. For a read-only installation check:
+
+```sh
+npx plane-for-codex@latest --check
+```
+
+Add `--json` for machine-readable results, or `--help` for usage. npm-managed sources use the plugin version bundled with the selected installer. Previous version directories remain available; modified managed payloads are preserved and cause an explicit error rather than being silently replaced. Repeated installs reuse the marketplace registration.
+
+## Existing local marketplace installations
+
+The installer keeps any existing `plane-for-codex` registration and its account authorization. It does not repoint a local checkout or a custom Git source to its own bundle.
+
+- Existing Git marketplaces refresh the same configured source/ref through Codex, then reinstall. Pinned refs retain their own pin.
+- Existing local development checkouts retain local modifications. Update that checkout through your usual Git workflow, then run the npx installer; it reports the actual selected source and installed version, which can differ from the npm installer's bundled version.
+- `--check` inspects the selected installation without refreshing a source or reinstalling.
+
+To deliberately switch an old local or Git source to npm-managed distribution, first preserve local changes and note the old path. Remove only the marketplace registration, then run the npx installer:
+
+```sh
+codex plugin marketplace remove plane-for-codex
+```
+
+This is a source migration, not permission to delete the old checkout or reset shared Plane authorization. Business repository mappings, task workspaces and copied synchronization files stay separate.
+
+## Native Git marketplace alternative
+
+Users who prefer Git-backed distribution can still install the complete plugin directly:
 
 ```sh
 codex plugin marketplace add SoaringLabs/plane-for-codex && \
   codex plugin add plane-for-codex@plane-for-codex
 ```
 
-This is one paste containing two native CLI operations: register the Git-backed marketplace, then install the plugin only if registration succeeds. Codex manages the repository checkout and plugin cache. It does not install Git, Python, Codex or GitHub CLI for you.
+Here `marketplace` means the catalog in the GitHub repository, not the official public Codex directory. The first command registers that source; the second installs `plugin-name@marketplace-name`. Do not replace an existing registration just to follow this alternative.
 
-Requirements: a plugin-enabled Codex CLI, Git, Python 3.10+, and an authenticated GitHub CLI for PR operations. The complete native installation and three-skill discovery were verified in fresh isolated environments with CLI 0.163.0; see the [validation record](validation-readme.md). Marketplace installation availability varies by client/workspace policy. The repository marketplace is a community distribution source, not an official-directory listing.
-
-The source URL is `https://github.com/SoaringLabs/plane-for-codex.git`; its `.agents/plugins/marketplace.json` points at `plugins/plane-for-codex`. The complete plugin includes three skills, shared Python helpers/references, assets and Plane MCP configuration. Standalone `npx skills add` copies are not a supported substitute for this bundle.
-
-Open a new chat in the target business repository, then select **Plane: 初始化**. Setup reuses existing authentication and asks for browser authorization only when missing or expired. Plugin installation, Plane authorization, project association and background-sync verification are separate results. OAuth approval remains a user action; never paste credentials into chat.
-
-If the marketplace/installation step fails, inspect that error before continuing. Do not claim a complete installation from successful registration alone. Use `codex plugin marketplace list` and `codex plugin list --marketplace plane-for-codex` to inspect the configured source and installed plugin. Seeing the three skills in a new chat verifies discovery only, not real service access.
-
-## Update a Git-backed installation
-
-```sh
-codex plugin marketplace upgrade plane-for-codex && codex plugin add plane-for-codex@plane-for-codex
-```
-
-Open a new chat afterward. Marketplace upgrade refreshes source; reinstall refreshes the cached plugin. It does not upgrade copied workflow/synchronization scripts in business repositories. Those updates follow a separate reviewed plan in the affected repository.
-
-## Existing local marketplace installations
-
-Earlier instructions registered a manually cloned local directory under the same marketplace name. Keep that source if you are developing the plugin or have local modifications. Update your chosen local checkout through your normal Git workflow, then reinstall:
-
-```sh
-codex plugin add plane-for-codex@plane-for-codex
-```
-
-Do not replace a local source just to follow the new quick start. Inspect `codex plugin marketplace list` first. If you explicitly want Git-managed distribution, preserve local changes, note the old source path, remove only its marketplace registration, then use the native installation command:
-
-```sh
-codex plugin marketplace remove plane-for-codex
-```
-
-Marketplace removal changes the registration; it is not permission to delete your clone, business repository or task workspaces. Do not remove shared Plane MCP connections. If client policy prevents source replacement, retain the working installation and resolve that policy separately.
-
-## Development from a local checkout
-
-Contributors can keep the local path workflow:
-
-```sh
-git clone https://github.com/SoaringLabs/plane-for-codex.git
-cd plane-for-codex
-codex plugin marketplace add "$PWD"
-codex plugin add plane-for-codex@plane-for-codex
-```
-
-This installs the selected local source. It neither publishes changes nor replaces account authorization. Preserve existing registered sources instead of silently repointing the same marketplace name. Development dependencies and validation are in [CONTRIBUTING](../CONTRIBUTING.md).
+Contributors can register their chosen repository path with `codex plugin marketplace add "$PWD"`, then install `plane-for-codex@plane-for-codex`. Keep the selected local source and review its changes. See [CONTRIBUTING](../CONTRIBUTING.md).
 
 ## Remove the plugin
 
@@ -64,8 +61,10 @@ This installs the selected local source. It neither publishes changes nor replac
 codex plugin remove plane-for-codex@plane-for-codex
 ```
 
-This removes the installed plugin and its cache. It does not remove business-repository `.plane-for-codex.json`, copied workflows/scripts, task worktrees or external integration settings. Background sync may therefore continue until an authorized change disables it in that repository or official integration. Review those resources separately before changing them.
+This removes the installed plugin/cache. The npm-managed source and registration remain so reinstalling is possible. It does not remove business-repository `.plane-for-codex.json`, copied workflows/scripts, task worktrees or external integration settings. Background synchronization may continue until an authorized change disables it in that repository or official integration.
 
-## Reference
+## Distribution and verification
 
-The native Git marketplace interface is documented in [OpenAI plugin packaging](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli). No npm package or remote bootstrap script is needed for this installation path. See the repository's [validation record](validation-readme.md) for the scope of checks performed on these instructions.
+The npm package is the installer and the full versioned plugin bundle. `npx` fetches/runs it; Codex remains responsible for native registration and installation. Standalone copies of individual skill folders are insufficient for this package because they omit shared resources and MCP configuration.
+
+See [npm exec/npx](https://docs.npmjs.com/cli/v11/commands/npm-exec/), [OpenAI marketplace packaging](https://developers.openai.com/plugins/build/plugins#add-a-marketplace-from-the-cli) and the [npm installation validation record](validation-npx.md). Historical native Git and README checks remain in [the earlier validation record](validation-readme.md).

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Plane: 初始化"
-  short_description: "关联 Plane 项目，选择原生或 Actions 同步，检查、重配或继续初始化"
-  default_prompt: "使用 $plane-for-codex:plane-setup。"
+  display_name: "Set Up Plane"
+  short_description: "Connect a Plane project and configure or resume GitHub sync"
+  default_prompt: "Use $plane-for-codex:plane-setup."

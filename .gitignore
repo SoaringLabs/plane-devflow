@@ -1,6 +1,8 @@
 __pycache__/
 *.py[cod]
 .venv/
+node_modules/
+*.tgz
 .DS_Store
 .plane-for-codex.local/
 dist/
