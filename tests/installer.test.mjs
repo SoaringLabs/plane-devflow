@@ -110,7 +110,7 @@ test('npm upgrade retains prior payload and its original registration', async t 
   assert.equal(f.state.calls.filter(args => args[2] === 'add').length, 1);
 });
 
-for (const sourceType of ['local', 'git']) test(`existing ${sourceType} source and modifications are preserved`, async t => {
+for (const sourceType of ['local', 'git', undefined]) test(`existing ${sourceType || 'unreported'} source and modifications are preserved`, async t => {
   const f = fixture(t);
   const sourceRoot = path.join(f.root, 'user-source');
   fs.cpSync(f.packageRoot, sourceRoot, { recursive: true });
@@ -122,7 +122,7 @@ for (const sourceType of ['local', 'git']) test(`existing ${sourceType} source a
   f.state.marketplaces = [{ name: NAME, root: sourceRoot, marketplaceSource: { sourceType } }];
   const result = await install(f.options);
   assert.equal(result.existingSourcePreserved, true);
-  assert.equal(result.source, sourceType);
+  assert.equal(result.source, sourceType || 'existing');
   assert.deepEqual(inventory(sourceRoot), before);
   assert.equal(fs.existsSync(f.managed), false);
   assert.equal(nativeWrites(f.state).length, 1);

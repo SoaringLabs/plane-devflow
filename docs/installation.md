@@ -30,7 +30,7 @@ Add `--json` for machine-readable results, or `--help` for usage. npm-managed so
 
 The installer keeps any existing `plane-for-codex` registration and its account authorization. It does not repoint a local checkout or a custom Git source to its own bundle.
 
-- Existing Git marketplaces refresh the same configured source/ref through Codex, then reinstall. Pinned refs retain their own pin.
+- When Codex reports a Git-backed source, it refreshes the same configured source/ref, then reinstalls. Pinned refs retain their own pin. If the client omits source-type metadata, the selected source is preserved and its actual installed version is verified.
 - Existing local development checkouts retain local modifications. Update that checkout through your usual Git workflow, then run the npx installer; it reports the actual selected source and installed version, which can differ from the npm installer's bundled version.
 - `--check` inspects the selected installation without refreshing a source or reinstalling.
 

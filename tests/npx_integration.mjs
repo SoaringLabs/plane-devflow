@@ -64,7 +64,15 @@ try {
   const localEnv = { ...env, CODEX_HOME: localState };
   run('register-local', 'codex', ['--no-daemon', 'plugin', 'marketplace', 'add', localRoot, '--json'], localEnv);
   const localResult = run('retained-local', 'npx', command, localEnv);
-  assert.equal(localResult.existingSourcePreserved, true); assert.equal(localResult.source, 'local');
+  assert.equal(localResult.existingSourcePreserved, true);
+  // Source type is optional in native output (notably Windows path aliases).
+  assert.ok(['local', 'existing'].includes(localResult.source));
+  const retained = run('retained-registration', 'codex', ['--no-daemon', 'plugin', 'marketplace', 'list', '--json'], localEnv)
+    .marketplaces.find(item => item.name === 'plane-for-codex');
+  const retainedDirectory = fs.statSync(retained.root, { bigint: true });
+  const originalDirectory = fs.statSync(localRoot, { bigint: true });
+  assert.equal(retainedDirectory.dev, originalDirectory.dev);
+  assert.equal(retainedDirectory.ino, originalDirectory.ino);
   assert.deepEqual(inventory(localRoot), localBefore);
   assert.equal(fs.existsSync(path.join(localState, 'marketplaces/plane-for-codex-npm')), false);
   assert.deepEqual(protectedFiles.map(digest), before);
