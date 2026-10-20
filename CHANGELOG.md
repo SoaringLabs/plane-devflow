@@ -6,7 +6,7 @@
 
 - 项目统一命名为 **Plane DevFlow**，更新仓库引用、插件与 marketplace 身份、npm 包和命令、配置文件、任务记录目录、同步文件及 PR/评论标记。
 - 三个技能继续使用 `plane-setup`、`plane-start`、`plane-deliver`；插件调用前缀改为 `$plane-devflow:`。运行时仅使用新名称，无旧名称别名或回退逻辑。
-- 当前版本号仍为 `0.9.1`；尚未发布此次改名的源码、npm 包、标签或 Release。
+- 当前版本号仍为 `0.9.1`；此次改名尚未发布 npm 包、版本标签或 GitHub Release。
 
 ## 0.9.1 — 2026-10-20
 
