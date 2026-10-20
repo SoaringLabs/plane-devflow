@@ -20,17 +20,16 @@ Open-source Agent Skills connecting **Plane tasks, agent development and GitHub 
 
 ### Install
 
-Run this command in your terminal:
+Run this command from your target repository's root:
 
 ```sh
 npx skills add SoaringLabs/plane-for-codex \
-  --skill plane-setup plane-start plane-deliver \
-  --global
+  --skill plane-setup plane-start plane-deliver
 ```
 
-Skills CLI installs three self-contained skills from GitHub and lets you choose the target agent. `--global` makes them available across projects; omit it for the current project only. To target one host directly, add `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Requires [Node.js 22.20+](https://nodejs.org/), npm, Git and an agent with local terminal and MCP support; runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
+Skills CLI installs three self-contained skills from GitHub into the current project and lets you choose the target agent. To make them available across projects, optionally add `--global`. To target one host directly, add `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Requires [Node.js 22.20+](https://nodejs.org/), npm, Git and an agent with local terminal and MCP support; runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
 
-Open a **new agent session in your target repository**, select or request **plane-setup**, and follow setup to connect Plane and choose a project. Skills installation, MCP registration, browser authorization and GitHub background synchronization are separate steps. Existing connections and authorization are reused. See [MCP setup](docs/installation.md#plane-mcp-connection) if Plane tools are missing.
+Open a **new agent session in your target repository**, select or request **plane-setup**, and follow setup to connect Plane and choose a project. Each repository keeps its own Plane association in `.plane-for-codex.json`; run setup once for each repository, then reuse that mapping. Installing globally only changes where skills are available. Skills installation, MCP registration, browser authorization and GitHub background synchronization are separate steps. Existing connections and authorization are reused. See [MCP setup](docs/installation.md#plane-mcp-connection) if Plane tools are missing.
 
 Already using the complete plugin? Keep that installation and its `$plane-for-codex:plane-setup` identifiers until you choose a [migration](docs/installation.md#existing-local-marketplace-installations). Install one distribution at a time to avoid duplicate entries.
 
@@ -69,7 +68,7 @@ Use the host's skill picker or request a workflow below. Codex uses `$plane-setu
 | **Start Plane Task** | Discuss, plan, start or resume an existing task — `plane-start` |
 | **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `plane-deliver` |
 
-Each skill bundles its own runtime and references, so selected skills can also be installed individually. The complete plugin remains a supported alternative; its skill identifiers retain the `$plane-for-codex:` prefix.
+The recommended command installs all three stages: **set up → develop → deliver**. They remain separate so you can request the right stage directly. Each skill bundles its own runtime and references and can also be installed individually for a narrower workflow. The complete plugin remains a supported alternative; its skill identifiers retain the `$plane-for-codex:` prefix.
 
 ## GitHub synchronization
 
@@ -92,10 +91,10 @@ Rerun the installation command to refresh these three skills. For GitHub-tracked
 
 ```sh
 npx skills check
-npx skills update plane-setup plane-start plane-deliver --global
+npx skills update plane-setup plane-start plane-deliver --project
 ```
 
-Use `npx skills remove plane-setup plane-start plane-deliver --global` and select the intended host to remove the global skills. Project installs use the corresponding project scope. Open a new chat after updates. Removal keeps MCP connections, account authorization, business mappings, copied workflows and task workspaces. The [installation guide](docs/installation.md) covers plugin updates and deliberate migration.
+Run `npx skills remove plane-setup plane-start plane-deliver` from the same repository and select the intended host to remove project skills. For existing global installations, use `--global` instead of `--project` when updating and add `--global` when removing. Open a new chat after updates. Removal keeps MCP connections, account authorization, business mappings, copied workflows and task workspaces. The [installation guide](docs/installation.md) covers plugin updates and deliberate migration.
 
 ## Documentation
 

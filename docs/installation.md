@@ -6,11 +6,10 @@
 
 ```sh
 npx skills add SoaringLabs/plane-for-codex \
-  --skill plane-setup plane-start plane-deliver \
-  --global
+  --skill plane-setup plane-start plane-deliver
 ```
 
-Choose Codex, Claude Code, Cursor or OpenCode when prompted. Optional `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode` targets a host explicitly. `--global` installs to the user skill directory across projects; omit it to install into the current project. The default command remains interactive so existing-file decisions are visible. For one skill, use `--skill plane-setup` (or another entry point). Each generated skill is self-contained; its bundled fallback guides cover related workflows even when a companion skill is absent.
+Run the command from the target repository root. Choose Codex, Claude Code, Cursor or OpenCode when prompted. Optional `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode` targets a host explicitly. The default installs into the current project. Add `--global` only when you choose user-level installation across projects. The default command remains interactive so existing-file decisions are visible. For one skill, use `--skill plane-setup` (or another entry point). Each generated skill is self-contained; its bundled fallback guides cover related workflows even when a companion skill is absent.
 
 Requirements: Node.js 22.20+ for Skills CLI, npm, Git and an agent with local shell and MCP support. Runtime helpers use Python 3.10+; PR operations need an authenticated GitHub CLI. Skills CLI is a third-party installer, not an official Codex marketplace listing. It fetches the selected GitHub source; Plane for Codex does not need a separate npm publication for this path.
 
@@ -32,18 +31,18 @@ Rerun the installation command to refresh the selected skills from their source.
 
 ```sh
 npx skills check
-npx skills update plane-setup plane-start plane-deliver --global
+npx skills update plane-setup plane-start plane-deliver --project
 ```
 
 Local directories and file-based test sources may not create GitHub update-tracking records; a zero exit code with no tracked skills is not a successful update check. Reinstall from that source to refresh it. Public GitHub update tracking for an unpublished candidate must be verified after an authorized publication.
 
-For project installations use `--project` instead of `--global` when updating. Reopen the agent session after updates. Remove global entries with:
+Run these commands from the repository where the skills were installed. Reopen the agent session after updates. Remove project entries with:
 
 ```sh
-npx skills remove plane-setup plane-start plane-deliver --global
+npx skills remove plane-setup plane-start plane-deliver
 ```
 
-Omit `--global` and run from the target project for project-scope removal. Removing skills preserves MCP connections and credentials, business `.plane-for-codex.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
+For an existing global installation, use `--global` instead of `--project` when updating, and add `--global` when removing. Changing the recommended command does not migrate or remove existing global installations. Removing skills preserves MCP connections and credentials, business `.plane-for-codex.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
 
 ## Existing local marketplace installations
 

@@ -2,6 +2,13 @@
 
 按插件版本记录已实现的变化。验证范围与已知限制见对应的版本验证文档；这里的版本记录不代表已创建 GitHub Release 或版本标签。
 
+## 0.9.1 — 2026-10-20
+
+- 推荐安装命令改为项目范围，去掉默认 `--global`；用户可按需自行添加该参数。中英文 README、安装与兼容说明中的更新/移除示例同步采用项目范围，已有全局安装及其配置授权不自动迁移。
+- 保留 `plane-setup`、`plane-start`、`plane-deliver` 三个独立入口，推荐一次安装完整流程；README 说明各阶段职责，以及每个仓库独立运行 setup、保存 Plane 项目映射的关系。
+- 本次为文档与发布校验修订，技能行为、MCP 配置、映射格式及授权边界不变；发布指南明确小修通常递增补丁号，无需为文案调整递增次版本号。
+- 验证范围和未验证项见 [0.9.1 验证记录](docs/validation-0.9.1.md)。新客户端 OAuth、Cursor 原生技能加载和真实业务端到端流程等既有限制仍保留。
+
 ## 0.9.0 — 2026-10-20
 
 - 默认通过 `npx skills add SoaringLabs/plane-for-codex --skill plane-setup plane-start plane-deliver --global` 安装；交互选择 Codex、Claude Code、Cursor 或 OpenCode，也可指定 `--agent`。无需为标准分发方式发布自有 npm 包。

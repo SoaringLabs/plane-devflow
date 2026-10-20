@@ -4,10 +4,10 @@ The default is a shared Agent Skills package for Codex, Claude Code, Cursor and 
 
 ```sh
 npx skills add SoaringLabs/plane-for-codex \
-  --skill plane-setup plane-start plane-deliver --global
+  --skill plane-setup plane-start plane-deliver
 ```
 
-Choose the intended host interactively. For an explicit target, append `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Omit `--global` for the current project. Each host receives the same self-contained workflow; native UI metadata is optional. Pre-release verification used an isolated source snapshot. Public-source and CI status are tracked separately in the [0.9.0 release record](validation-0.9.0.md).
+Run from the target repository root and choose the intended host interactively. For an explicit target, append `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Installation defaults to the current project; optionally add `--global` for user-level reuse across projects. Each host receives the same self-contained workflow; native UI metadata is optional. Pre-release verification used an isolated source snapshot. Public-source and CI status are tracked separately in the [0.9.0 release record](validation-0.9.0.md).
 
 ## Integration guides
 

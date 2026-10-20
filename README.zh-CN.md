@@ -20,17 +20,16 @@
 
 ### 安装
 
-复制这条命令到终端执行：
+在目标代码仓库根目录执行：
 
 ```sh
 npx skills add SoaringLabs/plane-for-codex \
-  --skill plane-setup plane-start plane-deliver \
-  --global
+  --skill plane-setup plane-start plane-deliver
 ```
 
-Skills CLI 从 GitHub 安装三个自包含技能，并让你选择目标 agent。`--global` 安装到用户范围，供不同项目使用，去掉它则只安装到当前项目。需要直接指定时，可加 `--agent codex`、`--agent claude-code`、`--agent cursor` 或 `--agent opencode`。需要 [Node.js 22.20+](https://nodejs.org/)、npm、Git，以及支持本地终端与 MCP 的 agent；运行辅助脚本需要 Python 3.10+，PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)。
+Skills CLI 从 GitHub 将三个自包含技能安装到当前项目，并让你选择目标 agent。如需跨项目使用，可自行添加 `--global`。需要直接指定时，可加 `--agent codex`、`--agent claude-code`、`--agent cursor` 或 `--agent opencode`。需要 [Node.js 22.20+](https://nodejs.org/)、npm、Git，以及支持本地终端与 MCP 的 agent；运行辅助脚本需要 Python 3.10+，PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)。
 
-在**目标代码仓库新开一个 agent 会话**，选择或请求使用 **plane-setup**，按引导连接 Plane 并选择项目。技能安装、MCP 注册、浏览器授权与 GitHub 后台同步分别确认；已有连接和授权会复用。工具缺失时见 [MCP 配置](docs/installation.md#plane-mcp-connection)。
+在**目标代码仓库新开一个 agent 会话**，选择或请求使用 **plane-setup**，按引导连接 Plane 并选择项目。每个仓库通过自己的 `.plane-for-codex.json` 保存 Plane 项目关联；每个仓库首次运行 setup，之后复用该映射。全局安装只改变技能的可用范围。技能安装、MCP 注册、浏览器授权与 GitHub 后台同步分别确认；已有连接和授权会复用。工具缺失时见 [MCP 配置](docs/installation.md#plane-mcp-connection)。
 
 已有完整插件的用户可以继续使用原安装及 `$plane-for-codex:plane-setup` 调用标识，按需再做 [迁移](docs/installation.md#existing-local-marketplace-installations)。选择一种分发方式，避免同时出现重复入口。
 
@@ -69,7 +68,7 @@ Skills CLI 从 GitHub 安装三个自包含技能，并让你选择目标 agent�
 | **Start Plane Task** | 讨论、规划、开始或恢复已有任务 — `plane-start` |
 | **Deliver Plane Task** | 交付 PR、准备试用、记录验收或按授权收尾 — `plane-deliver` |
 
-每个技能自带运行脚本与参考文件，也支持按名称单独安装。完整插件仍兼容，其调用标识继续使用 `$plane-for-codex:` 前缀。
+推荐命令一次安装三个阶段：**关联 → 开发 → 交付**。保留独立入口，方便按当前任务调用对应阶段。每个技能自带运行脚本与参考文件；只需要部分流程时，也可以按名称单独安装。完整插件仍兼容，其调用标识继续使用 `$plane-for-codex:` 前缀。
 
 ## GitHub 同步
 
@@ -92,10 +91,10 @@ Skills CLI 从 GitHub 安装三个自包含技能，并让你选择目标 agent�
 
 ```sh
 npx skills check
-npx skills update plane-setup plane-start plane-deliver --global
+npx skills update plane-setup plane-start plane-deliver --project
 ```
 
-移除用户范围技能使用 `npx skills remove plane-setup plane-start plane-deliver --global` 并选择目标宿主；项目范围安装使用对应项目范围。更新后新开聊天。移除技能会保留 MCP 连接、账号授权、业务映射、已复制的同步文件和任务工作区。插件更新及主动迁移见 [安装说明](docs/installation.md)。
+在同一仓库执行 `npx skills remove plane-setup plane-start plane-deliver` 并选择目标宿主，即可移除项目技能。已有全局安装在更新时将 `--project` 换成 `--global`，移除时添加 `--global`。更新后新开聊天。移除技能会保留 MCP 连接、账号授权、业务映射、已复制的同步文件和任务工作区。插件更新及主动迁移见 [安装说明](docs/installation.md)。
 
 ## 文档
 

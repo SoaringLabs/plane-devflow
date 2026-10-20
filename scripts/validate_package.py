@@ -278,7 +278,7 @@ def validate(root=ROOT, *, payload_only=False):
             text = path.read_text()
             steps = installation_steps(text)
             require(steps == [["npx", "skills", "add", "SoaringLabs/plane-for-codex", "--skill",
-                    "plane-setup", "plane-start", "plane-deliver", "--global"]],
+                    "plane-setup", "plane-start", "plane-deliver"]],
                     f"{path.name}: README Skills CLI installer mismatch")
             for name in SKILLS:
                 require(f"`{name}`" in text, f"{path.name}: missing skill identifier: {name}")

@@ -2,7 +2,11 @@
 
 Public source: [SoaringLabs/plane-for-codex](https://github.com/SoaringLabs/plane-for-codex). This is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.9.0. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.9.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+
+## Version policy
+
+Choose the version for the scope of a reviewed release, rather than for each edit. Documentation, installation guidance, validation adjustments and compatible bug fixes normally increment the patch version (`0.9.0` → `0.9.1`). Group meaningful new capabilities into a minor release; clearly flag incompatible changes and provide migration notes. Small edits can accumulate before a release. Preserve existing configuration and authorization unless a deliberate migration is authorized.
 
 ## Validate and publish source
 
@@ -39,6 +43,8 @@ The root `action.yml` describes the backward-compatible composite Action, so Git
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [v0.9.1 validation](docs/validation-0.9.1.md) records the project-scope installation guidance patch; final public-source, CI and local-update readbacks are linked from its Release.
 
 The [v0.8.0 release-candidate validation](docs/validation-0.8.0.md) joins the skill, README and native-install evidence, keeping their original source versions and limits explicit.
 
