@@ -1,0 +1,12 @@
+interface:
+  display_name: "Start Plane Task"
+  short_description: "Discuss, plan, start or resume an isolated Plane task"
+  default_prompt: "Use $plane-start."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "plane"
+      description: "Plane account and project tools"
+      transport: "streamable_http"
+      url: "https://mcp.plane.so/http/mcp"

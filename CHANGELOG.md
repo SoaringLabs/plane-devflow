@@ -2,6 +2,15 @@
 
 按插件版本记录已实现的变化。验证范围与已知限制见对应的版本验证文档；这里的版本记录不代表已创建 GitHub Release 或版本标签。
 
+## 0.9.0 — 2026-10-20
+
+- 默认通过 `npx skills add SoaringLabs/plane-for-codex --skill plane-setup plane-start plane-deliver --global` 安装；交互选择 Codex、Claude Code、Cursor 或 OpenCode，也可指定 `--agent`。无需为标准分发方式发布自有 npm 包。
+- 三个技能分别包含运行脚本、完整参考文档和其他入口的回退指南，支持用户范围、项目范围和单技能安装；生成器校验资源引用与输出漂移。
+- 新增通用宿主能力检查及四份调用/MCP 指引。区分技能安装、MCP 配置、模型登录、Plane OAuth 和实际工具访问，按宿主使用原生调用方式。
+- 保留完整 Codex 插件、原有限定技能标识、配置格式、任务记录、状态同步和授权边界；本地插件沿用既有来源升级，不自动迁移为独立技能。旧 npm 0.8.1 安装入口继续作为兼容渠道，本次不再次发布 npm。
+- 隔离验证四个 agent 的三技能全局/项目安装、重复安装、运行脚本和移除后的配置保留。Codex、Claude Code、OpenCode 原生识别通过；Cursor 原生技能加载受客户端登录限制，尚未验证。
+- MCP 配置读取通过不代表已授权访问。四个新测试客户端的 Plane OAuth、模型驱动业务流程、真实 PR/状态回写，以及 Cursor GUI 和远程/云端运行均未验证。跨平台 CI 与公开安装的最终状态见 [0.9.0 验证记录](docs/validation-0.9.0.md)，不以文件安装成功替代端到端验证。
+
 ## 0.8.1 — 2026-10-20
 
 - 技能显示名称统一为 `Set Up Plane`、`Start Plane Task`、`Deliver Plane Task`，卡片描述和默认调用提示同步改为英文；保留三个原有技能调用标识和行为。

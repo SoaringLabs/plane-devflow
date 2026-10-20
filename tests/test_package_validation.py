@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import validate_package as package
+import build_skills
 
 
 class PackageValidationTests(unittest.TestCase):
@@ -85,6 +86,7 @@ class PackageValidationTests(unittest.TestCase):
 
     def test_links_inside_fenced_examples_are_not_resources(self):
         self.skill.write_text(self.skill.read_text() + "\n```markdown\n[example](does-not-exist.md)\n```\n")
+        build_skills.generate(self.root)
         package.validate(self.root)
 
     def test_payload_links_cannot_escape_to_repo_files(self):
@@ -126,12 +128,12 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("Marketplace")
 
     def test_readme_install_identity_is_checked(self):
-        self.replace(self.root / "README.md", "npx plane-for-codex@latest", "npx another-package@latest")
-        self.rejects("npm installer mismatch")
+        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-for-codex", "npx skills add another/repository")
+        self.rejects("Skills CLI installer mismatch")
 
     def test_localized_readme_installation_is_checked(self):
-        self.replace(self.root / "README.zh-CN.md", "npx plane-for-codex@latest", "npx another-package@latest")
-        self.rejects("npm installer mismatch")
+        self.replace(self.root / "README.zh-CN.md", "npx skills add SoaringLabs/plane-for-codex", "npx skills add another/repository")
+        self.rejects("Skills CLI installer mismatch")
 
     def test_html_images_and_navigation_are_checked(self):
         hero = self.root / "docs/assets/workflow.svg"
@@ -143,7 +145,7 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("missing anchor")
 
     def test_installation_does_not_continue_after_registration_failure(self):
-        self.replace(self.root / "README.md", "npx plane-for-codex@latest", "npx plane-for-codex@latest ; echo success")
+        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-for-codex", "npx skills add SoaringLabs/plane-for-codex ; echo success")
         self.rejects("stop if a step fails")
 
     def test_cli_failure_is_nonzero_even_with_python_optimization(self):

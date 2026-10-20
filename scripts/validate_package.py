@@ -226,6 +226,33 @@ def validate_payload(plugin):
     return {"skills": len(SKILLS), "markdown_files": len(visited)}
 
 
+def validate_standalone(root):
+    from build_skills import HOSTS, generate
+    directory = root / "skills"
+    require({p.name for p in directory.iterdir() if p.is_dir()} == SKILLS,
+            "Standalone skill inventory mismatch")
+    for name in sorted(SKILLS):
+        skill = directory / name
+        for path in skill.rglob("*"):
+            require(not path.is_symlink(), f"Symlink in standalone payload: {path}")
+        frontmatter(skill / "SKILL.md")
+        ui = load_yaml((skill / "agents/openai.yaml").read_text(), name)
+        require(f"${name}" in ui["interface"]["default_prompt"] and
+                "$plane-for-codex:" not in ui["interface"]["default_prompt"],
+                f"{name}: standalone invocation mismatch")
+        require(ui.get("dependencies", {}).get("tools") == [{"type": "mcp", "value": "plane",
+                "description": "Plane account and project tools", "transport": "streamable_http",
+                "url": "https://mcp.plane.so/http/mcp"}], f"{name}: invalid Plane MCP dependency")
+        resource(skill, "scripts/plane_workflow.py", skill)
+        for host in HOSTS:
+            resource(skill, f"references/hosts/{host}.md", skill)
+        metadata = json.loads((skill / "distribution.json").read_text())
+        require(metadata.get("hosts") == list(HOSTS), f"{name}: host inventory mismatch")
+        check_links([skill / "SKILL.md", *skill.glob("references/**/*.md")], skill)
+    require(not generate(root, check=True), "Standalone distribution drift; run python3 scripts/build_skills.py")
+    return len(SKILLS)
+
+
 def validate(root=ROOT, *, payload_only=False):
     root = Path(root).resolve()
     plugin = root if payload_only else root / "plugins/plane-for-codex"
@@ -250,9 +277,12 @@ def validate(root=ROOT, *, payload_only=False):
         for path in readmes:
             text = path.read_text()
             steps = installation_steps(text)
-            require(steps == [["npx", "plane-for-codex@latest"]], f"{path.name}: README npm installer mismatch")
+            require(steps == [["npx", "skills", "add", "SoaringLabs/plane-for-codex", "--skill",
+                    "plane-setup", "plane-start", "plane-deliver", "--global"]],
+                    f"{path.name}: README Skills CLI installer mismatch")
             for name in SKILLS:
-                require(f"$plane-for-codex:{name}" in text, f"{path.name}: missing skill identifier: {name}")
+                require(f"`{name}`" in text, f"{path.name}: missing skill identifier: {name}")
+        result["standalone_skills"] = validate_standalone(root)
     return result
 
 

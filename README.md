@@ -12,9 +12,9 @@
 <p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
 <p align="center"><strong>From a Plane task to a reviewed pull request.</strong><br>Independent workspaces. Connected context. A clear handoff.</p>
 <p align="center"><a href="#quick-start">Quick start</a> · <a href="#features">Features</a> · <a href="#skills">Skills</a> · <a href="#documentation">Docs</a> · <a href="CHANGELOG.md">Changelog</a></p>
-<p align="center"><img src="docs/assets/workflow.svg" alt="Workflow illustration: Plane task → isolated Codex workspace → linked GitHub pull request. DEMO-123 is an example." width="100%"></p>
+<p align="center"><img src="docs/assets/workflow.svg" alt="Workflow illustration: Plane task → isolated agent workspace → linked GitHub pull request. DEMO-123 is an example." width="100%"></p>
 
-An open-source community plugin that connects **Plane tasks, Codex development and GitHub PRs**. Start with the task's requirements, work in its own directory, and deliver a linked PR with verification and acceptance records. No additional service to deploy.
+Open-source Agent Skills connecting **Plane tasks, agent development and GitHub PRs**, with integration guides for **Codex, Claude Code, Cursor and OpenCode**. Start with the task's requirements, work in its own directory, and deliver a linked PR with verification and acceptance records. No additional service to deploy.
 
 ## Quick start
 
@@ -23,22 +23,26 @@ An open-source community plugin that connects **Plane tasks, Codex development a
 Run this command in your terminal:
 
 ```sh
-npx plane-for-codex@latest
+npx skills add SoaringLabs/plane-for-codex \
+  --skill plane-setup plane-start plane-deliver \
+  --global
 ```
 
-The installer includes the complete plugin, saves it to a persistent local source, then installs and verifies all three skills through Codex. Existing marketplace registrations and account authorization are retained. Requires [Node.js 20+](https://nodejs.org/), npm and a plugin-enabled Codex CLI (verified with 0.163.0); runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
+Skills CLI installs three self-contained skills from GitHub and lets you choose the target agent. `--global` makes them available across projects; omit it for the current project only. To target one host directly, add `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Requires [Node.js 22.20+](https://nodejs.org/), npm, Git and an agent with local terminal and MCP support; runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
 
-Open a **new Codex chat in your target repository**, select **Set Up Plane**, and follow setup to choose a project and authorize Plane in your browser when needed. Account authorization and GitHub background-sync configuration are separate steps. Existing local-marketplace installs should follow the [migration guide](docs/installation.md#existing-local-marketplace-installations).
+Open a **new agent session in your target repository**, select or request **plane-setup**, and follow setup to connect Plane and choose a project. Skills installation, MCP registration, browser authorization and GitHub background synchronization are separate steps. Existing connections and authorization are reused. See [MCP setup](docs/installation.md#plane-mcp-connection) if Plane tools are missing.
+
+Already using the complete plugin? Keep that installation and its `$plane-for-codex:plane-setup` identifiers until you choose a [migration](docs/installation.md#existing-local-marketplace-installations). Install one distribution at a time to avoid duplicate entries.
 
 ### Start your first task
 
 `PROJECT-123` below is an example; replace it with an existing task ID.
 
-| Step | In Codex | Expected result |
+| Step | Ask your agent | Expected result |
 | --- | --- | --- |
-| Connect | Select **Set Up Plane** | Project association and verified sync, or the precise remaining setup step |
-| Develop | `$plane-for-codex:plane-start Start PROJECT-123` | The task's own working directory, branch, requirements and acceptance scope |
-| Deliver | `$plane-for-codex:plane-deliver Deliver PROJECT-123; keep the PR open` | A linked PR, actual check results and outstanding acceptance items |
+| Connect | Use **plane-setup** | Project association and verified sync, or the precise remaining setup step |
+| Develop | “Use plane-start to start PROJECT-123” | The task's own working directory, branch, requirements and acceptance scope |
+| Deliver | “Use plane-deliver to deliver PROJECT-123; keep the PR open” | A linked PR, actual check results and outstanding acceptance items |
 
 Setup's `.plane-for-codex.json` must reach the configured base branch before independent task branches are created. You can also ask to read a task and discuss it without saving files. Delivery, acceptance and merge follow the requested scope; existing authorization is reused.
 
@@ -49,23 +53,23 @@ Setup's `.plane-for-codex.json` must reach the configured base branch before ind
 | **Independent task workspaces** | A separate directory and branch for each task, preserving the primary checkout and other tasks' edits |
 | **Resume the right version** | Recover the task's recorded directory and context when continuing in another chat |
 | **Linked PR delivery** | Keep one primary PR tied to the task, with implementation and verification reports in Plane |
-| **Test when you're ready** | Ask Codex to prepare the task version for manual testing, with a usable entry point and test steps |
+| **Test when you're ready** | Ask your agent to prepare the task version for manual testing, with a usable entry point and test steps |
 | **Background GitHub sync** | Record PR events through GitHub Actions or an existing official Plane integration |
 | **Clear acceptance and completion** | Keep runtime readiness, human acceptance and merge authorization separate |
 
-To try a delivered result, say: “Run PROJECT-123 from its task workspace so I can test it.” Codex follows the project's own run/build instructions, checks the source version and hands over the entry point. PR delivery alone does not start an environment. See [acceptance handoff](plugins/plane-for-codex/references/acceptance-environment.md).
+To try a delivered result, say: “Run PROJECT-123 from its task workspace so I can test it.” The agent follows the project's own run/build instructions, checks the source version and hands over the entry point. PR delivery alone does not start an environment. See [acceptance handoff](skills/plane-deliver/references/acceptance-environment.md).
 
 ## Skills
 
-Search **Plane** in Codex's skill picker. Select an entry below or invoke it using its full identifier.
+Use the host's skill picker or request a workflow below. Codex uses `$plane-setup`; Claude Code uses `/plane-setup`; OpenCode loads the named skill through its native tool. See [host guides and verification status](docs/agent-compatibility.md) for syntax, MCP setup and tested limits.
 
 | Skill | Use when |
 | --- | --- |
-| **Set Up Plane** | Associate a project, inspect/reconfigure the mapping, or resume sync setup — `$plane-for-codex:plane-setup` |
-| **Start Plane Task** | Discuss, plan, start or resume an existing task — `$plane-for-codex:plane-start` |
-| **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `$plane-for-codex:plane-deliver` |
+| **Set Up Plane** | Associate a project, inspect/reconfigure the mapping, or resume sync setup — `plane-setup` |
+| **Start Plane Task** | Discuss, plan, start or resume an existing task — `plane-start` |
+| **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `plane-deliver` |
 
-These are skills, not a separate `/plane` command or settings page. Install the complete plugin; standalone copies of individual skill folders are not a supported installation.
+Each skill bundles its own runtime and references, so selected skills can also be installed individually. The complete plugin remains a supported alternative; its skill identifiers retain the `$plane-for-codex:` prefix.
 
 ## GitHub synchronization
 
@@ -76,7 +80,7 @@ These are skills, not a separate `/plane` command or settings page. Install the 
 
 Project association uses browser authorization, without a PAT. For Actions, enter the PAT directly through GitHub Secrets or a human-operated hidden terminal prompt. Keep it out of chat.
 
-Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are reported separately.** New basic mappings record PR activity without changing task states; legacy mappings retain their existing rules. Native transitions belong to the official integration. See [setup and sync](plugins/plane-for-codex/references/setup.md).
+Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are reported separately.** New basic mappings record PR activity without changing task states; legacy mappings retain their existing rules. Native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
 
 ## Scope
 
@@ -84,23 +88,23 @@ Currently supports existing tasks, one primary PR per task, Plane Cloud and gith
 
 ## Update or remove
 
-Run the same installer again to update, or add `--check` to verify without reinstalling:
+Rerun the installation command to refresh these three skills. For GitHub-tracked installations, Skills CLI also provides update checks:
 
 ```sh
-npx plane-for-codex@latest --check
+npx skills check
+npx skills update plane-setup plane-start plane-deliver --global
 ```
 
-Npm-managed installs use the version bundled with the installer. Existing Git sources refresh their configured ref; existing development checkouts keep their local files and update through your usual Git workflow.
-
-Then open a new chat. For removal, run `codex plugin remove plane-for-codex@plane-for-codex`. Plugin updates/removal do not update or delete business-repository mappings, copied workflows/scripts, task workspaces or external account configuration. See [installation and migration](docs/installation.md) before changing an existing local source.
+Use `npx skills remove plane-setup plane-start plane-deliver --global` and select the intended host to remove the global skills. Project installs use the corresponding project scope. Open a new chat after updates. Removal keeps MCP connections, account authorization, business mappings, copied workflows and task workspaces. The [installation guide](docs/installation.md) covers plugin updates and deliberate migration.
 
 ## Documentation
 
 | Topic | Read more |
 | --- | --- |
+| Agent compatibility | [Codex, Claude Code, Cursor and OpenCode](docs/agent-compatibility.md) |
 | Installation and updates | [Install, update, migrate and remove](docs/installation.md) |
-| Setup and recovery | [Project association & sync](plugins/plane-for-codex/references/setup.md) · [Resume setup](plugins/plane-for-codex/references/recovery.md) |
-| Development and handoff | [Task execution](plugins/plane-for-codex/references/task-execution.md) · [Parallel tasks](plugins/plane-for-codex/references/parallel-tasks.md) · [Acceptance environments](plugins/plane-for-codex/references/acceptance-environment.md) |
+| Setup and recovery | [Project association & sync](skills/plane-setup/references/setup.md) · [Resume setup](skills/plane-setup/references/recovery.md) |
+| Development and handoff | [Task execution](skills/plane-start/references/task-execution.md) · [Parallel tasks](skills/plane-start/references/parallel-tasks.md) · [Acceptance environments](skills/plane-deliver/references/acceptance-environment.md) |
 | Configuration | [Basic mapping](examples/plane-for-codex.basic.json) · [Legacy mapping](examples/plane-for-codex.example.json) |
 | Contributing and releases | [Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Publishing](PUBLISHING.md) · [Changelog](CHANGELOG.md) |
 

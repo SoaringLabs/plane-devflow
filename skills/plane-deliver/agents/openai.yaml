@@ -1,0 +1,12 @@
+interface:
+  display_name: "Deliver Plane Task"
+  short_description: "Deliver PRs, prepare testing and finalize accepted work"
+  default_prompt: "Use $plane-deliver."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "plane"
+      description: "Plane account and project tools"
+      transport: "streamable_http"
+      url: "https://mcp.plane.so/http/mcp"

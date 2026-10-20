@@ -4,6 +4,8 @@ Keep changes scoped to the problem and preserve existing features, authorization
 
 ## Where changes belong
 
+- `skills/`: generated, self-contained Skills CLI distribution; regenerate and commit it after canonical-source changes. Do not edit generated files by hand.
+- `scripts/build_skills.py` and `scripts/standalone-resources/`: generation and standalone-only MCP guidance.
 - `plugins/plane-for-codex/skills/`: the three public agent entrypoints and their Codex UI metadata. Keep purpose, routing and essential boundaries in SKILL.md; link conditional procedures when the requested mode needs them.
 - `plugins/plane-for-codex/references/`: canonical workflows, contracts and recovery. Keep each detailed rule in one place rather than copying it into every entrypoint.
 - `plugins/plane-for-codex/scripts/`: standard-library runtime helpers. Preserve read/plan versus apply behavior, structured output, idempotency and protection of unrelated work.
@@ -12,15 +14,16 @@ Keep changes scoped to the problem and preserve existing features, authorization
 - `evals/`: prompts, fixtures, decision rubrics and the opt-in model evaluation runner. Raw transcripts stay outside tracked files.
 - `README.md` / `README.zh-CN.md`: matching English and Chinese public entrypoints, installation and first successful use. Contributor/release detail belongs here or in PUBLISHING.
 
-Do not add skill directories or metadata only to match a template. The public inventory is deliberately three skills; an intentional inventory change must update the package contract and its tests. The complete plugin shares scripts/references; standalone installation of individual skill folders is not claimed.
+Do not add skill directories or metadata only to match a template. The public inventory is deliberately three skills; an intentional inventory change must update the package contract and its tests. The plugin keeps shared scripts/references. Generated standalone skills each contain their runtime, references and fallback workflow guides; CI checks that these copies match canonical sources.
 
 ## Local checks
 
-Use Node.js 20+, Python 3.10+ and a development virtual environment:
+Use Node.js 22.20+ for Skills CLI checks (the compatibility installer still supports Node.js 20+), Python 3.10+ and a development virtual environment:
 
 ```sh
 npm ci
 npm test
+python3 scripts/build_skills.py --check
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt
 .venv/bin/python -m unittest discover -s tests -v
@@ -30,7 +33,7 @@ python3 -m venv .venv
 git diff --check
 ```
 
-PyYAML is a development-only dependency for real YAML parsing. Shipped plugin helpers still use only the standard library. CI runs offline checks on Python 3.10 and 3.14 and installer checks on Node.js 20/24 across macOS, Linux and Windows. `npm run test:integration` packs the real npm tarball and calls the installed Codex CLI from fresh temporary state; it requires Codex but no login or model session. Model evals are opt-in and do not run automatically on forks/CI credentials.
+PyYAML is a development-only dependency for real YAML parsing. Shipped plugin helpers still use only the standard library. `npm run test:skills` executes actual Skills CLI installation and native discovery in isolated user/state directories; its network MCP probe is opt-in. `npm run test:agents` checks isolated installations for Codex, Claude Code, Cursor and OpenCode; optional PLANE_CLAUDE_BIN, PLANE_CURSOR_BIN and PLANE_OPENCODE_BIN paths enable their real native inspectors. A missing runtime or login is unverified, not a passed model session. CI runs offline checks on Python 3.10 and 3.14 and installer checks on Node.js 20/24 across macOS, Linux and Windows. `npm run test:integration` packs the real npm tarball and calls the installed Codex CLI from fresh temporary state; it requires Codex but no login or model session. Model evals are opt-in and do not run automatically on forks/CI credentials.
 
 Package validation checks frontmatter types/limits, UI fields, explicit public inventory, versions/resources, reachable inline Markdown/HTML links, images and anchors, and repository installation identity. It rejects symlinks and plugin references escaping the payload. It is not a complete Markdown parser, remote URL checker, security scanner or agent-behavior proof. Extracted-payload tests exercise helper import/CLI startup without the source checkout.
 

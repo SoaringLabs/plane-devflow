@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1440" height="740" viewBox="0 0 1440 740" fill="none" role="img" aria-labelledby="title description">
   <title id="title">Plane for Codex — from task to pull request</title>
-  <desc id="description">Workflow illustration: a Plane task provides requirements, Codex works in an isolated task workspace, and GitHub receives a linked pull request for review and authorized merge. DEMO-123 is an example task.</desc>
+  <desc id="description">Workflow illustration: a Plane task provides requirements, the agent works in an isolated task workspace, and GitHub receives a linked pull request for review and authorized merge. DEMO-123 is an example task.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1440" y2="740" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F1FF"/><stop offset=".52" stop-color="#EFF4FF"/><stop offset="1" stop-color="#EAE4FF"/></linearGradient>
     <linearGradient id="accent" x1="550" y1="240" x2="900" y2="590" gradientUnits="userSpaceOnUse"><stop stop-color="#7362F4"/><stop offset="1" stop-color="#4237BD"/></linearGradient>
@@ -29,7 +29,7 @@
     <g stroke="#9074D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m100 444 5 5 10-11m-15 50 5 5 10-11m-15 50 5 5 10-11"/></g>
     <rect x="540" y="278" width="46" height="46" rx="13" fill="url(#accent)"/>
     <path d="m551 292 8 9-8 9m14 0h11" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="600" y="309" fill="#F7F3FF" font-size="25" font-weight="700">Codex</text>
+    <text x="600" y="309" fill="#F7F3FF" font-size="25" font-weight="700">Agent</text>
     <text x="540" y="370" fill="#F7F3FF" font-size="27" font-weight="700">One task. One workspace.</text>
     <rect x="540" y="395" width="360" height="145" rx="12" fill="#181426" stroke="#3D3455"/>
     <g font-family="SFMono-Regular,Consolas,Liberation Mono,monospace" font-size="19"><text x="561" y="431" fill="#B9A4FF">codex/demo-123</text><text x="561" y="464" fill="#C3B9D5">├─ src/</text><text x="561" y="492" fill="#C3B9D5">├─ tests/</text><text x="561" y="520" fill="#C3B9D5">└─ verification notes</text></g>
@@ -42,7 +42,7 @@
     <rect x="1044" y="534" width="298" height="38" rx="10" fill="#F3EFFB"/>
     <text x="1061" y="559" fill="#76618E" font-size="17">Merge when authorized</text>
     <path d="M72 646H1368" stroke="#DAD2EB"/>
-    <text x="72" y="688" fill="#6D627F" font-size="19">A community plugin connecting Plane, Codex and GitHub.</text>
+    <text x="72" y="688" fill="#6D627F" font-size="19">Agent Skills connecting Plane, your agent and GitHub.</text>
     <text x="1368" y="688" fill="#8D81A5" font-size="16" text-anchor="end">Isolated work · Linked delivery · Clear acceptance</text>
   </g>
 </svg>

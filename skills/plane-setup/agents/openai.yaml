@@ -1,0 +1,12 @@
+interface:
+  display_name: "Set Up Plane"
+  short_description: "Connect a Plane project and configure or resume GitHub sync"
+  default_prompt: "Use $plane-setup."
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "plane"
+      description: "Plane account and project tools"
+      transport: "streamable_http"
+      url: "https://mcp.plane.so/http/mcp"

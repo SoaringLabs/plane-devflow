@@ -1,0 +1,11 @@
+{
+  "generator": "plane-for-codex/build_skills.py",
+  "skill": "plane-deliver",
+  "version": "0.9.0",
+  "hosts": [
+    "codex",
+    "claude-code",
+    "cursor",
+    "opencode"
+  ]
+}
