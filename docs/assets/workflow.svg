@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="740" viewBox="0 0 1440 740" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">Plane for Codex — from task to pull request</title>
+  <desc id="description">Workflow illustration: a Plane task provides requirements, Codex works in an isolated task workspace, and GitHub receives a linked pull request for review and authorized merge. DEMO-123 is an example task.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1440" y2="740" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F1FF"/><stop offset=".52" stop-color="#EFF4FF"/><stop offset="1" stop-color="#EAE4FF"/></linearGradient>
+    <linearGradient id="accent" x1="550" y1="240" x2="900" y2="590" gradientUnits="userSpaceOnUse"><stop stop-color="#7362F4"/><stop offset="1" stop-color="#4237BD"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#25204F" flood-opacity=".09"/></filter>
+    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" stroke="#8C7DCB" stroke-opacity=".06"/></pattern>
+  </defs>
+  <rect width="1440" height="740" rx="28" fill="url(#bg)"/>
+  <rect width="1440" height="740" rx="28" fill="url(#grid)"/>
+  <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif">
+    <rect x="72" y="58" width="228" height="32" rx="16" fill="#E5DFFF"/>
+    <text x="90" y="80" fill="#5A47AE" font-size="14" font-weight="700" letter-spacing="1.4">WORKFLOW OVERVIEW</text>
+    <text x="72" y="152" fill="#211A3C" font-size="48" font-weight="750" letter-spacing="-1.7">From a Plane task to a reviewed pull request.</text>
+    <text x="72" y="192" fill="#69627D" font-size="23">Keep the context. Give each task its own space. Make the handoff clear.</text>
+    <g filter="url(#shadow)">
+      <rect x="72" y="250" width="350" height="350" rx="20" fill="white" stroke="#E2DDEE"/>
+      <rect x="514" y="250" width="412" height="350" rx="20" fill="#211C37"/>
+      <rect x="1018" y="250" width="350" height="350" rx="20" fill="white" stroke="#E2DDEE"/>
+    </g>
+    <path d="M446 425H488m-10-10 10 10-10 10M950 425h42m-10-10 10 10-10 10" stroke="#998AC7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="98" y="278" width="46" height="46" rx="13" fill="#EEE9FF"/>
+    <path d="m111 298 20-8-7 21-4-9-9-4Zm9 4 11-12" stroke="#6D54CD" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="158" y="309" fill="#29223C" font-size="25" font-weight="700">Plane</text>
+    <text x="98" y="366" fill="#8D829F" font-size="15" font-weight="600" letter-spacing="1.1">EXAMPLE TASK · DEMO-123</text>
+    <text x="98" y="402" fill="#29223C" font-size="28" font-weight="700">A focused change</text>
+    <g fill="#726980" font-size="20"><text x="130" y="451">Requirements</text><text x="130" y="490">Acceptance criteria</text><text x="130" y="529">Project context</text></g>
+    <g stroke="#9074D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m100 444 5 5 10-11m-15 50 5 5 10-11m-15 50 5 5 10-11"/></g>
+    <rect x="540" y="278" width="46" height="46" rx="13" fill="url(#accent)"/>
+    <path d="m551 292 8 9-8 9m14 0h11" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="600" y="309" fill="#F7F3FF" font-size="25" font-weight="700">Codex</text>
+    <text x="540" y="370" fill="#F7F3FF" font-size="27" font-weight="700">One task. One workspace.</text>
+    <rect x="540" y="395" width="360" height="145" rx="12" fill="#181426" stroke="#3D3455"/>
+    <g font-family="SFMono-Regular,Consolas,Liberation Mono,monospace" font-size="19"><text x="561" y="431" fill="#B9A4FF">codex/demo-123</text><text x="561" y="464" fill="#C3B9D5">├─ src/</text><text x="561" y="492" fill="#C3B9D5">├─ tests/</text><text x="561" y="520" fill="#C3B9D5">└─ verification notes</text></g>
+    <circle cx="548" cy="569" r="4" fill="#B5A2EC"/><text x="561" y="576" fill="#B8ABCE" font-size="17">Build and verify in the task workspace</text>
+    <rect x="1044" y="278" width="46" height="46" rx="13" fill="#F1EDF8"/>
+    <g stroke="#6F5E8E" stroke-width="2.2" stroke-linecap="round"><circle cx="1057" cy="290" r="3"/><circle cx="1057" cy="311" r="3"/><circle cx="1077" cy="311" r="3"/><path d="M1057 293v15m20 0v-9a9 9 0 0 0-9-9h-3"/></g>
+    <text x="1104" y="309" fill="#29223C" font-size="25" font-weight="700">GitHub</text>
+    <text x="1044" y="370" fill="#29223C" font-size="27" font-weight="700">A linked pull request</text>
+    <g fill="#726980" font-size="20"><text x="1044" y="422">Changes + verification</text><text x="1044" y="461">Plane delivery report</text><text x="1044" y="500">Human acceptance</text></g>
+    <rect x="1044" y="534" width="298" height="38" rx="10" fill="#F3EFFB"/>
+    <text x="1061" y="559" fill="#76618E" font-size="17">Merge when authorized</text>
+    <path d="M72 646H1368" stroke="#DAD2EB"/>
+    <text x="72" y="688" fill="#6D627F" font-size="19">A community plugin connecting Plane, Codex and GitHub.</text>
+    <text x="1368" y="688" fill="#8D81A5" font-size="16" text-anchor="end">Isolated work · Linked delivery · Clear acceptance</text>
+  </g>
+</svg>

@@ -2,14 +2,14 @@
 
 Public source: [SoaringLabs/plane-for-codex](https://github.com/SoaringLabs/plane-for-codex). This is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.7.0. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.8.0. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Validate and publish source
 
-1. Run `python3 -m unittest discover -s tests -v` and `python3 scripts/validate_package.py`.
-2. Run the offline demo and inspect its outputs. Live MCP and Actions checks are separate from offline tests.
+1. Install `requirements-dev.txt` in a development virtual environment, then run `python3 -m unittest discover -s tests -v` and `python3 scripts/validate_package.py`.
+2. Validate the behavior cases with `python3 evals/run.py --validate-only`; run affected fresh-session decision evals as described in [evals/README.md](evals/README.md), recording model/configuration, source digest and limits separately from live integration evidence. Run the offline demo and inspect its outputs. Live MCP and Actions checks are separate from offline tests.
 3. Review the exact publication file list and the reachable history of the branch being pushed. Remove private workspace/repository identities, real object IDs, private Actions run links and personal filesystem paths from public documents. Keep historical test totals, failures and limitations, and identify private evidence as unpublished. Exclude `.plane-for-codex.local/`, credentials, response snapshots, demo output and plugin caches; local Codex snapshot refs are not publication refs.
-4. Commit the reviewed source and push only the intended branch (normally `main`) to this repository. Do not use `--mirror` or publish local snapshot refs. Repository creation, push and optional release tagging require an explicit publication request; installation testing does not publish automatically. The README includes clone and local-marketplace installation instructions.
+4. Commit the reviewed source and push only the intended branch (normally `main`) to this repository. Do not use `--mirror` or publish local snapshot refs. Repository creation, push and optional release tagging require an explicit publication request; installation testing does not publish automatically. The README uses native Git-marketplace installation; contributor clone/local-marketplace and migration instructions live in docs/installation.md.
 5. Actions setup vendors two sync scripts and a workflow into each business repository; publishing this source is not needed for runtime. The official checkout dependency uses a verified full SHA. Existing users of the composite Action pin this repository's actual published commit SHA. Updating either copied scripts or a pin is a reviewed repository change; plugin installation cannot update other repositories' workflows automatically.
 
 When changing a release, update `plugin.json` version and `plane_sync.VERSION` together, test compatibility, and reinstall the plugin to refresh its cached package. Keep the marketplace name stable. Onboarding should remain conversational and require only necessary account consent and project selection.
@@ -25,6 +25,12 @@ The root `action.yml` describes the backward-compatible composite Action, so Git
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [v0.8.0 release-candidate validation](docs/validation-0.8.0.md) joins the skill, README and native-install evidence, keeping their original source versions and limits explicit.
+
+The [README validation](docs/validation-readme.md) records bilingual presentation, native installation command checks, HTML resources and local visual previews.
+
+The [skill-quality validation](docs/validation-skill-quality.md) records package checks, synthetic decision evaluations and their limits separately from live integration evidence.
 
 The [v0.7.0 validation](docs/validation-0.7.0.md) covers isolated parallel tasks, task PR routing and base-conflict resolution. The [v0.6.1 validation](docs/validation-0.6.1.md) covers first-write task ownership, discussion/document intent and local installation. The [v0.6.0 validation](docs/validation-0.6.0.md) covers checkout guards, completion handoff and local installation. The [v0.5.0 validation](docs/validation-0.5.0.md) covers task receipts and evidence gates. Version validation notes are historical records. The [v0.4.2 validation](docs/validation-0.4.2.md) includes the pre-publication rerun. The [live capability summary](docs/plane-github-capability-verification.md) is redacted; its raw private logs are not publicly accessible. An offline pass does not certify every host UI, self-hosted deployment, native integration or real PR writeback.
 

@@ -1,0 +1,33 @@
+{
+  "phase": "Pre-release installation test before the 0.8.0 version bump; historical source/version and publication status.",
+  "date": "2026-10-20",
+  "codex_cli": "0.163.0",
+  "python": "3.14.3",
+  "public_source_commit": "3e1245b28e5563e7de03421f1bfd25328267f528",
+  "public_payload_files": 26,
+  "candidate_payload_files": 28,
+  "all_payload_sha256_match": true,
+  "plugin_id": "plane-for-codex@plane-for-codex",
+  "version": "0.7.0",
+  "skills": [
+    "plane-for-codex:plane-setup",
+    "plane-for-codex:plane-start",
+    "plane-for-codex:plane-deliver"
+  ],
+  "all_skills_enabled": true,
+  "native_skill_load_errors": [],
+  "before_install_plane_skills": 0,
+  "protected_configuration_path_count": 59,
+  "protected_configuration_unchanged": true,
+  "sandbox_write_probe": "denied: Operation not permitted",
+  "shared_daemon": false,
+  "credentials_copied": false,
+  "oauth_performed": false,
+  "plane_writeback_performed": false,
+  "published": false,
+  "post_checks": {
+    "package_validation": "passed: 3 skills, 13 payload Markdown files, 32 repository Markdown files",
+    "package_regression_tests": 18,
+    "diff_check": "passed"
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "date": "2026-10-20",
+  "base_commit": "3e1245b28e5563e7de03421f1bfd25328267f528",
+  "cli_version": "0.163.0",
+  "model": "CLI default; not pinned or identified in event output",
+  "scope": "Synthetic decision-only fresh-session runs; no live tools or native discovery",
+  "initial_repetitions": 1,
+  "followup_repetitions": 3,
+  "runs": [
+    {
+      "kind": "decision_only",
+      "expected": 24,
+      "scored": 24,
+      "passed": 23,
+      "critical_failures": 0,
+      "payload_sha256": "55ed33336702bcbb3ca5b8ca3976d8b14fb2372b60439db0eef3442685efa21c",
+      "rubric_sha256": "5a8b2e651cded8cc443426e46a2b0cc6cd5e34486a27891728aa87c5813f1a78",
+      "run": "baseline-original",
+      "coverage": "all 24 cases once",
+      "failed_cases": [
+        {
+          "case_id": "START-05",
+          "repeat": 1,
+          "passed": false,
+          "route_pass": true,
+          "missing_decisions": [
+            "discuss_only"
+          ],
+          "missing_alternative_groups": [],
+          "forbidden_decisions": []
+        }
+      ]
+    },
+    {
+      "kind": "decision_only",
+      "expected": 24,
+      "scored": 24,
+      "passed": 24,
+      "critical_failures": 0,
+      "payload_sha256": "55ed33336702bcbb3ca5b8ca3976d8b14fb2372b60439db0eef3442685efa21c",
+      "rubric_sha256": "3017d63043d0a6534c60116fd21031077e00ed9eb58952987e37674705b662f8",
+      "run": "baseline-final-rubric",
+      "coverage": "all 24 cases once",
+      "failed_cases": []
+    },
+    {
+      "kind": "decision_only",
+      "expected": 24,
+      "scored": 24,
+      "passed": 22,
+      "critical_failures": 0,
+      "payload_sha256": "d9ad88005ec25ab83c0e9e3ef171bd88d0973addf1b6385f343965d951aeb43e",
+      "rubric_sha256": "7b6a61aec0fe0553a8a4e91c31d2811e0928f5f15b809e2faa105f3146eb86a0",
+      "run": "candidate-original",
+      "coverage": "all 24 cases once",
+      "failed_cases": [
+        {
+          "case_id": "DELIVER-02",
+          "repeat": 1,
+          "passed": false,
+          "route_pass": true,
+          "missing_decisions": [
+            "handoff_runtime"
+          ],
+          "missing_alternative_groups": [],
+          "forbidden_decisions": []
+        },
+        {
+          "case_id": "SETUP-01",
+          "repeat": 1,
+          "passed": false,
+          "route_pass": true,
+          "missing_decisions": [
+            "inspect_auth"
+          ],
+          "missing_alternative_groups": [],
+          "forbidden_decisions": []
+        }
+      ]
+    },
+    {
+      "kind": "decision_only",
+      "expected": 24,
+      "scored": 24,
+      "passed": 24,
+      "critical_failures": 0,
+      "payload_sha256": "d9ad88005ec25ab83c0e9e3ef171bd88d0973addf1b6385f343965d951aeb43e",
+      "rubric_sha256": "3017d63043d0a6534c60116fd21031077e00ed9eb58952987e37674705b662f8",
+      "run": "candidate-final-rubric",
+      "coverage": "all 24 cases once",
+      "failed_cases": []
+    },
+    {
+      "kind": "decision_only",
+      "expected": 12,
+      "scored": 12,
+      "passed": 12,
+      "critical_failures": 0,
+      "payload_sha256": "ade1c813b4cc7458a467cfe3dd28b949cd5e8ad7b578d07edcf7bf25403cdddf",
+      "rubric_sha256": "3017d63043d0a6534c60116fd21031077e00ed9eb58952987e37674705b662f8",
+      "run": "finalization-followup",
+      "coverage": "DELIVER-03/04/05/08, three fresh sessions each",
+      "failed_cases": []
+    }
+  ],
+  "rubric_corrections": {
+    "START-05": "Asking for missing identity suffices when fixture provides no independent task material.",
+    "SETUP-01": "Fixture already provides valid authentication; no redundant inspect_auth decision is required.",
+    "DELIVER-02": "report_handoff and handoff_runtime are accepted alternative labels; rationale was manually checked for entry, steps and retention."
+  },
+  "trace_review": "All completed command_execution events were local cat/sed document reads; relevant entrypoints read for routed cases. No live service/helper commands observed.",
+  "unverified": [
+    "Native skill discovery or install/update/uninstall",
+    "Real MCP/tool execution and remote writeback",
+    "A pinned model or statistical reliability across repetitions/models"
+  ],
+  "final_payload_change": "After candidate suite, only a workflow writeback pointer was added to finalization.md; affected finalization cases were rerun three times each. Other candidate cases assessed unchanged by this pointer."
+}

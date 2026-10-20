@@ -1,98 +1,116 @@
-# Plane for Codex
+<p align="center">
+  <img src="plugins/plane-for-codex/assets/icon.png" alt="Plane for Codex logo" width="88" height="88">
+</p>
+<h1 align="center">Plane for Codex</h1>
+<p align="center">
+  <a href="https://github.com/SoaringLabs/plane-for-codex/releases"><img src="https://img.shields.io/github/v/release/SoaringLabs/plane-for-codex?color=7661d8" alt="Latest release"></a>
+  <a href="https://github.com/SoaringLabs/plane-for-codex/stargazers"><img src="https://img.shields.io/github/stars/SoaringLabs/plane-for-codex?style=flat&amp;color=7661d8" alt="GitHub stars"></a>
+  <a href="https://github.com/SoaringLabs/plane-for-codex/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/SoaringLabs/plane-for-codex/validate.yml?branch=main&amp;label=checks" alt="Main branch checks"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10 or newer"></a>
+</p>
+<p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
+<p align="center"><strong>From a Plane task to a reviewed pull request.</strong><br>Independent workspaces. Connected context. A clear handoff.</p>
+<p align="center"><a href="#quick-start">Quick start</a> · <a href="#features">Features</a> · <a href="#skills">Skills</a> · <a href="#documentation">Docs</a> · <a href="CHANGELOG.md">Changelog</a></p>
+<p align="center"><img src="docs/assets/workflow.svg" alt="Workflow illustration: Plane task → isolated Codex workspace → linked GitHub pull request. DEMO-123 is an example." width="100%"></p>
 
-把 Plane 任务、Codex 开发和 GitHub PR 串成一条工作流的社区开源插件。
+An open-source community plugin that connects **Plane tasks, Codex development and GitHub PRs**. Start with the task's requirements, work in its own directory, and deliver a linked PR with verification and acceptance records. No additional service to deploy.
 
-**关联项目 → 独立工作区开发与验证 → 交付 PR → 按需准备验收环境 → 人工验收与收尾**
+## Quick start
 
-- 在 Codex 中选择或创建 Plane 项目，关联当前代码仓库。
-- 为不同任务准备独立工作目录和分支，让多个聊天可以同时开发。
-- 创建或更新关联任务的 PR，将交付记录回写 Plane。
-- 通过 GitHub Actions 或已配置的 Plane 官方 GitHub 集成同步 PR 进展。
+### Install
 
-无需部署额外服务。Python 脚本只使用标准库。
-
-## 安装
-
-需要支持插件的 Codex、Git、Python 3.10+；PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)（`gh auth login`）。
+Run this command in your terminal:
 
 ```sh
-git clone https://github.com/SoaringLabs/plane-for-codex.git
-cd plane-for-codex
-codex plugin marketplace add /absolute/path/to/plane-for-codex --json
-codex plugin add plane-for-codex@plane-for-codex --json
-codex mcp login plane
+codex plugin marketplace add SoaringLabs/plane-for-codex && \
+  codex plugin add plane-for-codex@plane-for-codex
 ```
 
-将 `/absolute/path/to/plane-for-codex` 替换为克隆目录的**绝对路径**，随后在浏览器完成 Plane 授权。已有同名 `plane` MCP 连接时，先检查是否冲突。
+Codex fetches the repository and installs the complete plugin. No manual clone, local path or npm bootstrap is needed. Requires a plugin-enabled Codex CLI, Git and Python 3.10+; PR operations also need an authenticated [GitHub CLI](https://cli.github.com/).
 
-安装或更新后，在目标代码仓库新开一个 Codex 聊天加载插件。更新时重新执行上面的 `codex plugin add` 命令即可。
+Open a **new Codex chat in your target repository**, select **Plane: 初始化**, and follow setup to choose a project and authorize Plane in your browser when needed. Account authorization and GitHub background-sync configuration are separate steps. Existing local-marketplace installs should follow the [migration guide](docs/installation.md#existing-local-marketplace-installations).
 
-## 开始使用
+### Start your first task
 
-在 Codex 的技能选择菜单中搜索 **Plane**，选择对应入口并发送。菜单打开方式随客户端而异；支持 `/` 技能菜单的版本可输入 `/` 搜索。
+`PROJECT-123` below is an example; replace it with an existing task ID.
 
-| 入口 | 什么时候用 | 会做什么 |
+| Step | In Codex | Expected result |
 | --- | --- | --- |
-| **Plane: 初始化** | 首次使用，或检查、调整已有配置 | 引导选择项目、关联仓库并配置 GitHub 同步 |
-| **Plane: 开始任务** | 准备处理一个已有任务 | 读取需求，准备独立目录与分支；再次开始时恢复原任务 |
-| **Plane: 交付任务** | 交付改动、准备人工试用或记录验收时 | 按请求交付 PR、从任务工作区准备验收入口，或核对验收与完成条件 |
+| Connect | Select **Plane: 初始化** | Project association and verified sync, or the precise remaining setup step |
+| Develop | `$plane-for-codex:plane-start Start PROJECT-123` | The task's own working directory, branch, requirements and acceptance scope |
+| Deliver | `$plane-for-codex:plane-deliver Deliver PROJECT-123; keep the PR open` | A linked PR, actual check results and outstanding acceptance items |
 
-初始化直接选择并发送即可；开始任务时可附上任务编号或链接。初始化生成的 `.plane-for-codex.json` 需要进入仓库的目标基础分支，之后才能创建独立任务分支。
+Setup's `.plane-for-codex.json` must reach the configured base branch before independent task branches are created. You can also ask to read a task and discuss it without saving files. Delivery, acceptance and merge follow the requested scope; existing authorization is reused.
 
-也可使用完整技能标识：`$plane-for-codex:plane-setup`、`$plane-for-codex:plane-start`、`$plane-for-codex:plane-deliver`。这些是 Skill 入口，没有单独的 `/plane` 命令或配置页面。
+## Features
 
-开发前会整理需求和验收标准，交付时检查当前改动的验证记录。任务合并并确认完成后，会尝试更新主工作目录；遇到未提交改动等阻碍时保留现场。详细规则见 [任务执行与验收](plugins/plane-for-codex/references/task-execution.md)。
-
-### 按需准备人工验收
-
-交付 PR 后，可以说“帮我运行 PROJECT-123 的工作区代码，我来验收”。Codex 会根据项目自身的说明准备运行入口、命令或产物，从任务工作区执行并核对实际加载的分支/提交，再提供入口与测试步骤。主工作目录继续保留原来的分支，其他任务的运行资源按归属隔离或协调使用。
-
-只交付 PR 或表示稍后再测时，不会强制启动环境。需要持续运行的验收资源会按交接约定保留，测试结束后清理；启动成功与用户验收分别记录。具体工具、构建和运行方式由项目决定，详见 [验收环境交接](plugins/plane-for-codex/references/acceptance-environment.md)。
-
-## GitHub 同步
-
-初始化会引导配置并验证一种后台同步方式，让 Codex 关闭后发生的 PR 事件也能回写 Plane。
-
-| 方式 | 需要准备 |
+| Capability | What it gives you |
 | --- | --- |
-| **GitHub Actions（默认）** | Plane PAT、仓库 Secret `PLANE_API_KEY`，以及合入默认分支的同步文件 |
-| **Plane 官方 GitHub 集成** | 已启用并核对仓库、项目映射及规则的官方集成，无需本插件的 workflow 或 PAT Secret |
+| **Independent task workspaces** | A separate directory and branch for each task, preserving the primary checkout and other tasks' edits |
+| **Resume the right version** | Recover the task's recorded directory and context when continuing in another chat |
+| **Linked PR delivery** | Keep one primary PR tied to the task, with implementation and verification reports in Plane |
+| **Test when you're ready** | Ask Codex to prepare the task version for manual testing, with a usable entry point and test steps |
+| **Background GitHub sync** | Record PR events through GitHub Actions or an existing official Plane integration |
+| **Clear acceptance and completion** | Keep runtime readiness, human acceptance and merge authorization separate |
 
-关联项目使用 Plane 浏览器授权，不需要 PAT；Actions 使用单独的凭证。PAT 请通过隐藏终端输入或 GitHub Secrets 页面录入，勿发送到聊天。
+To try a delivered result, say: “Run PROJECT-123 from its task workspace so I can test it.” Codex follows the project's own run/build instructions, checks the source version and hands over the entry point. PR delivery alone does not start an environment. See [acceptance handoff](plugins/plane-for-codex/references/acceptance-environment.md).
 
-缺少凭证、权限或验证时，初始化会保留进度并报告部分完成，之后可继续配置。**连接验证通过与真实 PR 事件回写成功会分别报告。** 配置细节见 [初始化与同步](plugins/plane-for-codex/references/setup.md)。
+## Skills
 
-## 使用范围
+Search **Plane** in Codex's skill picker. Display labels currently appear in Chinese; full identifiers work in either language.
 
-- 当前支持已有任务的开发与交付，一条任务对应一个主 PR。
-- 新基础配置只同步 PR 记录，保留任务状态；旧配置沿用原有状态与人工验收规则。官方集成的状态变化由其自身规则控制。
-- Cycle、任务创建与管理、自定义状态规则、多 PR 聚合和上下文自动推进尚未实现。
-- 当前面向 Plane Cloud 与 github.com；完整的自托管 Plane 和 GitHub Enterprise 接入尚未支持。
-
-## 文档与演示
-
-| 想了解什么 | 文档 |
+| Skill | Use when |
 | --- | --- |
-| 初始化、重新配置与同步 | [配置指南](plugins/plane-for-codex/references/setup.md) · [中断后继续配置](plugins/plane-for-codex/references/recovery.md) |
-| 需求、验证、验收与交付 | [任务执行与验收](plugins/plane-for-codex/references/task-execution.md) |
-| 多聊天开发与合并冲突 | [并行任务](plugins/plane-for-codex/references/parallel-tasks.md) |
-| 按需运行任务结果供人工验收 | [验收环境交接](plugins/plane-for-codex/references/acceptance-environment.md) |
-| 分支检查与完成后收尾 | [工作目录管理](plugins/plane-for-codex/references/checkout.md) |
-| 配置文件格式 | [基础配置示例](examples/plane-for-codex.basic.json) · [旧配置示例](examples/plane-for-codex.example.json) |
-| 版本、架构与贡献发布 | [更新记录](CHANGELOG.md) · [架构](docs/architecture.md) · [发布指南](PUBLISHING.md) |
+| **Setup** · `Plane: 初始化` | Associate a project, inspect/reconfigure the mapping, or resume sync setup — `$plane-for-codex:plane-setup` |
+| **Start** · `Plane: 开始任务` | Discuss, plan, start or resume an existing task — `$plane-for-codex:plane-start` |
+| **Deliver** · `Plane: 交付任务` | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `$plane-for-codex:plane-deliver` |
 
-无需账号即可运行本地演示；演示不会操作真实 Plane 或 GitHub：
+These are skills, not a separate `/plane` command or settings page. Install the complete plugin; standalone copies of individual skill folders are not a supported installation.
+
+## GitHub synchronization
+
+| Provider | Requirements |
+| --- | --- |
+| **GitHub Actions** — default | A separate Plane PAT in the repository Secret `PLANE_API_KEY`, plus sync files merged into the default branch |
+| **Official Plane integration** | An enabled and verified repository/project mapping and rules; no plugin workflow or PAT Secret |
+
+Project association uses browser authorization, without a PAT. For Actions, enter the PAT directly through GitHub Secrets or a human-operated hidden terminal prompt. Keep it out of chat.
+
+Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are reported separately.** New basic mappings record PR activity without changing task states; legacy mappings retain their existing rules. Native transitions belong to the official integration. See [setup and sync](plugins/plane-for-codex/references/setup.md).
+
+## Scope
+
+Currently supports existing tasks, one primary PR per task, Plane Cloud and github.com. Cycle/task management, custom status rules, multi-PR aggregation, full self-hosted Plane and GitHub Enterprise support are outside the current scope.
+
+## Update or remove
+
+Refresh the Git-backed marketplace and reinstall the plugin:
+
+```sh
+codex plugin marketplace upgrade plane-for-codex && codex plugin add plane-for-codex@plane-for-codex
+```
+
+Then open a new chat. For removal, run `codex plugin remove plane-for-codex@plane-for-codex`. Plugin updates/removal do not update or delete business-repository mappings, copied workflows/scripts, task workspaces or external account configuration. See [installation and migration](docs/installation.md) before changing an existing local source.
+
+## Documentation
+
+| Topic | Read more |
+| --- | --- |
+| Installation and updates | [Install, update, migrate and remove](docs/installation.md) |
+| Setup and recovery | [Project association & sync](plugins/plane-for-codex/references/setup.md) · [Resume setup](plugins/plane-for-codex/references/recovery.md) |
+| Development and handoff | [Task execution](plugins/plane-for-codex/references/task-execution.md) · [Parallel tasks](plugins/plane-for-codex/references/parallel-tasks.md) · [Acceptance environments](plugins/plane-for-codex/references/acceptance-environment.md) |
+| Configuration | [Basic mapping](examples/plane-for-codex.basic.json) · [Legacy mapping](examples/plane-for-codex.example.json) |
+| Contributing and releases | [Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Publishing](PUBLISHING.md) · [Changelog](CHANGELOG.md) |
+
+Try the offline demo from a source checkout; it needs no account and calls no live services:
 
 ```sh
 python3 plugins/plane-for-codex/scripts/plane_workflow.py demo
 ```
 
-开发验证：`python3 -m unittest discover -s tests -v`。
-
-## English
-
-Plane for Codex connects Plane tasks, isolated development workspaces and GitHub PRs. Install with the commands above, then select **Plane: 初始化** (Setup), **Plane: 开始任务** (Start task), or **Plane: 交付任务** (Deliver task) in Codex. GitHub background sync uses Actions or an existing official Plane integration. New basic mappings preserve task states; legacy mappings retain their existing rules. See the [setup guide](plugins/plane-for-codex/references/setup.md) for details.
+Runtime Python helpers use only the standard library. Development checks and decision evals are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-社区维护，与 Plane / OpenAI 无官方隶属关系。采用 [MIT License](LICENSE)。
+Community-maintained by [SoaringLabs](https://github.com/SoaringLabs). Not affiliated with Plane or OpenAI. [MIT License](LICENSE).
