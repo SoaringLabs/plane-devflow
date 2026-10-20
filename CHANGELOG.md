@@ -2,11 +2,13 @@
 
 按插件版本记录已实现的变化。验证范围与已知限制见对应的版本验证文档；这里的版本记录不代表已创建 GitHub Release 或版本标签。
 
-## 未发布
+## 0.10.0 — 2026-10-21
 
 - 项目统一命名为 **Plane DevFlow**，更新仓库引用、插件与 marketplace 身份、npm 包和命令、配置文件、任务记录目录、同步文件及 PR/评论标记。
 - 三个技能继续使用 `plane-setup`、`plane-start`、`plane-deliver`；插件调用前缀改为 `$plane-devflow:`。运行时仅使用新名称，无旧名称别名或回退逻辑。
-- 当前版本号仍为 `0.9.1`；此次改名尚未发布 npm 包、版本标签或 GitHub Release。
+- 改名涉及运行时和配置身份，使用 `0.10.0` 标记升级边界；旧版本标签和 Release 保留历史名称，不覆盖既有发布。旧业务配置、任务记录、同步文件及 PR 标记不会自动迁移，详见 [升级边界](docs/installation.md#upgrade-from-the-previous-name)。
+- 原生客户端隔离测试采用环境变量白名单、空凭证文件和 macOS Keychain/Mach 服务访问限制，并在启动前验证隔离边界，避免测试使用真实账号授权。
+- GitHub/Skills CLI 发布无需自有 npm 包；本次不发布 `plane-devflow` npm 包，也不修改业务仓库或账号授权。验证结果及未验证项见 [0.10.0 验证记录](docs/validation-0.10.0.md)。
 
 ## 0.9.1 — 2026-10-20
 

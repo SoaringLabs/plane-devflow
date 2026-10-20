@@ -34,6 +34,8 @@ Open a **new agent session in your target repository**, select or request **plan
 
 For the Codex plugin distribution, use `$plane-devflow:plane-setup`. See [local plugin installation](docs/installation.md#install-the-codex-plugin-locally). Install one distribution at a time to avoid duplicate entries.
 
+Upgrading from **Plane for Codex**? Read the [0.10.0 upgrade boundary](docs/installation.md#upgrade-from-the-previous-name) first: configuration paths and runtime identities changed, and business records are not migrated automatically.
+
 ### Start your first task
 
 `PROJECT-123` below is an example; replace it with an existing task ID.

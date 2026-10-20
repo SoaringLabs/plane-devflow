@@ -34,6 +34,8 @@ Skills CLI 从 GitHub 将三个自包含技能安装到当前项目，并让你�
 
 Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插件安装](docs/installation.md#install-the-codex-plugin-locally)。选择一种分发方式，避免同时出现重复入口。
 
+从 **Plane for Codex** 升级？请先查看 [0.10.0 升级边界](docs/installation.md#upgrade-from-the-previous-name)：配置路径与运行标识已变更，业务记录不会自动迁移。
+
 ### 开始第一条任务
 
 下面的 `PROJECT-123` 是示例，请替换为项目中已有任务的真实编号。

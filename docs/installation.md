@@ -66,6 +66,14 @@ It requires Node.js 20+ and a plugin-enabled Codex CLI on PATH. It saves a persi
 
 Remove the plugin with `codex plugin remove plane-devflow@plane-devflow`. Remove its source registration separately with `codex plugin marketplace remove plane-devflow`. Business configuration, task workspaces and account credentials are separate from plugin files.
 
+## Upgrade from the previous name
+
+Version 0.10.0 is the first **Plane DevFlow** release. The previous **Plane for Codex** runtime identifiers have changed; there are no old-name aliases or automatic data migrations. The three skill names stay `plane-setup`, `plane-start` and `plane-deliver`; the plugin prefix is now `$plane-devflow:`.
+
+For a repository without a previous mapping, install the new source and run `plane-setup`. For an existing mapped repository, preserve its original files and finish or explicitly plan migration of active tasks before switching. Review the repository mapping (`.plane-devflow.json`), Git task records (`plane-devflow` under shared Git metadata), local artifacts (`.plane-devflow.local/`), vendored synchronization files (`.github/plane-devflow/` and `.github/workflows/plane-devflow.yml`) and existing PR/comment markers together. Reinstalling skills alone does not convert these records, and renaming the JSON file alone is not a complete migration.
+
+Keep existing MCP connections and account authorization. The `PLANE_API_KEY` Secret name is unchanged; this release does not rotate secrets or alter business repository settings. Business mapping schemas 1 and 2 remain supported under the new filename. Historical releases retain their original names and behavior.
+
 ## Validation scope
 
 For an unpublished candidate, run actual Skills CLI against an isolated local Git snapshot or directory containing that candidate. The public GitHub command still resolves published source and cannot establish unpublished behavior. Validate project/global scope, selected/all skills, repeated installation, removal of source/cache, actual native discovery, helper startup and dependency parsing. Keep real user state inaccessible and test credentials empty.

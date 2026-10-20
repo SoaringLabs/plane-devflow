@@ -1,7 +1,7 @@
 {
   "generator": "plane-devflow/build_skills.py",
   "skill": "plane-deliver",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "hosts": [
     "codex",
     "claude-code",
