@@ -11,12 +11,12 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 NAMES = ("plane-setup", "plane-start", "plane-deliver")
 HOSTS = ("codex", "claude-code", "cursor", "opencode")
-OWNER = "plane-for-codex/build_skills.py"
+OWNER = "plane-devflow/build_skills.py"
 
 
 def expected_files(root, name):
     root = Path(root)
-    plugin = root / "plugins/plane-for-codex"
+    plugin = root / "plugins/plane-devflow"
     mapping = {plugin / "skills" / name / "SKILL.md": Path("SKILL.md")}
     for other in NAMES:
         if other != name:
@@ -30,9 +30,9 @@ def expected_files(root, name):
         return Path(os.path.relpath(target, document.parent)).as_posix()
 
     def render(source, destination):
-        text = source.read_text(encoding="utf-8").replace("$plane-for-codex:", "")
+        text = source.read_text(encoding="utf-8").replace("$plane-devflow:", "")
         if source.is_relative_to(plugin):
-            for old, new in (("# Set up Plane for Codex", "# Set up Plane"),
+            for old, new in (("# Set up Plane DevFlow", "# Set up Plane"),
                              ("in one Codex project", "for one repository"),
                              ("Codex-managed", "host-managed"),
                              ("current Codex chat", "current agent session"),
@@ -84,7 +84,7 @@ def expected_files(root, name):
                     "For another Plane workflow, use its installed skill when available; otherwise read the bundled guide "
                     f"({routes}) and follow only the user's requested scope.")
     files["SKILL.md"] = (entry[:end] + introduction + entry[end:]).encode()
-    ui = (plugin / "skills" / name / "agents/openai.yaml").read_text().replace("$plane-for-codex:", "$")
+    ui = (plugin / "skills" / name / "agents/openai.yaml").read_text().replace("$plane-devflow:", "$")
     ui += ('\ndependencies:\n  tools:\n    - type: "mcp"\n      value: "plane"\n'
            '      description: "Plane account and project tools"\n'
            '      transport: "streamable_http"\n      url: "https://mcp.plane.so/http/mcp"\n')
@@ -97,7 +97,7 @@ def expected_files(root, name):
 
 def generate(root=ROOT, *, check=False):
     root = Path(root).resolve()
-    for p in (root / "plugins/plane-for-codex").rglob("*"):
+    for p in (root / "plugins/plane-devflow").rglob("*"):
         if p.is_symlink():
             raise ValueError(f"Canonical source contains a symlink: {p}")
     changes = []

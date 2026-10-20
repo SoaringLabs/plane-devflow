@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 from urllib.error import HTTPError, URLError
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 import plane_sync as sync
 import plane_workflow as workflow
 import action_runner as action
@@ -21,13 +21,13 @@ from test_task_progress import ready_data
 
 
 def config():
-    return json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+    return json.loads((ROOT / "examples/plane-devflow.example.json").read_text())
 
 
 def event(cfg=None, **updates):
     cfg = cfg or config()
     pr = {"number": 7, "html_url": "https://github.com/example/demo-project/pull/7",
-          "title": "[DEMO-12] Fix greeting", "body": "<!-- plane-for-codex " + json.dumps(sync.binding(cfg, "DEMO-12")) + " -->",
+          "title": "[DEMO-12] Fix greeting", "body": "<!-- plane-devflow " + json.dumps(sync.binding(cfg, "DEMO-12")) + " -->",
           "state": "open", "draft": False,
           "base": {"ref": "main", "sha": "a" * 40, "repo": {"full_name": "example/demo-project"}}}
     pr.update(updates)
@@ -220,7 +220,7 @@ class HTTPTests(unittest.TestCase):
         self.assertIn("/api/v2/", reqs[2].full_url)
         self.assertEqual(reqs[1].method, "PATCH")
         self.assertTrue(reqs[2].full_url.endswith("/comments/upsert/"))
-        self.assertEqual(json.loads(reqs[2].data)["external_source"], "plane-for-codex")
+        self.assertEqual(json.loads(reqs[2].data)["external_source"], "plane-devflow")
         self.assertEqual(reqs[0].get_header("X-api-key"), "sentinel-secret")
 
     def test_rate_limit_bounded_retry(self):
@@ -379,7 +379,7 @@ class GitTests(unittest.TestCase):
             project_id=cfg["plane"]["project_id"], project_key="DEMO", base="main", branch_prefix="codex", completion="manual",
             in_progress=cfg["states"]["in_progress"], in_review=cfg["states"]["in_review"], done=cfg["states"]["done"],
             action_source="example/plugin@" + "a" * 40, apply=True)
-        path = self.root / ".github/workflows/plane-for-codex.yml"
+        path = self.root / ".github/workflows/plane-devflow.yml"
         path.parent.mkdir(parents=True)
         path.write_text("existing workflow")
         original = (self.root / sync.CONFIG_NAME).read_text()

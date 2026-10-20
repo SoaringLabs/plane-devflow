@@ -8,7 +8,7 @@ import { execFileSync } from 'node:child_process';
 import { install, inventory } from '../lib/installer.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const NAME = 'plane-for-codex';
+const NAME = 'plane-devflow';
 const ID = `${NAME}@${NAME}`;
 const SKILLS = ['plane-setup', 'plane-start', 'plane-deliver'];
 
@@ -31,7 +31,7 @@ function fixture(t) {
     } finally { fs.rmSync(root, { recursive: true, force: true }); }
   });
   const state = { marketplaces: [], installed: null, calls: [], failAdd: false, failInstall: false, failDiscovery: false, corruptCache: false };
-  const managed = path.join(stateRoot, 'marketplaces', 'plane-for-codex-npm');
+  const managed = path.join(stateRoot, 'marketplaces', 'plane-devflow-npm');
   const run = async args => {
     state.calls.push(args);
     if (args[0] === '--version') return 'codex-cli 0.163.0';
@@ -213,7 +213,7 @@ test('managed directory symlink is rejected before writing outside its root', as
 test('active lock is respected and dead process lock can be recovered', async t => {
   const f = fixture(t); await install(f.options);
   const lock = path.join(f.managed, '.install.lock');
-  const owner = { owner: 'plane-for-codex/npm-installer/v1', pid: process.pid, host: os.hostname() };
+  const owner = { owner: 'plane-devflow/npm-installer/v1', pid: process.pid, host: os.hostname() };
   fs.writeFileSync(lock, JSON.stringify(owner));
   await assert.rejects(install(f.options), /installation is active/);
   fs.writeFileSync(lock, JSON.stringify({ ...owner, pid: 2_147_483_647 }));
@@ -227,7 +227,7 @@ test('invalid marketplace metadata cannot trigger a write', async t => {
 });
 
 test('help and version run without a Codex process', () => {
-  const cli = path.join(REPO, 'bin/plane-for-codex.mjs');
+  const cli = path.join(REPO, 'bin/plane-devflow.mjs');
   assert.match(execFileSync(process.execPath, [cli, '--help'], { encoding: 'utf8' }), /--check/);
   assert.equal(execFileSync(process.execPath, [cli, '--version'], { encoding: 'utf8' }).trim(), JSON.parse(fs.readFileSync(path.join(REPO, 'package.json'))).version);
 });

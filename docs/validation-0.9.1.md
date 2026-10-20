@@ -21,7 +21,7 @@ No fresh OAuth completion or model execution is claimed by this matrix. Empty-pr
 
 ## Release and local update
 
-Remote CI and public-source verification follow the source push. Their final outcomes and run links are recorded in the [0.9.1 Release](https://github.com/SoaringLabs/plane-for-codex/releases/tag/v0.9.1). Local installation uses the existing complete-plugin source and keeps the marketplace identity. Verification compares cached payloads, confirms all three native skills, checks existing settings/authentication hashes and performs a read-only check through the existing Plane connection. No duplicate standalone skills or new account credentials are installed in the real user profile.
+Remote CI and public-source verification follow the source push. Their final outcomes and run links are recorded in the [0.9.1 Release](https://github.com/SoaringLabs/plane-devflow/releases/tag/v0.9.1). Local installation uses the existing complete-plugin source and keeps the marketplace identity. Verification compares cached payloads, confirms all three native skills, checks existing settings/authentication hashes and performs a read-only check through the existing Plane connection. No duplicate standalone skills or new account credentials are installed in the real user profile.
 
 The compatibility npm package remains the separately published legacy 0.8.1 channel. This Skills CLI/GitHub release does not require a new npm publication.
 

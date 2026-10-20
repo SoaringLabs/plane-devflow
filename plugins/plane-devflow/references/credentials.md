@@ -12,7 +12,7 @@ Prefer an already authenticated Plane app or browser when the host exposes it. O
 
 Navigate **avatar / Open user menu → Settings (Profile settings) → Personal Access Tokens → Add access token**. UI labels may say Add personal access token. Use current observed UI, not invented selectors or an unverified `/profile/api-tokens` URL. As verified in Plane Cloud on 2026-10-10, this opens a settings modal; the task URL does not change. Do not promise a stable direct PAT page URL.
 
-Show the suggested title (`Plane for Codex: OWNER/REPO`) and description. Explain the expiry field; the user chooses an explicit expiry appropriate to the automation and will need to renew it before expiry. Confirm they are using the intended Plane account/project permissions. No paid upgrade or new Plane project is required solely for this credential step.
+Show the suggested title (`Plane DevFlow: OWNER/REPO`) and description. Explain the expiry field; the user chooses an explicit expiry appropriate to the automation and will need to renew it before expiry. Confirm they are using the intended Plane account/project permissions. No paid upgrade or new Plane project is required solely for this credential step.
 
 With computer/browser use, navigate to the form and optionally fill non-secret title/description. Stop before **Generate token** and hand control to the user to generate and copy it. Do not capture the page/AX tree after generation while the token is visible, read clipboard contents, inspect DOM token values, or move the credential through agent memory/files/tools. Login, CAPTCHA and credential creation follow the host's handoff/confirmation rules. If the user already has a suitable PAT, skip creation after their confirmation.
 

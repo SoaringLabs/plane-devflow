@@ -1,17 +1,17 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "plane-for-codex",
+  "name": "plane-devflow",
   "version": "0.9.1",
   "description": "Develop independent Plane tasks across chats using isolated main-based worktrees, resolve base conflicts, and deliver linked pull requests in Codex.",
   "extensions": {
     "com.openai": {
       "onboardingSkill": "./skills/plane-setup/SKILL.md",
       "interface": {
-        "displayName": "Plane for Codex",
+        "displayName": "Plane DevFlow",
         "shortDescription": "Connect Plane, configure GitHub sync and deliver task PRs",
         "longDescription": "Community open-source Plane workflow for Codex. Connect a repository, discuss and research requirements, verify the task branch before saving documents or code, and deliver a linked pull request. Choose verified native or Actions GitHub synchronization; incomplete setup remains resumable.",
         "developerName": "SoaringLabs",
-        "websiteURL": "https://github.com/SoaringLabs/plane-for-codex",
+        "websiteURL": "https://github.com/SoaringLabs/plane-devflow",
         "logo": "./assets/icon.png",
         "composerIcon": "./assets/icon.png",
         "category": "Productivity",

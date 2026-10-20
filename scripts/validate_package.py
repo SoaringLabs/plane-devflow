@@ -17,7 +17,7 @@ except ImportError:
     raise SystemExit("Install development dependencies: python3 -m pip install -r requirements-dev.txt")
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 from plane_sync import validate_config
 
 SKILLS = {"plane-setup", "plane-start", "plane-deliver"}
@@ -188,7 +188,7 @@ def validate_payload(plugin):
     for path in plugin.rglob("*"):
         require(not path.is_symlink(), f"Symlink in payload: {path}")
     manifest = json.loads((plugin / "plugin.json").read_text())
-    require(manifest.get("name") == "plane-for-codex", "Unexpected plugin name")
+    require(manifest.get("name") == "plane-devflow", "Unexpected plugin name")
     tree = ast.parse((plugin / "scripts/plane_sync.py").read_text())
     versions = [n.value.value for n in tree.body if isinstance(n, ast.Assign) and
                 any(isinstance(t, ast.Name) and t.id == "VERSION" for t in n.targets) and
@@ -198,7 +198,7 @@ def validate_payload(plugin):
     resource(plugin, extension["onboardingSkill"], plugin)
     for key in ("logo", "composerIcon"):
         resource(plugin, extension["interface"][key], plugin)
-    require(extension["interface"]["websiteURL"] == "https://github.com/SoaringLabs/plane-for-codex",
+    require(extension["interface"]["websiteURL"] == "https://github.com/SoaringLabs/plane-devflow",
             "Plugin website must identify this repository")
     mcp = json.loads((plugin / "mcp.json").read_text())
     require(mcp["mcpServers"]["plane"]["url"] == "https://mcp.plane.so/http/mcp", "Unexpected Plane MCP endpoint")
@@ -213,7 +213,7 @@ def validate_payload(plugin):
         for key in ("display_name", "short_description", "default_prompt"):
             require(isinstance(interface.get(key), str) and bool(interface[key].strip()), f"{name}: invalid UI {key}")
         require(len(interface["short_description"]) <= 64, f"{name}: UI description too long")
-        require(f"$plane-for-codex:{name}" in interface["default_prompt"], f"{name}: UI prompt invokes wrong skill")
+        require(f"$plane-devflow:{name}" in interface["default_prompt"], f"{name}: UI prompt invokes wrong skill")
         policy = ui.get("policy", {})
         require(isinstance(policy, dict) and ("allow_implicit_invocation" not in policy or
                 isinstance(policy["allow_implicit_invocation"], bool)), f"{name}: invalid invocation policy")
@@ -238,7 +238,7 @@ def validate_standalone(root):
         frontmatter(skill / "SKILL.md")
         ui = load_yaml((skill / "agents/openai.yaml").read_text(), name)
         require(f"${name}" in ui["interface"]["default_prompt"] and
-                "$plane-for-codex:" not in ui["interface"]["default_prompt"],
+                "$plane-devflow:" not in ui["interface"]["default_prompt"],
                 f"{name}: standalone invocation mismatch")
         require(ui.get("dependencies", {}).get("tools") == [{"type": "mcp", "value": "plane",
                 "description": "Plane account and project tools", "transport": "streamable_http",
@@ -255,21 +255,21 @@ def validate_standalone(root):
 
 def validate(root=ROOT, *, payload_only=False):
     root = Path(root).resolve()
-    plugin = root if payload_only else root / "plugins/plane-for-codex"
+    plugin = root if payload_only else root / "plugins/plane-devflow"
     result = validate_payload(plugin)
     if not payload_only:
         marketplace = json.loads((root / ".agents/plugins/marketplace.json").read_text())
         entries = marketplace.get("plugins", [])
-        require(len(entries) == 1 and entries[0]["name"] == "plane-for-codex", "Unexpected marketplace inventory")
+        require(len(entries) == 1 and entries[0]["name"] == "plane-devflow", "Unexpected marketplace inventory")
         require((root / entries[0]["source"]["path"]).resolve() == plugin, "Marketplace points outside plugin source")
         require((root / "action.yml").is_file() and (root / "LICENSE").is_file(), "Missing Action or license")
         npm = json.loads((root / "package.json").read_text())
         manifest = json.loads((plugin / "plugin.json").read_text())
-        require(npm.get("name") == "plane-for-codex", "Unexpected npm package name")
+        require(npm.get("name") == "plane-devflow", "Unexpected npm package name")
         require(npm.get("version") == manifest.get("version"), "npm/plugin version mismatch")
-        require(npm.get("bin") == {"plane-for-codex": "bin/plane-for-codex.mjs"}, "Unexpected npm executable")
-        resource(root, npm["bin"]["plane-for-codex"], root)
-        for example in (root / "examples").glob("plane-for-codex*.json"):
+        require(npm.get("bin") == {"plane-devflow": "bin/plane-devflow.mjs"}, "Unexpected npm executable")
+        resource(root, npm["bin"]["plane-devflow"], root)
+        for example in (root / "examples").glob("plane-devflow*.json"):
             validate_config(json.loads(example.read_text()))
         readmes = [resource(root, name, root) for name in ("README.md", "README.zh-CN.md")]
         docs = readmes + [root / n for n in ("PUBLISHING.md", "CONTRIBUTING.md") if (root / n).is_file()]
@@ -277,7 +277,7 @@ def validate(root=ROOT, *, payload_only=False):
         for path in readmes:
             text = path.read_text()
             steps = installation_steps(text)
-            require(steps == [["npx", "skills", "add", "SoaringLabs/plane-for-codex", "--skill",
+            require(steps == [["npx", "skills", "add", "SoaringLabs/plane-devflow", "--skill",
                     "plane-setup", "plane-start", "plane-deliver"]],
                     f"{path.name}: README Skills CLI installer mismatch")
             for name in SKILLS:

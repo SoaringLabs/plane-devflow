@@ -149,7 +149,7 @@ def run_case(case, source, output, label, repeat, timeout):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--plugin', type=Path, default=ROOT / 'plugins/plane-for-codex')
+    parser.add_argument('--plugin', type=Path, default=ROOT / 'plugins/plane-devflow')
     parser.add_argument('--cases', type=Path, default=ROOT / 'evals/cases.jsonl')
     parser.add_argument('--output', type=Path)
     parser.add_argument('--label', default='candidate')
@@ -196,8 +196,8 @@ def main():
     if shutil.which('codex') is None:
         parser.error('Authenticated Codex CLI required for model runs; --validate-only needs no CLI')
     output = args.output.resolve()
-    if output.is_relative_to(ROOT) and not output.is_relative_to(ROOT / '.plane-for-codex.local'):
-        parser.error('Raw traces must be outside the checkout or in ignored .plane-for-codex.local/')
+    if output.is_relative_to(ROOT) and not output.is_relative_to(ROOT / '.plane-devflow.local'):
+        parser.error('Raw traces must be outside the checkout or in ignored .plane-devflow.local/')
     output.mkdir(parents=True, exist_ok=False)
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
         futures = [pool.submit(run_case, c, args.plugin.resolve(), output, args.label, r, args.timeout)

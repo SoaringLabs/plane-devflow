@@ -41,10 +41,10 @@
 
 ### 涉及文件
 
-- [Setup Skill](../plugins/plane-for-codex/skills/plane-setup/SKILL.md)
-- [Setup 菜单信息](../plugins/plane-for-codex/skills/plane-setup/agents/openai.yaml)
-- [Setup 参考](../plugins/plane-for-codex/references/setup.md)
-- [本地工作流脚本](../plugins/plane-for-codex/scripts/plane_workflow.py)：`doctor`、`configure`、`write_new_or_same`、命令参数定义。
+- [Setup Skill](../plugins/plane-devflow/skills/plane-setup/SKILL.md)
+- [Setup 菜单信息](../plugins/plane-devflow/skills/plane-setup/agents/openai.yaml)
+- [Setup 参考](../plugins/plane-devflow/references/setup.md)
+- [本地工作流脚本](../plugins/plane-devflow/scripts/plane_workflow.py)：`doctor`、`configure`、`write_new_or_same`、命令参数定义。
 
 ### 当前行为
 
@@ -65,9 +65,9 @@ Setup 结束时读取已有 work item，不能完整覆盖刚创建且没有任�
 
 ### 涉及文件
 
-- [状态同步脚本](../plugins/plane-for-codex/scripts/plane_sync.py)：`validate_config`、`read_config`。
-- [本地工作流脚本](../plugins/plane-for-codex/scripts/plane_workflow.py)：`configure`、`repo_config`、`doctor`。
-- [配置示例](../examples/plane-for-codex.example.json)。
+- [状态同步脚本](../plugins/plane-devflow/scripts/plane_sync.py)：`validate_config`、`read_config`。
+- [本地工作流脚本](../plugins/plane-devflow/scripts/plane_workflow.py)：`configure`、`repo_config`、`doctor`。
+- [配置示例](../examples/plane-devflow.example.json)。
 
 ### 当前行为
 
@@ -115,10 +115,10 @@ Project、Cycle、work item 的具体工具参数应按执行时的 MCP schema �
 
 ### 涉及文件
 
-- [Start Skill](../plugins/plane-for-codex/skills/plane-start/SKILL.md)：准备分支后直接写入 `in_progress`。
-- [Deliver Skill](../plugins/plane-for-codex/skills/plane-deliver/SKILL.md)：交付后直接写入 `in_review`，完成时写入 Done 的语义。
-- [工作流参考](../plugins/plane-for-codex/references/workflow.md)：固定的开发、审核与完成说明。
-- [状态同步脚本](../plugins/plane-for-codex/scripts/plane_sync.py)：`target_state`、`phase`、`sync_event`。
+- [Start Skill](../plugins/plane-devflow/skills/plane-start/SKILL.md)：准备分支后直接写入 `in_progress`。
+- [Deliver Skill](../plugins/plane-devflow/skills/plane-deliver/SKILL.md)：交付后直接写入 `in_review`，完成时写入 Done 的语义。
+- [工作流参考](../plugins/plane-devflow/references/workflow.md)：固定的开发、审核与完成说明。
+- [状态同步脚本](../plugins/plane-devflow/scripts/plane_sync.py)：`target_state`、`phase`、`sync_event`。
 
 ### 当前行为
 
@@ -167,10 +167,10 @@ MCP 写入与 REST 同步的状态判断分别写在 Skill 指引和脚本中，
 
 ### 涉及文件
 
-- [状态同步脚本](../plugins/plane-for-codex/scripts/plane_sync.py)
-- [Action runner](../plugins/plane-for-codex/scripts/action_runner.py)
+- [状态同步脚本](../plugins/plane-devflow/scripts/plane_sync.py)
+- [Action runner](../plugins/plane-devflow/scripts/action_runner.py)
 - [Action 定义](../action.yml)
-- [本地工作流脚本](../plugins/plane-for-codex/scripts/plane_workflow.py)：`caller_workflow`、`set_secret`。
+- [本地工作流脚本](../plugins/plane-devflow/scripts/plane_workflow.py)：`caller_workflow`、`set_secret`。
 
 保留固定发布 SHA、读取可信 base 配置、不 checkout PR 代码、读取最新 PR 状态、验证主任务关联和评论 upsert 的设计。
 

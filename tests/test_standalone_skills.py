@@ -36,7 +36,7 @@ class StandaloneSkillsTests(unittest.TestCase):
         self.assertEqual(build_skills.generate(self.root, check=True), [])
 
     def test_each_skill_can_move_alone_and_run_without_checkout(self):
-        version = json.loads((self.root / "plugins/plane-for-codex/plugin.json").read_text())["version"]
+        version = json.loads((self.root / "plugins/plane-devflow/plugin.json").read_text())["version"]
         for name in build_skills.NAMES:
             destination = Path(self.temp.name) / "installed" / name
             shutil.copytree(self.root / "skills" / name, destination)
@@ -90,7 +90,7 @@ class StandaloneSkillsTests(unittest.TestCase):
             self.assertEqual({p.stem for p in (skill / "references/hosts").glob("*.md")}, set(build_skills.HOSTS))
             body = (skill / "SKILL.md").read_text()
             self.assertNotIn("../../scripts", body)
-            self.assertNotIn("$plane-for-codex:", body)
+            self.assertNotIn("$plane-devflow:", body)
             self.assertIn("references/host-runtime.md", body)
             self.assertNotIn("codex mcp ", (skill / "references/mcp.md").read_text())
 

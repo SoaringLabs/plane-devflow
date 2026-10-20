@@ -21,7 +21,7 @@ The 45 candidate publication files and existing `main` history passed the creden
 
 ### Python 3.10 compatibility correction
 
-The [initial public CI run](https://github.com/SoaringLabs/plane-for-codex/actions/runs/38195744659) passed on Python 3.14 but failed one readiness test on Python 3.10. The same failure was reproduced locally on Python 3.10: `datetime.fromisoformat` could not parse GitHub's UTC timestamps ending in `Z`, so otherwise valid Secret/connection evidence stayed unverified.
+The [initial public CI run](https://github.com/SoaringLabs/plane-devflow/actions/runs/38195744659) passed on Python 3.14 but failed one readiness test on Python 3.10. The same failure was reproduced locally on Python 3.10: `datetime.fromisoformat` could not parse GitHub's UTC timestamps ending in `Z`, so otherwise valid Secret/connection evidence stayed unverified.
 
 GitHub timestamp parsing now normalizes a trailing `Z` to `+00:00` and requires timezone-aware values. Two additional regression tests cover equivalent/ordered instants across offsets and invalid, timezone-free or non-string metadata remaining unverified with sanitized errors. Both local Python 3.10 and 3.14 suites pass all 131 tests, package validation passes on both, and the Python 3.10 offline demo passes. The CI matrix remains unchanged; the failing run remains visible as historical evidence.
 

@@ -19,8 +19,8 @@ class PackageValidationTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / "source"
         shutil.copytree(ROOT, self.root, ignore=shutil.ignore_patterns(
-            ".git", "node_modules", "__pycache__", "*.pyc", ".venv", "dist", ".plane-for-codex.local", ".env*"))
-        self.plugin = self.root / "plugins/plane-for-codex"
+            ".git", "node_modules", "__pycache__", "*.pyc", ".venv", "dist", ".plane-devflow.local", ".env*"))
+        self.plugin = self.root / "plugins/plane-devflow"
         self.skill = self.plugin / "skills/plane-start/SKILL.md"
 
     def replace(self, path, old, new):
@@ -100,7 +100,7 @@ class PackageValidationTests(unittest.TestCase):
     def test_ui_types_and_wrong_invocation_rejected(self):
         ui = self.skill.parent / "agents/openai.yaml"
         original = ui.read_text()
-        for old, new in (('"Start Plane Task"', "false"), ("$plane-for-codex:plane-start", "$wrong")):
+        for old, new in (('"Start Plane Task"', "false"), ("$plane-devflow:plane-start", "$wrong")):
             ui.write_text(original.replace(old, new))
             self.rejects("UI")
 
@@ -128,11 +128,11 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("Marketplace")
 
     def test_readme_install_identity_is_checked(self):
-        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-for-codex", "npx skills add another/repository")
+        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add another/repository")
         self.rejects("Skills CLI installer mismatch")
 
     def test_localized_readme_installation_is_checked(self):
-        self.replace(self.root / "README.zh-CN.md", "npx skills add SoaringLabs/plane-for-codex", "npx skills add another/repository")
+        self.replace(self.root / "README.zh-CN.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add another/repository")
         self.rejects("Skills CLI installer mismatch")
 
     def test_html_images_and_navigation_are_checked(self):
@@ -145,7 +145,7 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("missing anchor")
 
     def test_installation_does_not_continue_after_registration_failure(self):
-        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-for-codex", "npx skills add SoaringLabs/plane-for-codex ; echo success")
+        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add SoaringLabs/plane-devflow ; echo success")
         self.rejects("stop if a step fails")
 
     def test_cli_failure_is_nonzero_even_with_python_optimization(self):

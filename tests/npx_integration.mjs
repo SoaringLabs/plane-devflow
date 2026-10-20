@@ -37,19 +37,19 @@ function run(label, command, args, childEnv = env, cwd = path.join(root, 'projec
 
 try {
   const packed = run('pack', 'npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', root], env, repo)[0];
-  const expected = inventory(path.join(repo, 'plugins/plane-for-codex'));
+  const expected = inventory(path.join(repo, 'plugins/plane-devflow'));
   assert.deepEqual(packed.files.filter(file => file.path.startsWith('plugins/')).map(file => file.path).sort(),
-    Object.keys(expected).map(name => `plugins/plane-for-codex/${name}`).sort());
+    Object.keys(expected).map(name => `plugins/plane-devflow/${name}`).sort());
   assert.ok(packed.files.every(file => !/(?:^|\/)(?:tests|evals|node_modules|__pycache__|\.env|\.npmrc)(?:\/|$)/.test(file.path)));
-  const command = ['--yes', '--package', path.join(root, packed.filename), 'plane-for-codex', '--json'];
+  const command = ['--yes', '--package', path.join(root, packed.filename), 'plane-devflow', '--json'];
   const first = run('fresh', 'npx', command);
   assert.equal(first.version, version); assert.equal(first.source, 'npm'); assert.equal(first.payloadFiles, Object.keys(expected).length);
   assert.deepEqual(first.skills.map(skill => skill.displayName).sort(), ['Set Up Plane', 'Start Plane Task', 'Deliver Plane Task'].sort());
   assert.ok(fs.readFileSync(path.join(state, 'config.toml'), 'utf8').startsWith(original));
   const config = digest(path.join(state, 'config.toml'));
-  const persistent = path.join(state, 'marketplaces/plane-for-codex-npm/versions', version, 'plugin');
+  const persistent = path.join(state, 'marketplaces/plane-devflow-npm/versions', version, 'plugin');
   assert.deepEqual(inventory(persistent), expected);
-  assert.deepEqual(inventory(path.join(state, 'plugins/cache/plane-for-codex/plane-for-codex', version)), expected);
+  assert.deepEqual(inventory(path.join(state, 'plugins/cache/plane-devflow/plane-devflow', version)), expected);
   fs.rmSync(cache, { recursive: true });
   const repeat = run('repeat-after-cache-removal', 'npx', command);
   assert.equal(repeat.version, version); assert.equal(digest(path.join(state, 'config.toml')), config);
@@ -59,8 +59,8 @@ try {
   const localRoot = path.join(root, 'retained source & (local)');
   fs.mkdirSync(path.join(localRoot, '.agents/plugins'), { recursive: true });
   fs.copyFileSync(path.join(repo, '.agents/plugins/marketplace.json'), path.join(localRoot, '.agents/plugins/marketplace.json'));
-  fs.cpSync(path.join(repo, 'plugins/plane-for-codex'), path.join(localRoot, 'plugins/plane-for-codex'), { recursive: true, filter: p => !p.includes('__pycache__') });
-  fs.appendFileSync(path.join(localRoot, 'plugins/plane-for-codex/references/delivery.md'), '\nSynthetic local customization.\n');
+  fs.cpSync(path.join(repo, 'plugins/plane-devflow'), path.join(localRoot, 'plugins/plane-devflow'), { recursive: true, filter: p => !p.includes('__pycache__') });
+  fs.appendFileSync(path.join(localRoot, 'plugins/plane-devflow/references/delivery.md'), '\nSynthetic local customization.\n');
   const localBefore = inventory(localRoot);
   const localState = path.join(root, 'local-state'); fs.mkdirSync(localState);
   fs.writeFileSync(path.join(localState, 'config.toml'), original);
@@ -71,13 +71,13 @@ try {
   // Source type is optional in native output (notably Windows path aliases).
   assert.ok(['local', 'existing'].includes(localResult.source));
   const retained = run('retained-registration', 'codex', ['--no-daemon', 'plugin', 'marketplace', 'list', '--json'], localEnv)
-    .marketplaces.find(item => item.name === 'plane-for-codex');
+    .marketplaces.find(item => item.name === 'plane-devflow');
   const retainedDirectory = fs.statSync(retained.root, { bigint: true });
   const originalDirectory = fs.statSync(localRoot, { bigint: true });
   assert.equal(retainedDirectory.dev, originalDirectory.dev);
   assert.equal(retainedDirectory.ino, originalDirectory.ino);
   assert.deepEqual(inventory(localRoot), localBefore);
-  assert.equal(fs.existsSync(path.join(localState, 'marketplaces/plane-for-codex-npm')), false);
+  assert.equal(fs.existsSync(path.join(localState, 'marketplaces/plane-devflow-npm')), false);
   assert.deepEqual(profileMetadata(protectedFiles), before);
   const result = { version, packedFiles: packed.files.length, pluginFiles: first.payloadFiles, fresh: true, repeat: true,
     cacheRemoval: true, check: true, retainedLocalSource: true, nativeSkills: first.skills, originalProfileMetadataUnchanged: true, evidence: root };

@@ -15,7 +15,7 @@ def workspace_lock(root, task_identity=None):
     common = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], root).stdout.strip())
     from task_progress import digest
     name = "workspaces" if task_identity is None else "sync-" + digest(task_identity)
-    path = common / ("plane-for-codex-" + name + ".lock")
+    path = common / ("plane-devflow-" + name + ".lock")
     require(not path.is_symlink(), "Workspace lock must not be a symlink.")
     deadline = time.monotonic() + 35
     while True:

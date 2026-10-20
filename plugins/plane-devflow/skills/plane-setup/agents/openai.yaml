@@ -1,4 +1,4 @@
 interface:
   display_name: "Set Up Plane"
   short_description: "Connect a Plane project and configure or resume GitHub sync"
-  default_prompt: "Use $plane-for-codex:plane-setup."
+  default_prompt: "Use $plane-devflow:plane-setup."

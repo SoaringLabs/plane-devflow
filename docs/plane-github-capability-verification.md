@@ -90,7 +90,7 @@ v2 PATCH 空 `label_ids`／`assignee_ids` 返回 200，但随后 GET 的 ID 数�
 
 最终全量验证完成（原始运行记录未公开）：26 项结果，25 项 pass、1 项已明确记录的 v2 关系回读 limitation，无失败项；数字包含认证、清理和付费能力的只读检查，并非 25 个产品功能。v2 清除后的集合用独立 v1 读取确认，没有重复 PATCH 来掩盖差异。
 
-本地忽略目录 `.plane-for-codex.local/capability-probe/` 保存 redacted OAuth receipts、PAT summaries 与运行元数据；GitHub 私有测试仓库保留可复现脚本、提交、PR、Issue 和 Actions 日志。不会把 API key 或真实业务数据提交进验证文档。
+本地忽略目录 `.plane-devflow.local/capability-probe/` 保存 redacted OAuth receipts、PAT summaries 与运行元数据；GitHub 私有测试仓库保留可复现脚本、提交、PR、Issue 和 Actions 日志。不会把 API key 或真实业务数据提交进验证文档。
 
 探测器创建的 REST 临时任务／标签／Cycle／Module 已逐项 DELETE 并 GET 确认 404，所有轮次 cleanup_failures 为空。OAuth 创建的测试 Page 已 detach／archive／delete；临时测试项目已删除，项目列表确认不存在，其任务、Cycle、Module 等不再保留。删除后单项目读取返回 403，而非 404，清理确认以 DELETE 成功和列表中不存在为准。
 

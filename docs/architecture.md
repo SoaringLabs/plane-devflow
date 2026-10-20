@@ -1,4 +1,4 @@
-# Architecture and scope
+# Plane DevFlow architecture and scope
 
 Plugin distribution is portable `plugin.json`, `mcp.json`, `skills/` and bundled references/scripts. The repository root also contains a local marketplace and a backward-compatible composite GitHub Action. Codex executes Skill instructions; deterministic scripts handle Git/config/reporting and REST lifecycle synchronization.
 
@@ -13,7 +13,7 @@ Reconfiguration is explicit: plan differences, verify the reviewed original SHA-
 | Task requirements and human acceptance | Plane work item and user |
 | Implementation and repository checks | Codex plus repo instructions |
 | Code state, review and merge evidence | Git/GitHub |
-| Stable project/repo/state mapping | `.plane-for-codex.json` in each business repo |
+| Stable project/repo/state mapping | `.plane-devflow.json` in each business repo |
 | Interactive credentials | Official Plane MCP OAuth / existing GitHub CLI |
 | Unattended synchronization credential | Per-repository GitHub Secret `PLANE_API_KEY` |
 

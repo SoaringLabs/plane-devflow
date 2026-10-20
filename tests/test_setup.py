@@ -11,13 +11,13 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 import plane_sync as sync
 import plane_workflow as workflow
 
 
 def legacy():
-    return json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+    return json.loads((ROOT / "examples/plane-devflow.example.json").read_text())
 
 
 def basic():
@@ -207,7 +207,7 @@ class SetupTests(unittest.TestCase):
 
     def test_existing_workflow_blocks_replacement(self):
         original = self.original()
-        path = self.root / ".github/workflows/plane-for-codex.yml"
+        path = self.root / ".github/workflows/plane-devflow.yml"
         path.parent.mkdir(parents=True)
         path.write_text("existing workflow")
         with self.assertRaisesRegex(sync.WorkflowError, "workflow"):
@@ -216,7 +216,7 @@ class SetupTests(unittest.TestCase):
         self.assertEqual(path.read_text(), "existing workflow")
 
     def test_first_basic_mapping_does_not_break_existing_workflow(self):
-        path = self.root / ".github/workflows/plane-for-codex.yml"
+        path = self.root / ".github/workflows/plane-devflow.yml"
         path.parent.mkdir(parents=True)
         path.write_text("older action")
         with self.assertRaisesRegex(sync.WorkflowError, "workflow"):
@@ -234,7 +234,7 @@ class SetupTests(unittest.TestCase):
 
     def test_base_workflow_blocks_even_when_missing_in_checkout(self):
         self.original()
-        p = self.root / ".github/workflows/plane-for-codex.yml"
+        p = self.root / ".github/workflows/plane-devflow.yml"
         p.parent.mkdir(parents=True)
         p.write_text("event workflow")
         self.git("add", ".")

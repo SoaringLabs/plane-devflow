@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="plugins/plane-for-codex/assets/icon.png" alt="Plane for Codex logo" width="88" height="88">
+  <img src="plugins/plane-devflow/assets/icon.png" alt="Plane DevFlow logo" width="88" height="88">
 </p>
-<h1 align="center">Plane for Codex</h1>
+<h1 align="center">Plane DevFlow</h1>
 <p align="center">
-  <a href="https://github.com/SoaringLabs/plane-for-codex/releases"><img src="https://img.shields.io/github/v/release/SoaringLabs/plane-for-codex?color=7661d8" alt="Latest release"></a>
-  <a href="https://github.com/SoaringLabs/plane-for-codex/stargazers"><img src="https://img.shields.io/github/stars/SoaringLabs/plane-for-codex?style=flat&amp;color=7661d8" alt="GitHub stars"></a>
-  <a href="https://github.com/SoaringLabs/plane-for-codex/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/SoaringLabs/plane-for-codex/validate.yml?branch=main&amp;label=checks" alt="Main branch checks"></a>
+  <a href="https://github.com/SoaringLabs/plane-devflow/releases"><img src="https://img.shields.io/github/v/release/SoaringLabs/plane-devflow?color=7661d8" alt="Latest release"></a>
+  <a href="https://github.com/SoaringLabs/plane-devflow/stargazers"><img src="https://img.shields.io/github/stars/SoaringLabs/plane-devflow?style=flat&amp;color=7661d8" alt="GitHub stars"></a>
+  <a href="https://github.com/SoaringLabs/plane-devflow/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/SoaringLabs/plane-devflow/validate.yml?branch=main&amp;label=checks" alt="Main branch checks"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT license"></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10 or newer"></a>
 </p>
@@ -16,6 +16,7 @@
 
 Open-source Agent Skills connecting **Plane tasks, agent development and GitHub PRs**, with integration guides for **Codex, Claude Code, Cursor and OpenCode**. Start with the task's requirements, work in its own directory, and deliver a linked PR with verification and acceptance records. No additional service to deploy.
 
+
 ## Quick start
 
 ### Install
@@ -23,15 +24,15 @@ Open-source Agent Skills connecting **Plane tasks, agent development and GitHub 
 Run this command from your target repository's root:
 
 ```sh
-npx skills add SoaringLabs/plane-for-codex \
+npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver
 ```
 
 Skills CLI installs three self-contained skills from GitHub into the current project and lets you choose the target agent. To make them available across projects, optionally add `--global`. To target one host directly, add `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Requires [Node.js 22.20+](https://nodejs.org/), npm, Git and an agent with local terminal and MCP support; runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
 
-Open a **new agent session in your target repository**, select or request **plane-setup**, and follow setup to connect Plane and choose a project. Each repository keeps its own Plane association in `.plane-for-codex.json`; run setup once for each repository, then reuse that mapping. Installing globally only changes where skills are available. Skills installation, MCP registration, browser authorization and GitHub background synchronization are separate steps. Existing connections and authorization are reused. See [MCP setup](docs/installation.md#plane-mcp-connection) if Plane tools are missing.
+Open a **new agent session in your target repository**, select or request **plane-setup**, and follow setup to connect Plane and choose a project. Each repository keeps its own Plane association in `.plane-devflow.json`; run setup once for each repository, then reuse that mapping. Installing globally only changes where skills are available. Skills installation, MCP registration, browser authorization and GitHub background synchronization are separate steps. Existing connections and authorization are reused. See [MCP setup](docs/installation.md#plane-mcp-connection) if Plane tools are missing.
 
-Already using the complete plugin? Keep that installation and its `$plane-for-codex:plane-setup` identifiers until you choose a [migration](docs/installation.md#existing-local-marketplace-installations). Install one distribution at a time to avoid duplicate entries.
+For the Codex plugin distribution, use `$plane-devflow:plane-setup`. See [local plugin installation](docs/installation.md#install-the-codex-plugin-locally). Install one distribution at a time to avoid duplicate entries.
 
 ### Start your first task
 
@@ -43,7 +44,7 @@ Already using the complete plugin? Keep that installation and its `$plane-for-co
 | Develop | “Use plane-start to start PROJECT-123” | The task's own working directory, branch, requirements and acceptance scope |
 | Deliver | “Use plane-deliver to deliver PROJECT-123; keep the PR open” | A linked PR, actual check results and outstanding acceptance items |
 
-Setup's `.plane-for-codex.json` must reach the configured base branch before independent task branches are created. You can also ask to read a task and discuss it without saving files. Delivery, acceptance and merge follow the requested scope; existing authorization is reused.
+Setup's `.plane-devflow.json` must reach the configured base branch before independent task branches are created. You can also ask to read a task and discuss it without saving files. Delivery, acceptance and merge follow the requested scope; existing authorization is reused.
 
 ## Features
 
@@ -68,7 +69,7 @@ Use the host's skill picker or request a workflow below. Codex uses `$plane-setu
 | **Start Plane Task** | Discuss, plan, start or resume an existing task — `plane-start` |
 | **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `plane-deliver` |
 
-The recommended command installs all three stages: **set up → develop → deliver**. They remain separate so you can request the right stage directly. Each skill bundles its own runtime and references and can also be installed individually for a narrower workflow. The complete plugin remains a supported alternative; its skill identifiers retain the `$plane-for-codex:` prefix.
+The recommended command installs all three stages: **set up → develop → deliver**. They remain separate so you can request the right stage directly. Each skill bundles its own runtime and references and can also be installed individually for a narrower workflow. The Codex plugin uses the `$plane-devflow:` skill prefix.
 
 ## GitHub synchronization
 
@@ -94,7 +95,7 @@ npx skills check
 npx skills update plane-setup plane-start plane-deliver --project
 ```
 
-Run `npx skills remove plane-setup plane-start plane-deliver` from the same repository and select the intended host to remove project skills. For existing global installations, use `--global` instead of `--project` when updating and add `--global` when removing. Open a new chat after updates. Removal keeps MCP connections, account authorization, business mappings, copied workflows and task workspaces. The [installation guide](docs/installation.md) covers plugin updates and deliberate migration.
+Run `npx skills remove plane-setup plane-start plane-deliver` from the same repository and select the intended host to remove project skills. For existing global installations, use `--global` instead of `--project` when updating and add `--global` when removing. Open a new chat after updates. Removal keeps MCP connections, account authorization, business mappings, copied workflows and task workspaces. The [installation guide](docs/installation.md) covers local plugin installation and removal.
 
 ## Documentation
 
@@ -104,13 +105,13 @@ Run `npx skills remove plane-setup plane-start plane-deliver` from the same repo
 | Installation and updates | [Install, update, migrate and remove](docs/installation.md) |
 | Setup and recovery | [Project association & sync](skills/plane-setup/references/setup.md) · [Resume setup](skills/plane-setup/references/recovery.md) |
 | Development and handoff | [Task execution](skills/plane-start/references/task-execution.md) · [Parallel tasks](skills/plane-start/references/parallel-tasks.md) · [Acceptance environments](skills/plane-deliver/references/acceptance-environment.md) |
-| Configuration | [Basic mapping](examples/plane-for-codex.basic.json) · [Legacy mapping](examples/plane-for-codex.example.json) |
+| Configuration | [Basic mapping](examples/plane-devflow.basic.json) · [Legacy mapping](examples/plane-devflow.example.json) |
 | Contributing and releases | [Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Publishing](PUBLISHING.md) · [Changelog](CHANGELOG.md) |
 
 Try the offline demo from a source checkout; it needs no account and calls no live services:
 
 ```sh
-python3 plugins/plane-for-codex/scripts/plane_workflow.py demo
+python3 plugins/plane-devflow/scripts/plane_workflow.py demo
 ```
 
 Runtime Python helpers use only the standard library. Development checks and decision evals are documented in [CONTRIBUTING.md](CONTRIBUTING.md).

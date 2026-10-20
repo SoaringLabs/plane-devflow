@@ -3,7 +3,7 @@ name: plane-setup
 description: Associate a repository with a Plane project, check or reconfigure its mapping, or resume native or Actions GitHub synchronization. Use for Plane setup requests, not ordinary coding or task delivery.
 ---
 
-# Set up Plane for Codex
+# Set up Plane DevFlow
 
 Selecting this skill alone starts setup. Use the bundled Plane MCP for account access. Resolve `../../scripts/plane_workflow.py` from this installed file and invoke its absolute path; keep the target repository explicit.
 

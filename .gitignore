@@ -4,7 +4,7 @@ __pycache__/
 node_modules/
 *.tgz
 .DS_Store
-.plane-for-codex.local/
+.plane-devflow.local/
 dist/
 .env
 .env.*

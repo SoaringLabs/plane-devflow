@@ -82,7 +82,7 @@ class SkillEvalTests(unittest.TestCase):
                 patch.object(evals.subprocess, 'run', side_effect=subprocess.TimeoutExpired(
                     ['codex'], 1, output=b'{"type":"turn.started"}\n', stderr=b'timeout')):
             output = Path(temp)
-            result = evals.run_case(self.case, ROOT / 'plugins/plane-for-codex', output, 'test', 1, 1)
+            result = evals.run_case(self.case, ROOT / 'plugins/plane-devflow', output, 'test', 1, 1)
             self.assertEqual(result['status'], 'unverified')
             self.assertNotIn('passed', result)
             self.assertIn('turn.started', (output / 'DELIVER-03-1/events.jsonl').read_text())
@@ -92,7 +92,7 @@ class SkillEvalTests(unittest.TestCase):
                 patch.object(evals.subprocess, 'check_output', return_value='codex-cli test'), \
                 patch.object(evals.subprocess, 'run', return_value=subprocess.CompletedProcess(
                     ['codex'], 0, '{"type":"turn.completed"}\n', '')):
-            result = evals.run_case(self.case, ROOT / 'plugins/plane-for-codex', Path(temp), 'test', 1, 1)
+            result = evals.run_case(self.case, ROOT / 'plugins/plane-devflow', Path(temp), 'test', 1, 1)
             self.assertEqual(result['status'], 'unverified')
             self.assertNotIn('passed', result)
 

@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 import plane_workflow as workflow
 import plane_sync as sync
 import task_progress as progress
@@ -41,7 +41,7 @@ class TaskProgressTests(unittest.TestCase):
         self.git("config", "user.name", "Test")
         self.git("config", "user.email", "test@example.invalid")
         self.git("remote", "add", "origin", "https://github.com/example/demo-project.git")
-        self.cfg = json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+        self.cfg = json.loads((ROOT / "examples/plane-devflow.example.json").read_text())
         (self.root / sync.CONFIG_NAME).write_text(json.dumps(self.cfg))
         (self.root / "file.txt").write_text("before")
         self.git("add", ".")
@@ -63,7 +63,7 @@ class TaskProgressTests(unittest.TestCase):
     def live(self, state="MERGED", **extra):
         return {"url": "https://github.com/example/demo-project/pull/7", "state": state, "isDraft": False,
                 "headRefOid": self.head, "baseRefName": "main", "baseRefOid": self.git("rev-parse", "main"), "mergeCommit": {"oid": "a" * 40},
-                "title": "[DEMO-12] Location entry", "body": "<!-- plane-for-codex " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->",
+                "title": "[DEMO-12] Location entry", "body": "<!-- plane-devflow " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->",
                 "isCrossRepository": False, "mergeable": "MERGEABLE", "mergeStateStatus": "CLEAN", **extra}
 
     def workitem(self):
@@ -93,7 +93,7 @@ class TaskProgressTests(unittest.TestCase):
             return progress.check_task(self.root, "DEMO-12", stage, workitem=workitem)
 
     def test_inspection_and_plan_leave_git_metadata_unchanged(self):
-        metadata = self.root / ".git/plane-for-codex/tasks"
+        metadata = self.root / ".git/plane-devflow/tasks"
         progress.progress(self.root, "DEMO-12")
         progress.progress(self.root, "DEMO-12", update=self.data)
         self.assertFalse(metadata.exists())
@@ -101,7 +101,7 @@ class TaskProgressTests(unittest.TestCase):
     def test_apply_requires_inspected_digest(self):
         with self.assertRaises(sync.WorkflowError):
             progress.progress(self.root, "DEMO-12", update=self.data, apply=True)
-        self.assertFalse((self.root / ".git/plane-for-codex/tasks").exists())
+        self.assertFalse((self.root / ".git/plane-devflow/tasks").exists())
 
     def test_receipt_shared_across_worktrees_but_not_projects(self):
         first = self.save()
@@ -354,14 +354,14 @@ class TaskProgressTests(unittest.TestCase):
             self.assertFalse(result["state_sync"])
 
     def test_cli_gates_exit_two_and_record_apply_leaves_checkout_clean(self):
-        command = [sys.executable, str(ROOT / "plugins/plane-for-codex/scripts/plane_workflow.py"),
+        command = [sys.executable, str(ROOT / "plugins/plane-devflow/scripts/plane_workflow.py"),
                    "check-task", "DEMO-12", "--repo", str(self.root), "--stage", "review"]
         result = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(result.returncode, 2)
         self.assertFalse(json.loads(result.stdout)["ready"])
         patch_file = Path(self.temp.name) / "update.json"
         patch_file.write_text(json.dumps(self.data))
-        record_cmd = [sys.executable, str(ROOT / "plugins/plane-for-codex/scripts/plane_workflow.py"),
+        record_cmd = [sys.executable, str(ROOT / "plugins/plane-devflow/scripts/plane_workflow.py"),
                       "task-progress", "DEMO-12", "--repo", str(self.root), "--record-file", str(patch_file),
                       "--expected-record-sha256", "missing", "--apply"]
         self.assertEqual(subprocess.run(record_cmd, capture_output=True).returncode, 0)

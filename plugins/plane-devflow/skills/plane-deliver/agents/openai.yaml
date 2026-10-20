@@ -1,4 +1,4 @@
 interface:
   display_name: "Deliver Plane Task"
   short_description: "Deliver PRs, prepare testing and finalize accepted work"
-  default_prompt: "Use $plane-for-codex:plane-deliver."
+  default_prompt: "Use $plane-devflow:plane-deliver."

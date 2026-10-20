@@ -1,6 +1,6 @@
-name: Plane for Codex sync
+name: Plane DevFlow sync
 description: Synchronize one primary Plane task from a GitHub PR using trusted repository configuration.
-author: Plane for Codex contributors
+author: Plane DevFlow contributors
 inputs:
   plane-api-key:
     description: Plane personal API key stored as a repository Secret; required only in Actions mode.
@@ -17,4 +17,4 @@ runs:
         PLANE_API_KEY: ${{ inputs.plane-api-key }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PLANE_ACTION_PATH: ${{ github.action_path }}
-      run: python3 "$PLANE_ACTION_PATH/plugins/plane-for-codex/scripts/action_runner.py"
+      run: python3 "$PLANE_ACTION_PATH/plugins/plane-devflow/scripts/action_runner.py"

@@ -27,7 +27,7 @@ class CredentialGuideTests(unittest.TestCase):
         self.assertTrue(all(args[0] == 'git' for args in calls))
         self.assertEqual(plane['url'], 'https://app.plane.so/example-workspace/')
         self.assertEqual(plane['next_step'], 'github')
-        self.assertEqual(plane['suggested_title'], 'Plane for Codex: example/demo-project')
+        self.assertEqual(plane['suggested_title'], 'Plane DevFlow: example/demo-project')
         self.assertEqual(github['url'], 'https://github.com/example/demo-project/settings/secrets/actions/new')
         self.assertEqual(github['name_field'], 'PLANE_API_KEY')
         self.assertEqual(github['next_step'], 'verify')

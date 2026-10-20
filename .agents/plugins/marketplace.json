@@ -1,9 +1,9 @@
 {
-  "name": "plane-for-codex",
-  "interface": {"displayName": "Plane for Codex"},
+  "name": "plane-devflow",
+  "interface": {"displayName": "Plane DevFlow"},
   "plugins": [{
-    "name": "plane-for-codex",
-    "source": {"source": "local", "path": "./plugins/plane-for-codex"},
+    "name": "plane-devflow",
+    "source": {"source": "local", "path": "./plugins/plane-devflow"},
     "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
     "category": "Productivity"
   }]

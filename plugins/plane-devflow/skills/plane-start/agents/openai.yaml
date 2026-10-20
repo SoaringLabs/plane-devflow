@@ -1,4 +1,4 @@
 interface:
   display_name: "Start Plane Task"
   short_description: "Discuss, plan, start or resume an isolated Plane task"
-  default_prompt: "Use $plane-for-codex:plane-start."
+  default_prompt: "Use $plane-devflow:plane-start."

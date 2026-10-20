@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="plugins/plane-for-codex/assets/icon.png" alt="Plane for Codex 标志" width="88" height="88">
+  <img src="plugins/plane-devflow/assets/icon.png" alt="Plane DevFlow 标志" width="88" height="88">
 </p>
-<h1 align="center">Plane for Codex</h1>
+<h1 align="center">Plane DevFlow</h1>
 <p align="center">
-  <a href="https://github.com/SoaringLabs/plane-for-codex/releases"><img src="https://img.shields.io/github/v/release/SoaringLabs/plane-for-codex?color=7661d8" alt="最新版本"></a>
-  <a href="https://github.com/SoaringLabs/plane-for-codex/stargazers"><img src="https://img.shields.io/github/stars/SoaringLabs/plane-for-codex?style=flat&amp;color=7661d8" alt="GitHub Stars"></a>
-  <a href="https://github.com/SoaringLabs/plane-for-codex/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/SoaringLabs/plane-for-codex/validate.yml?branch=main&amp;label=checks" alt="主分支检查状态"></a>
+  <a href="https://github.com/SoaringLabs/plane-devflow/releases"><img src="https://img.shields.io/github/v/release/SoaringLabs/plane-devflow?color=7661d8" alt="最新版本"></a>
+  <a href="https://github.com/SoaringLabs/plane-devflow/stargazers"><img src="https://img.shields.io/github/stars/SoaringLabs/plane-devflow?style=flat&amp;color=7661d8" alt="GitHub Stars"></a>
+  <a href="https://github.com/SoaringLabs/plane-devflow/actions/workflows/validate.yml"><img src="https://img.shields.io/github/actions/workflow/status/SoaringLabs/plane-devflow/validate.yml?branch=main&amp;label=checks" alt="主分支检查状态"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT 许可"></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10 及以上"></a>
 </p>
@@ -16,6 +16,7 @@
 
 将 **Plane 任务、agent 开发和 GitHub PR** 串成一条工作流的开源 Agent Skills，提供 **Codex、Claude Code、Cursor、OpenCode** 的接入指引。从任务需求出发，在独立目录中开发，再交付附有验证与验收记录的关联 PR。无需部署额外服务。
 
+
 ## 快速开始
 
 ### 安装
@@ -23,15 +24,15 @@
 在目标代码仓库根目录执行：
 
 ```sh
-npx skills add SoaringLabs/plane-for-codex \
+npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver
 ```
 
 Skills CLI 从 GitHub 将三个自包含技能安装到当前项目，并让你选择目标 agent。如需跨项目使用，可自行添加 `--global`。需要直接指定时，可加 `--agent codex`、`--agent claude-code`、`--agent cursor` 或 `--agent opencode`。需要 [Node.js 22.20+](https://nodejs.org/)、npm、Git，以及支持本地终端与 MCP 的 agent；运行辅助脚本需要 Python 3.10+，PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)。
 
-在**目标代码仓库新开一个 agent 会话**，选择或请求使用 **plane-setup**，按引导连接 Plane 并选择项目。每个仓库通过自己的 `.plane-for-codex.json` 保存 Plane 项目关联；每个仓库首次运行 setup，之后复用该映射。全局安装只改变技能的可用范围。技能安装、MCP 注册、浏览器授权与 GitHub 后台同步分别确认；已有连接和授权会复用。工具缺失时见 [MCP 配置](docs/installation.md#plane-mcp-connection)。
+在**目标代码仓库新开一个 agent 会话**，选择或请求使用 **plane-setup**，按引导连接 Plane 并选择项目。每个仓库通过自己的 `.plane-devflow.json` 保存 Plane 项目关联；每个仓库首次运行 setup，之后复用该映射。全局安装只改变技能的可用范围。技能安装、MCP 注册、浏览器授权与 GitHub 后台同步分别确认；已有连接和授权会复用。工具缺失时见 [MCP 配置](docs/installation.md#plane-mcp-connection)。
 
-已有完整插件的用户可以继续使用原安装及 `$plane-for-codex:plane-setup` 调用标识，按需再做 [迁移](docs/installation.md#existing-local-marketplace-installations)。选择一种分发方式，避免同时出现重复入口。
+Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插件安装](docs/installation.md#install-the-codex-plugin-locally)。选择一种分发方式，避免同时出现重复入口。
 
 ### 开始第一条任务
 
@@ -43,7 +44,7 @@ Skills CLI 从 GitHub 将三个自包含技能安装到当前项目，并让你�
 | 开发 | “使用 plane-start 开始 PROJECT-123” | 任务专属目录、分支、需求与验收范围 |
 | 交付 | “使用 plane-deliver 交付 PROJECT-123，先不要合并” | 关联 PR、实际检查结果和待验收项 |
 
-初始化生成的 `.plane-for-codex.json` 需要先进入配置的基础分支，才能创建独立任务分支。仅核对需求时，可以明确要求“只讨论，不保存文件”。交付、验收与合并各按请求范围执行，已有授权会复用。
+初始化生成的 `.plane-devflow.json` 需要先进入配置的基础分支，才能创建独立任务分支。仅核对需求时，可以明确要求“只讨论，不保存文件”。交付、验收与合并各按请求范围执行，已有授权会复用。
 
 ## 功能
 
@@ -68,7 +69,7 @@ Skills CLI 从 GitHub 将三个自包含技能安装到当前项目，并让你�
 | **Start Plane Task** | 讨论、规划、开始或恢复已有任务 — `plane-start` |
 | **Deliver Plane Task** | 交付 PR、准备试用、记录验收或按授权收尾 — `plane-deliver` |
 
-推荐命令一次安装三个阶段：**关联 → 开发 → 交付**。保留独立入口，方便按当前任务调用对应阶段。每个技能自带运行脚本与参考文件；只需要部分流程时，也可以按名称单独安装。完整插件仍兼容，其调用标识继续使用 `$plane-for-codex:` 前缀。
+推荐命令一次安装三个阶段：**关联 → 开发 → 交付**。保留独立入口，方便按当前任务调用对应阶段。每个技能自带运行脚本与参考文件；只需要部分流程时，也可以按名称单独安装。Codex 插件的调用标识使用 `$plane-devflow:` 前缀。
 
 ## GitHub 同步
 
@@ -94,23 +95,23 @@ npx skills check
 npx skills update plane-setup plane-start plane-deliver --project
 ```
 
-在同一仓库执行 `npx skills remove plane-setup plane-start plane-deliver` 并选择目标宿主，即可移除项目技能。已有全局安装在更新时将 `--project` 换成 `--global`，移除时添加 `--global`。更新后新开聊天。移除技能会保留 MCP 连接、账号授权、业务映射、已复制的同步文件和任务工作区。插件更新及主动迁移见 [安装说明](docs/installation.md)。
+在同一仓库执行 `npx skills remove plane-setup plane-start plane-deliver` 并选择目标宿主，即可移除项目技能。已有全局安装在更新时将 `--project` 换成 `--global`，移除时添加 `--global`。更新后新开聊天。移除技能会保留 MCP 连接、账号授权、业务映射、已复制的同步文件和任务工作区。本地插件安装及移除见 [安装说明](docs/installation.md)。
 
 ## 文档
 
 | 想了解什么 | 文档 |
 | --- | --- |
 | Agent 兼容 | [Codex、Claude Code、Cursor、OpenCode](docs/agent-compatibility.md) |
-| 安装、更新与迁移 | [安装、更新、迁移及移除](docs/installation.md) |
+| 安装、更新与移除 | [安装、更新及移除](docs/installation.md) |
 | 初始化与恢复 | [项目关联与同步](skills/plane-setup/references/setup.md) · [中断后继续](skills/plane-setup/references/recovery.md) |
 | 开发与交接 | [任务执行](skills/plane-start/references/task-execution.md) · [并行任务](skills/plane-start/references/parallel-tasks.md) · [验收环境](skills/plane-deliver/references/acceptance-environment.md) |
-| 配置格式 | [基础映射](examples/plane-for-codex.basic.json) · [旧映射](examples/plane-for-codex.example.json) |
+| 配置格式 | [基础映射](examples/plane-devflow.basic.json) · [旧映射](examples/plane-devflow.example.json) |
 | 贡献与发布 | [贡献指南](CONTRIBUTING.md) · [架构](docs/architecture.md) · [发布指南](PUBLISHING.md) · [更新记录](CHANGELOG.md) |
 
 在源码目录运行离线演示，无需账号，也不会调用真实服务：
 
 ```sh
-python3 plugins/plane-for-codex/scripts/plane_workflow.py demo
+python3 plugins/plane-devflow/scripts/plane_workflow.py demo
 ```
 
 插件运行时的 Python helper 仅使用标准库。开发检查与决策评测见 [CONTRIBUTING.md](CONTRIBUTING.md)。

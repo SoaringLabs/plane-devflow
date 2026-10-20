@@ -42,7 +42,7 @@ Resolve the GitHub base branch from configured mapping, remote default ref or Gi
 
 Use the same selected-project command with `--replace` to generate a replacement plan. It reports differences, whether the project changed and `expected_config_sha256`. Cancellation leaves the existing file intact. Repeat reviewed arguments with `--replace --apply --expected-config-sha256 HASH_FROM_PLAN` when applying.
 
-The helper checks the original hash, takes a shared Git metadata lock, backs up original bytes under the common Git directory's `plane-for-codex/backups/`, and atomically replaces the mapping. Backups and locks are outside tracked application files. Failed replacement preserves the original file. A changed hash requires a fresh plan, not force overwrite. An identical mapping preserves formatting and creates no needless backups. No auth store or remote Plane object is removed.
+The helper checks the original hash, takes a shared Git metadata lock, backs up original bytes under the common Git directory's `plane-devflow/backups/`, and atomically replaces the mapping. Backups and locks are outside tracked application files. Failed replacement preserves the original file. A changed hash requires a fresh plan, not force overwrite. An identical mapping preserves formatting and creates no needless backups. No auth store or remote Plane object is removed.
 
 Selecting a different project clears old state targets and disables status sync. It preserves repository/base/branch-prefix and completion preferences unless the user changes them. Invalid config can be replaced using the same hash/backup flow. `doctor` reports invalid config without deleting it.
 
@@ -81,7 +81,7 @@ Follow [the credential guide](credentials.md) when the Secret is missing: first 
 Prepare the mapping/workflow/scripts as a setup change in an isolated branch if the checkout has unrelated work. Explain the concrete changes. A workflow saved locally or in an unmerged PR is **not active**. Once the change is in the default branch, run:
 
 ```sh
-gh workflow run plane-for-codex.yml --repo OWNER/REPO --ref ACTUAL_DEFAULT_BRANCH
+gh workflow run plane-devflow.yml --repo OWNER/REPO --ref ACTUAL_DEFAULT_BRANCH
 python3 /absolute/plugin/scripts/plane_workflow.py check-github --repo /absolute/application/repo
 ```
 
@@ -129,7 +129,7 @@ The optional committed section is `"sync": {"provider": "actions", "api_version"
 
 ## Existing event workflows and pinned Actions
 
-Replacing config while `.github/workflows/plane-for-codex.yml` exists is blocked. Also inspect the relevant base-branch workflow: an older pinned Action cannot read version 2. Resolve disabling/removing the old workflow through a reviewed GitHub change first; do not delete it merely because the user selected reconfigure. Ensure old events cannot apply old mapping while association changes. This stage does not automatically rewrite active event workflows.
+Replacing config while `.github/workflows/plane-devflow.yml` exists is blocked. Also inspect the relevant base-branch workflow: an older pinned Action cannot read version 2. Resolve disabling/removing the old workflow through a reviewed GitHub change first; do not delete it merely because the user selected reconfigure. Ensure old events cannot apply old mapping while association changes. This stage does not automatically rewrite active event workflows.
 
 The older `configure --action-source owner/repository@FULL_40_CHARACTER_COMMIT_SHA` remains a legacy integration path for unchanged version 1 mappings. Only use an actual published SHA. Prefer the bundled workflow for new setup; migrating an existing pinned workflow needs a reviewed change. The readiness helper conservatively verifies the bundled files; it does not certify a different custom/pinned workflow without separate review.
 

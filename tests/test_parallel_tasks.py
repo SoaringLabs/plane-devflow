@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 import checkout_workflow as checkout
 import plane_workflow as workflow
 import task_progress as receipts
@@ -26,7 +26,7 @@ class ParallelFixture(unittest.TestCase):
         self.directory = Path(self.temp.name).resolve()
         self.root = self.directory / "project with spaces"
         self.root.mkdir()
-        self.cfg = json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+        self.cfg = json.loads((ROOT / "examples/plane-devflow.example.json").read_text())
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Fixture")
         self.git("config", "user.email", "fixture@example.invalid")
@@ -79,7 +79,7 @@ class ParallelTaskTests(ParallelFixture):
         plan = workflow.prepare(self.root, "DEMO-12")
         self.assertTrue(plan["isolated"])
         self.assertFalse(Path(plan["path"]).exists())
-        self.assertFalse((self.root / ".git/plane-for-codex").exists())
+        self.assertFalse((self.root / ".git/plane-devflow").exists())
         (self.root / "shared.txt").write_text("primary user edits")
         target = self.start("DEMO-12")
         self.assertEqual(self.git("branch", "--show-current"), "main")
@@ -288,7 +288,7 @@ class ParallelTaskTests(ParallelFixture):
         receipts.progress(a, "DEMO-12", update=data, expected="missing", apply=True)
         pr = {"url": data["delivery"]["pr_url"], "state": "MERGED", "isDraft": False, "headRefOid": a_head,
               "baseRefName": "main", "mergeCommit": {"oid": merged}, "isCrossRepository": False,
-              "title": "[DEMO-12] A", "body": "<!-- plane-for-codex " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->"}
+              "title": "[DEMO-12] A", "body": "<!-- plane-devflow " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->"}
         original = workflow.run
         def gh(args, cwd=None, **kwargs):
             if args[0] == "gh":

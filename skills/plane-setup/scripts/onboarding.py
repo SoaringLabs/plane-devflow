@@ -25,7 +25,7 @@ def capabilities(surfaces=()):
 def checkpoint_path(root, config):
     from plane_workflow import run
     common = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], root).stdout.strip())
-    destination = common / "plane-for-codex" / "setup" / (config_digest(config) + ".json")
+    destination = common / "plane-devflow" / "setup" / (config_digest(config) + ".json")
     require(not any(p.is_symlink() for p in (destination, destination.parent, destination.parent.parent)),
             "Setup progress must not resolve through symlinks.")
     return destination

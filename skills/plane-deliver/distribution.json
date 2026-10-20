@@ -1,5 +1,5 @@
 {
-  "generator": "plane-for-codex/build_skills.py",
+  "generator": "plane-devflow/build_skills.py",
   "skill": "plane-deliver",
   "version": "0.9.1",
   "hosts": [

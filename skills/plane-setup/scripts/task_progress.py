@@ -54,7 +54,7 @@ def identity(config, task):
 def location(root, config, task):
     from plane_workflow import run
     common = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], root).stdout.strip())
-    path = common / "plane-for-codex" / "tasks" / (digest(identity(config, task)) + ".json")
+    path = common / "plane-devflow" / "tasks" / (digest(identity(config, task)) + ".json")
     require(not any(p.is_symlink() for p in (path, path.parent, path.parent.parent)),
             "Task metadata must not resolve through symlinks.")
     return path
@@ -382,11 +382,11 @@ def report(path, task, summary, *, stage="review", workitem=None):
     from plane_workflow import render_report
     body = render_report(root, task, summary, "\n".join(lines), "\n".join(remaining))
     stamp = {"version": 1, "head": head, "brief_sha256": brief_hash, "record_sha256": receipt["record_sha256"]}
-    return body + "\n<!-- plane-for-codex-evidence " + json.dumps(stamp, separators=(",", ":")) + " -->\n"
+    return body + "\n<!-- plane-devflow-evidence " + json.dumps(stamp, separators=(",", ":")) + " -->\n"
 
 
 def verify_report(body, receipt_hash, head, brief_hash):
-    stamps = re.findall(r"<!-- plane-for-codex-evidence (.*?) -->", body)
+    stamps = re.findall(r"<!-- plane-devflow-evidence (.*?) -->", body)
     require(len(stamps) == 1, "Use render-report --from-progress to bind the report to current evidence.")
     try:
         stamp = json.loads(stamps[0])

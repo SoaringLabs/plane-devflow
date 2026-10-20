@@ -1,9 +1,9 @@
 # Agent compatibility
 
-The default is a shared Agent Skills package for Codex, Claude Code, Cursor and OpenCode. The original Codex plugin, qualified identifiers and npm installer remain compatible. Repository/package names and `.plane-for-codex.json` stay stable; installing another host does not migrate accounts or business configuration.
+Plane DevFlow provides shared Agent Skills for Codex, Claude Code, Cursor and OpenCode, plus a Codex plugin. Repository mappings use `.plane-devflow.json`. Installing skills for another host does not configure its accounts or change business mappings.
 
 ```sh
-npx skills add SoaringLabs/plane-for-codex \
+npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver
 ```
 
@@ -51,6 +51,6 @@ Tested on macOS arm64 with Skills CLI 1.7.4, Node.js 24.15.0 and Python 3.14.3. 
 
 MCP configuration recognition is not authenticated tool access. No fresh test client completed browser consent or a model-driven business operation. Cursor desktop rendering, remote/cloud runtimes and native Claude/Cursor/OpenCode clients on Windows/Linux remain unverified. Public-source installation/tracking checks and the guarded Windows Codex fixture are described in the [release record](validation-0.9.0.md); final CI status is linked in the Release. The local installer tests are not a claim of universal compatibility with every Agent Skills host.
 
-264 Python tests, 18 compatibility installer unit tests and the Codex standalone install/refresh/removal regression passed. All 24 existing decision-eval cases passed structure validation; no new multi-host model decision scores are claimed. Canonical plugin behavior and the compatibility installer runtime are unchanged; release versions are updated together. The original local verification left the primary checkout unchanged. Real configuration/authentication hashes remained unchanged, and removal preserved synthetic host settings, MCP registrations/auth files and the business mapping. See [standalone validation](validation-skills-add.md) for detailed evidence and earlier baseline checks.
+264 Python tests, 18 plugin installer unit tests and the Codex standalone install/refresh/removal regression passed. All 24 existing decision-eval cases passed structure validation; no new multi-host model decision scores are claimed. Canonical plugin behavior and the plugin installer runtime are unchanged; release versions are updated together. The original local verification left the primary checkout unchanged. Real configuration/authentication hashes remained unchanged, and removal preserved synthetic host settings, MCP registrations/auth files and the business mapping. See [standalone validation](validation-skills-add.md) for detailed evidence and earlier baseline checks.
 
 Sources: [Agent Skills](https://agentskills.io/specification), [Skills CLI supported agents](https://github.com/vercel-labs/skills/blob/main/docs/agents.md). Host-specific primary documentation is linked in each integration guide.

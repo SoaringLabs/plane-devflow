@@ -1,19 +1,19 @@
-# Install, update, migrate and remove
+# Install, update and remove
 
 [English README](../README.md) · [中文说明](../README.zh-CN.md)
 
 ## Install with Skills CLI
 
 ```sh
-npx skills add SoaringLabs/plane-for-codex \
+npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver
 ```
 
 Run the command from the target repository root. Choose Codex, Claude Code, Cursor or OpenCode when prompted. Optional `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode` targets a host explicitly. The default installs into the current project. Add `--global` only when you choose user-level installation across projects. The default command remains interactive so existing-file decisions are visible. For one skill, use `--skill plane-setup` (or another entry point). Each generated skill is self-contained; its bundled fallback guides cover related workflows even when a companion skill is absent.
 
-Requirements: Node.js 22.20+ for Skills CLI, npm, Git and an agent with local shell and MCP support. Runtime helpers use Python 3.10+; PR operations need an authenticated GitHub CLI. Skills CLI is a third-party installer, not an official Codex marketplace listing. It fetches the selected GitHub source; Plane for Codex does not need a separate npm publication for this path.
+Requirements: Node.js 22.20+ for Skills CLI, npm, Git and an agent with local shell and MCP support. Runtime helpers use Python 3.10+; PR operations need an authenticated GitHub CLI. Skills CLI is a third-party installer, not an official Codex marketplace listing. It fetches the selected GitHub source; Plane DevFlow does not need a separate npm publication for this path.
 
-The repository's generated `skills/` directories include instructions, UI/dependency metadata, standard-library Python helpers, references, license and distribution metadata. Their canonical sources remain under `plugins/plane-for-codex/` plus standalone MCP guidance under `scripts/standalone-resources/`. Generation rewrites paths and invocation names, and CI rejects drift. Installation does not require this source checkout at runtime.
+The repository's generated `skills/` directories include instructions, UI/dependency metadata, standard-library Python helpers, references, license and distribution metadata. Their canonical sources remain under `plugins/plane-devflow/` plus standalone MCP guidance under `scripts/standalone-resources/`. Generation rewrites paths and invocation names, and CI rejects drift. Installation does not require this source checkout at runtime.
 
 ## Plane MCP connection
 
@@ -23,7 +23,7 @@ Reuse the host's working Plane tools and authorization. Check existing servers a
 
 The host guides cover Codex CLI registration/login, Claude Code HTTP MCP registration and `/mcp`, Cursor's JSON/UI connection and OpenCode's remote server/auth commands. The user completes browser consent. Authorization tied to one client or server identity is not copied to another agent. Reopen/refresh the session when needed, inspect actual tool schemas and retrieve the requested workspace before claiming live access. An HTTP 401 challenge alone does not establish access.
 
-The Python/Git workflow keeps the same `.plane-for-codex.json`, task receipts, branch-prefix defaults, sync scripts and PR markers across agents. `doctor` may report optional `codex_cli` availability; another host can work with it false. Hosts without managed-worktree APIs use the existing Git preparation path. Local terminal access is required for implementation; a text-only host can discuss the task but cannot execute the helpers.
+The Python/Git workflow keeps the same `.plane-devflow.json`, task receipts, branch-prefix defaults, sync scripts and PR markers across agents. `doctor` may report optional `codex_cli` availability; another host can work with it false. Hosts without managed-worktree APIs use the existing Git preparation path. Local terminal access is required for implementation; a text-only host can discuss the task but cannot execute the helpers.
 
 ## Update or remove standalone skills
 
@@ -42,36 +42,29 @@ Run these commands from the repository where the skills were installed. Reopen t
 npx skills remove plane-setup plane-start plane-deliver
 ```
 
-For an existing global installation, use `--global` instead of `--project` when updating, and add `--global` when removing. Changing the recommended command does not migrate or remove existing global installations. Removing skills preserves MCP connections and credentials, business `.plane-for-codex.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
+For an existing global installation, use `--global` instead of `--project` when updating, and add `--global` when removing. Changing the recommended command does not migrate or remove existing global installations. Removing skills preserves MCP connections and credentials, business `.plane-devflow.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
 
-## Existing local marketplace installations
+## Install the Codex plugin locally
 
-The complete plugin and its `$plane-for-codex:plane-setup`, `$plane-for-codex:plane-start`, `$plane-for-codex:plane-deliver` identifiers remain supported. Existing users can keep that installation; no automatic migration or authorization reset is required.
-
-To switch deliberately, first inspect the existing plugin/MCP connection and any local customizations. Preserve its source checkout and account authorization. Install the standalone skills, then disable/remove only the duplicate plugin skill distribution when you are ready. If its Plane connection is plugin-owned, establish and verify a standalone connection before disabling that plugin; OAuth bound to a different connection identity may require user login. Keep one active distribution to avoid duplicate entries. Skill removal and credential removal are separate operations; do not delete shared account credentials to tidy up the menu.
-
-The default Skills CLI command does not replace marketplace registrations. Existing business mappings, worktree receipts, native/basic/legacy state rules and copied Actions files retain their own update policy.
-
-## Complete plugin compatibility
-
-The previously published npm 0.8.1 installer remains available as a legacy compatibility channel. The current Skills CLI/GitHub release does not require a new npm publication:
+From a local checkout, register this repository and install its plugin:
 
 ```sh
-npx plane-for-codex@latest
+codex plugin marketplace add /absolute/path/to/plane-devflow
+codex plugin add plane-devflow@plane-devflow
 ```
 
-It requires Node.js 20+ and a plugin-enabled Codex CLI on PATH (verified with 0.163.0). It bundles the complete plugin, saves an immutable persistent source outside the npx cache, then registers/installs through native Codex commands. It verifies the complete payload and three plugin-qualified skills. Use `npx plane-for-codex@latest --check` for a read-only check; `--json` and `--help` remain available.
+The plugin bundles its three skills and the Plane MCP connection. Use `$plane-devflow:plane-setup`, `$plane-devflow:plane-start` and `$plane-devflow:plane-deliver`. Keep one active distribution to avoid duplicate skill entries. Account consent is handled by the host.
 
-Existing marketplace registrations retain their selected source. Recognized Git sources refresh the same ref; local development checkouts retain their modifications and update through the usual Git workflow. If source-type metadata is absent, the installer preserves the source and reports its actual version. Modified npm-managed payloads cause an explicit error instead of being overwritten. To change to npm-managed storage deliberately, preserve local edits and remove only the old marketplace registration before reinstalling. Keep the old checkout and shared authorization.
-
-The native Git alternative also remains supported:
+The local npm installer can also be run from the checkout after `npm ci`:
 
 ```sh
-codex plugin marketplace add SoaringLabs/plane-for-codex && \
-  codex plugin add plane-for-codex@plane-for-codex
+node bin/plane-devflow.mjs
+node bin/plane-devflow.mjs --check
 ```
 
-Here marketplace means the repository catalog, not an official directory listing. Contributors may register an explicit checkout path. Preserve existing registrations instead of changing sources merely to follow another example. Remove the installed plugin with `codex plugin remove plane-for-codex@plane-for-codex`; its source registration and unrelated business data remain separate.
+It requires Node.js 20+ and a plugin-enabled Codex CLI on PATH. It saves a persistent source outside the npm cache, verifies the full payload and native skill discovery, and preserves the selected source and unrelated settings. The `plane-devflow` npm package has not been published; these local commands do not publish it.
+
+Remove the plugin with `codex plugin remove plane-devflow@plane-devflow`. Remove its source registration separately with `codex plugin marketplace remove plane-devflow`. Business configuration, task workspaces and account credentials are separate from plugin files.
 
 ## Validation scope
 

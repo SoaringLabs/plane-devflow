@@ -10,7 +10,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 import github_setup as setup
 import plane_workflow as workflow
 import plane_sync as sync
@@ -18,7 +18,7 @@ import action_runner as runner
 
 
 def config():
-    return json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+    return json.loads((ROOT / "examples/plane-devflow.example.json").read_text())
 
 
 class ReadinessTests(unittest.TestCase):
@@ -121,7 +121,7 @@ class RepositoryTests(unittest.TestCase):
                     data = {"content": base64.b64encode(files[name]).decode()}
                 elif suffix == "/actions/permissions":
                     data = {"enabled": True}
-                elif suffix == "/actions/workflows/plane-for-codex.yml":
+                elif suffix == "/actions/workflows/plane-devflow.yml":
                     data = {"state": "active"}
                 else:
                     data = {"workflow_runs": [{"id": i, "event": "workflow_dispatch", "head_sha": run_sha,

@@ -22,7 +22,7 @@ def fetch_config(event, token):
             "Invalid base repository or commit.")
     url = f"https://api.github.com/repos/{repo}/contents/{quote(CONFIG_NAME)}?ref={sha}"
     request = Request(url, headers={"Authorization": "Bearer " + token,
-        "Accept": "application/vnd.github+json", "User-Agent": f"plane-for-codex/{VERSION}"})
+        "Accept": "application/vnd.github+json", "User-Agent": f"plane-devflow/{VERSION}"})
     try:
         with build_opener(NoRedirect()).open(request, timeout=20) as response:
             record = json.load(response)
@@ -93,7 +93,7 @@ def main():
         print(json.dumps(result, indent=2))
         return 0
     except (WorkflowError, OSError, ValueError, KeyError, TypeError) as error:
-        print(f"plane-for-codex: {error}", file=sys.stderr)
+        print(f"plane-devflow: {error}", file=sys.stderr)
         return 1
 
 

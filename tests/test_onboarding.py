@@ -158,7 +158,7 @@ class RecoveryTests(unittest.TestCase):
             onboarding.progress(self.root, event='pat-ready', apply=True)
 
     def test_cli_checkpoint_survives_another_process(self):
-        script = fixtures.ROOT / 'plugins/plane-for-codex/scripts/plane_workflow.py'
+        script = fixtures.ROOT / 'plugins/plane-devflow/scripts/plane_workflow.py'
         command = ['python3', str(script), 'setup-progress', '--repo', str(self.root), '--offline']
         saved = json.loads(plane_workflow.run(command + ['--event','pat-ready','--apply']).stdout)
         resumed = json.loads(plane_workflow.run(command).stdout)

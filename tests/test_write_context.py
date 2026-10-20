@@ -20,7 +20,7 @@ class WriteContextTests(CheckoutFixture):
         return {"branch": self.git("branch", "--show-current"), "head": self.git("rev-parse", "HEAD"),
                 "status": self.git("status", "--porcelain"),
                 "metadata": {str(p): p.read_bytes() for p in
-                             (self.root / ".git/plane-for-codex").rglob("*") if p.is_file()}}
+                             (self.root / ".git/plane-devflow").rglob("*") if p.is_file()}}
 
     def test_discussion_needs_no_selected_task_or_new_branch(self):
         self.git("switch", "main")
@@ -92,7 +92,7 @@ class WriteContextTests(CheckoutFixture):
         self.assertTrue(result["repository_writes_allowed"], result)
         self.assertEqual(result["next_action"], "write_in_selected_task_checkout")
         self.assertEqual(self.snapshot(), before)
-        self.assertFalse((self.root / ".git/plane-for-codex/tasks").exists())
+        self.assertFalse((self.root / ".git/plane-devflow/tasks").exists())
 
     def test_resume_preserves_context_and_checks_accumulated_changes(self):
         self.scope(["file.txt", "docs/**"])

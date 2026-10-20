@@ -17,11 +17,11 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-CONFIG_NAME = ".plane-for-codex.json"
+CONFIG_NAME = ".plane-devflow.json"
 VERSION = "0.9.1"
 REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 PROJECT_RE = re.compile(r"[A-Z][A-Z0-9_-]{0,29}\Z")
-BINDING_RE = re.compile(r"<!--\s*plane-for-codex\s+(\{.*?\})\s*-->", re.S)
+BINDING_RE = re.compile(r"<!--\s*plane-devflow\s+(\{.*?\})\s*-->", re.S)
 
 
 class WorkflowError(Exception):
@@ -136,7 +136,7 @@ class PlaneClient:
         for attempt in range(3):
             request = Request(url, data=payload, method=method, headers={
                 "X-Api-Key": self.token, "Accept": "application/json",
-                "Content-Type": "application/json", "User-Agent": f"plane-for-codex/{VERSION}"})
+                "Content-Type": "application/json", "User-Agent": f"plane-devflow/{VERSION}"})
             try:
                 with self.opener.open(request, timeout=20) as response:
                     raw = response.read()
@@ -237,7 +237,7 @@ class PlaneClient:
         # v1 has no documented atomic upsert. Use v2 only for this capability.
         return self.request("POST", self.item_path(item, "v2") + "comments/upsert/", {
             "comment_html": comment_html, "access": "INTERNAL",
-            "external_source": "plane-for-codex", "external_id": external_id})
+            "external_source": "plane-devflow", "external_id": external_id})
 
 
 def parse_task(value, config):
@@ -331,7 +331,7 @@ def github_snapshot(event, token):
     require(REPO_RE.fullmatch(repo) and type(number) is int, "Invalid GitHub snapshot lookup.")
     request = Request(f"https://api.github.com/repos/{repo}/pulls/{number}", headers={
         "Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
-        "User-Agent": f"plane-for-codex/{VERSION}"})
+        "User-Agent": f"plane-devflow/{VERSION}"})
     try:
         with build_opener(NoRedirect()).open(request, timeout=20) as response:
             pr = json.load(response)
@@ -402,7 +402,7 @@ def main(argv=None):
         return 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
         # Configuration/event parse errors contain no API response bodies or credentials.
-        print(f"plane-for-codex: {error}", file=sys.stderr)
+        print(f"plane-devflow: {error}", file=sys.stderr)
         return 1
 
 

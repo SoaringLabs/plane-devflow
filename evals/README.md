@@ -25,7 +25,7 @@ Use new output directories; the runner refuses to overwrite an existing run. `--
 
 User config, rules, plugins, memory and hooks are disabled for the evaluated invocation, with host skill discovery skipped in favor of the supplied catalog. `skip_host_skill_discovery` is a development feature; inspect the captured warning and CLI compatibility. These flags are not a general network/security sandbox: use only synthetic fixtures, read-only sandboxing and a trusted local runtime. Do not put real credentials or account data in fixtures or enable production tools to make a test pass.
 
-Each run records the payload digest, exact prompt/command, CLI version, decision, command events, errors, timing and scoring. Raw output goes outside the checkout or into ignored `.plane-for-codex.local/`; the runner will not publish it. Review command events to confirm relevant documents were actually read and check for unintended actions, rather than trusting only the final JSON.
+Each run records the payload digest, exact prompt/command, CLI version, decision, command events, errors, timing and scoring. Raw output goes outside the checkout or into ignored `.plane-devflow.local/`; the runner will not publish it. Review command events to confirm relevant documents were actually read and check for unintended actions, rather than trusting only the final JSON.
 
 ## Maintain the rubric
 

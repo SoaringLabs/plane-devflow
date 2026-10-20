@@ -35,7 +35,7 @@ function profile(host) {
   write(path.join(home, '.config/opencode/opencode.json'), { $schema: 'https://opencode.ai/config.json', mcp: {
     retained: { type: 'remote', url: 'https://example.invalid/mcp', enabled: false } } });
   write(path.join(home, '.local/share/opencode/auth.json'), {});
-  write(path.join(project, '.plane-for-codex.json'), { fixture: 'business mapping remains untouched' });
+  write(path.join(project, '.plane-devflow.json'), { fixture: 'business mapping remains untouched' });
   const env = credentialEnvironment(root, home);
   return { host, home, project, state, env };
 }
@@ -64,7 +64,7 @@ try {
     const target = profile(host);
     const saved = [path.join(target.state, 'config.toml'), path.join(target.home, '.claude/settings.json'),
       path.join(target.home, '.cursor/mcp.json'), path.join(target.home, '.config/opencode/opencode.json'),
-      path.join(target.home, '.local/share/opencode/auth.json'), path.join(target.project, '.plane-for-codex.json')];
+      path.join(target.home, '.local/share/opencode/auth.json'), path.join(target.project, '.plane-devflow.json')];
     const initial = saved.map(digest);
     const args = [...cli, 'add', installSource, '--skill', ...names, '--agent', host, '--global', '--yes'];
     run('global-install', 'npx', args, target);
@@ -135,13 +135,13 @@ try {
       result.mcpStatusExit = status.status;
     }
     // Native config changes are intentional only inside this host's temporary profile.
-    assert.equal(digest(path.join(target.project, '.plane-for-codex.json')), initial.at(-1));
+    assert.equal(digest(path.join(target.project, '.plane-devflow.json')), initial.at(-1));
     const nativeConfigFiles = [...saved, path.join(target.home, '.claude.json'), path.join(target.home, '.claude/.claude.json')];
     const nativeConfigHashes = nativeConfigFiles.map(digest);
     run('remove-global', 'npx', [...cli, 'remove', ...names, '--agent', host, '--global', '--yes'], target);
     assert.deepEqual(nativeConfigFiles.map(digest), nativeConfigHashes);
     result.removalPreservesMcpAndAuth = true;
-    result.removalPreservesBusinessMapping = digest(path.join(target.project, '.plane-for-codex.json')) === initial.at(-1);
+    result.removalPreservesBusinessMapping = digest(path.join(target.project, '.plane-devflow.json')) === initial.at(-1);
     summary.agents[host] = result;
     console.log(`${host}: ${JSON.stringify(result)}`);
   }

@@ -30,7 +30,7 @@ During public-source verification, Cursor's native MCP list returned connection 
 - Fresh-client Plane OAuth and authenticated tool access for all four hosts. No real credentials are copied into test profiles; a registered URL or `requires_authentication` result is not a successful authenticated connection.
 - Model-driven end-to-end business workflows, multi-host decision quality, real PR writeback/state transitions, Cursor GUI acceptance and remote/cloud/SSH runtimes.
 - Cross-platform native Claude/Cursor/OpenCode behavior. CI can verify installation on its operating systems without certifying unavailable native host/model sessions.
-- Public-source installation/update tracking and remote CI are checked separately after pushing the reviewed commit. Their final status is recorded in the [GitHub Release](https://github.com/SoaringLabs/plane-for-codex/releases/tag/v0.9.0), rather than inferred from local snapshot tests.
+- Public-source installation/update tracking and remote CI are checked separately after pushing the reviewed commit. Their final status is recorded in the [GitHub Release](https://github.com/SoaringLabs/plane-devflow/releases/tag/v0.9.0), rather than inferred from local snapshot tests.
 
 ## Existing installations
 

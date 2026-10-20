@@ -49,13 +49,13 @@ The body carries a visible `[PROJECT-123]` and one hidden JSON binding with work
 
 Before final review or merging, `sync-task --apply` integrates the latest base in the selected task branch. Conflicts remain in that checkout for scoped resolution and verification; update the same PR after the new head is checked. The merge gate verifies the live PR base commit is known and included in the local/PR head. Recheck immediately before the exact-head merge.
 
-The local delivery helper deliberately returns `plane_writeback: pending`: the Skill must complete MCP writeback. Retrieve comments, then upsert by stable `plane-for-codex:owner/repo:NUMBER:delivery` marker (update matching comment, else create). Include the PR link, implementation, checks and remaining acceptance. If MCP fails after PR creation, return the existing PR and retry only writeback. Never claim end-to-end completion from the helper's exit code alone.
+The local delivery helper deliberately returns `plane_writeback: pending`: the Skill must complete MCP writeback. Retrieve comments, then upsert by stable `plane-devflow:owner/repo:NUMBER:delivery` marker (update matching comment, else create). Include the PR link, implementation, checks and remaining acceptance. If MCP fails after PR creation, return the existing PR and retry only writeback. Never claim end-to-end completion from the helper's exit code alone.
 
 PR delivery can finish with manual acceptance still pending and no runtime started. When the user asks to try the result, `plane-deliver` follows [acceptance environments](acceptance-environment.md) to run or prepare it from the recorded task worktree, verify the selected version and usable entry point, then hand it over for testing. This is a Skill-guided local operation using project-specific commands, not a new CLI stage or a reason to switch the primary checkout. Keep runtime readiness, human acceptance and merge authorization separate.
 
 ## Complete
 
-Verify the PR's real merged status and configured base/repository. In basic mode, the user can say `$plane-for-codex:plane-deliver 检查这条任务的 PR 是否已合并，并按完成规则同步 Plane`. With event sync, lifecycle state/comment updates happen in GitHub independently; the full development report still comes from the Skill.
+Verify the PR's real merged status and configured base/repository. In basic mode, the user can say `$plane-devflow:plane-deliver 检查这条任务的 PR 是否已合并，并按完成规则同步 Plane`. With event sync, lifecycle state/comment updates happen in GitHub independently; the full development report still comes from the Skill.
 
 `manual` policy or `manual-acceptance` Plane label keeps a merged task in review. User acceptance authorizes Done after outstanding required checks are satisfied. `on_merge` without that label permits Done when the primary PR is merged. An unmerged closed PR leaves task state unchanged. Preserve completed/canceled tasks even on reopened or draft events.
 

@@ -14,7 +14,7 @@ from task_progress import SHA, digest, identity
 def metadata_path(root, config, task, kind):
     from plane_workflow import run
     common = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], root).stdout.strip())
-    path = common / "plane-for-codex" / kind / (digest(identity(config, task)) + ".json")
+    path = common / "plane-devflow" / kind / (digest(identity(config, task)) + ".json")
     require(not any(p.is_symlink() for p in (path, path.parent, path.parent.parent)),
             "Checkout metadata must not resolve through symlinks.")
     return path

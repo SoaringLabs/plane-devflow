@@ -1,4 +1,4 @@
-# Contributing
+# Contributing to Plane DevFlow
 
 Keep changes scoped to the problem and preserve existing features, authorization boundaries and native/basic/legacy state ownership. A skill wording change can change behavior; review it accordingly. Small fixes need a short explanation, while changes to default behavior or compatibility need an explicit scope and acceptance criteria.
 
@@ -6,9 +6,9 @@ Keep changes scoped to the problem and preserve existing features, authorization
 
 - `skills/`: generated, self-contained Skills CLI distribution; regenerate and commit it after canonical-source changes. Do not edit generated files by hand.
 - `scripts/build_skills.py` and `scripts/standalone-resources/`: generation and standalone-only MCP guidance.
-- `plugins/plane-for-codex/skills/`: the three public agent entrypoints and their Codex UI metadata. Keep purpose, routing and essential boundaries in SKILL.md; link conditional procedures when the requested mode needs them.
-- `plugins/plane-for-codex/references/`: canonical workflows, contracts and recovery. Keep each detailed rule in one place rather than copying it into every entrypoint.
-- `plugins/plane-for-codex/scripts/`: standard-library runtime helpers. Preserve read/plan versus apply behavior, structured output, idempotency and protection of unrelated work.
+- `plugins/plane-devflow/skills/`: the three public agent entrypoints and their Codex UI metadata. Keep purpose, routing and essential boundaries in SKILL.md; link conditional procedures when the requested mode needs them.
+- `plugins/plane-devflow/references/`: canonical workflows, contracts and recovery. Keep each detailed rule in one place rather than copying it into every entrypoint.
+- `plugins/plane-devflow/scripts/`: standard-library runtime helpers. Preserve read/plan versus apply behavior, structured output, idempotency and protection of unrelated work.
 - `bin/` and `lib/`: the npm installer and its persistent-source/native verification boundary. Keep it separate from account authorization and business-repository mutation.
 - `tests/`: deterministic behavior and malformed-package regression tests.
 - `evals/`: prompts, fixtures, decision rubrics and the opt-in model evaluation runner. Raw transcripts stay outside tracked files.
@@ -29,7 +29,7 @@ python3 -m venv .venv
 .venv/bin/python -m unittest discover -s tests -v
 .venv/bin/python scripts/validate_package.py
 .venv/bin/python evals/run.py --validate-only
-.venv/bin/python plugins/plane-for-codex/scripts/plane_workflow.py demo
+.venv/bin/python plugins/plane-devflow/scripts/plane_workflow.py demo
 git diff --check
 ```
 

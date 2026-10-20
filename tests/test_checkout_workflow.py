@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "plugins/plane-for-codex/scripts"))
+sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 import checkout_workflow as checkout
 import plane_workflow as workflow
 import plane_sync as sync
@@ -24,7 +24,7 @@ class CheckoutFixture(unittest.TestCase):
         self.directory = Path(self.temp.name)
         self.root = (self.directory / "repo with spaces").resolve()
         self.root.mkdir()
-        self.cfg = json.loads((ROOT / "examples/plane-for-codex.example.json").read_text())
+        self.cfg = json.loads((ROOT / "examples/plane-devflow.example.json").read_text())
         self.git("init", "-b", "main")
         self.git("config", "user.name", "Test")
         self.git("config", "user.email", "test@example.invalid")
@@ -150,9 +150,9 @@ class CheckoutTests(CheckoutFixture):
 
     def test_readonly_context_creates_no_metadata_and_history_rewrite_blocks(self):
         self.scope()
-        before = sorted(p.name for p in (self.root / ".git/plane-for-codex").rglob("*"))
+        before = sorted(p.name for p in (self.root / ".git/plane-devflow").rglob("*"))
         checkout.context(self.root, "DEMO-12")
-        self.assertEqual(sorted(p.name for p in (self.root / ".git/plane-for-codex").rglob("*")), before)
+        self.assertEqual(sorted(p.name for p in (self.root / ".git/plane-devflow").rglob("*")), before)
         self.git("checkout", "--orphan", "rewritten")
         self.git("commit", "--allow-empty", "-m", "different history")
         self.git("branch", "-D", "codex/demo-12")
@@ -189,7 +189,7 @@ class HandoffTests(CheckoutFixture):
         receipts.progress(self.root, "DEMO-12", update=data, expected="missing", apply=True)
         self.pr = {"url": data["delivery"]["pr_url"], "state": "MERGED", "isDraft": False, "headRefOid": self.head,
                    "baseRefName": "main", "mergeCommit": {"oid": self.merge}, "isCrossRepository": False,
-                   "title": "[DEMO-12] Change", "body": "<!-- plane-for-codex " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->"}
+                   "title": "[DEMO-12] Change", "body": "<!-- plane-devflow " + json.dumps(sync.binding(self.cfg, "DEMO-12")) + " -->"}
         self.real_run = workflow.run
         def fake(args, cwd=None, **kwargs):
             if args[0] == "gh":
@@ -224,7 +224,7 @@ class HandoffTests(CheckoutFixture):
         before = self.git("rev-parse", "origin/main")
         self.assertTrue(self.finish()["ready"])
         self.assertEqual(self.git("rev-parse", "origin/main"), before)
-        self.assertFalse((self.root / ".git/plane-for-codex/handoffs").exists())
+        self.assertFalse((self.root / ".git/plane-devflow/handoffs").exists())
         (self.root / "untracked.txt").write_text("preserve")
         self.assertFalse(self.finish(apply=True)["ready"])
         self.assertEqual(self.git("branch", "--show-current"), "codex/demo-12")
