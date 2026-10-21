@@ -59,6 +59,25 @@ class SkillEvalTests(unittest.TestCase):
         decision['skill'] = 'plane-setup'
         self.assertFalse(evals.score(case, decision)['passed'])
 
+    def test_manual_update_can_read_setup_reference_without_business_setup(self):
+        case = next(c for c in self.cases if c['id'] == 'UPDATE-01')
+        for route in (None, 'plane-setup'):
+            decision = {'skill': route, 'actions': ['check_plugin_updates', 'report_plugin_update'],
+                        'rationale': 'Only the known manual helper; no account or project checks.'}
+            self.assertTrue(evals.score(case, decision)['passed'])
+            decision['actions'].append('read_setup')
+            self.assertFalse(evals.score(case, decision)['passed'])
+
+    def test_invalid_alternative_skill_rubrics_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'case.jsonl'
+            for routes in ([], [None, 'invented'], [None, None], ['plane-start'], 'plane-setup'):
+                case = copy.deepcopy(next(c for c in self.cases if c['id'] == 'UPDATE-01'))
+                case['expected_skills_any'] = routes
+                path.write_text(json.dumps(case)+'\n')
+                with self.subTest(routes=routes), self.assertRaises(ValueError):
+                    evals.read_cases(path)
+
     def test_invalid_case_rubrics_are_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'cases.jsonl'

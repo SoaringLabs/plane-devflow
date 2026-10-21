@@ -59,3 +59,7 @@ The service implements the minimal [MCP stdio transport](https://modelcontextpro
 ### START-10 rubric correction
 
 Two retained task-1 decision runs scored 3/4 with no forbidden actions. In START-10 the rationale explicitly kept a supplied sync limitation separate from discussion, while action labels omitted `report_partial` and `review_sync_bundle`. Discussion does not require inspecting a bundle. The machine projection now requires discussion-only routing; human trace review still requires the supplied limitation to be reported and all original forbidden effects remain. Original scores are preserved; a rescored result or new session must be identified separately. This correction does not turn decision tests into execution proof.
+
+### Equivalent routing and handoff projections
+
+A retained release-candidate run scored 42/45, with zero forbidden actions. Review found three narrower machine projections: SETUP-02 required manual Secret guidance even when the next safe step was local credential inspection; ONBOARD-02 required one of two equivalent handoff labels; UPDATE-01 required no skill even when setup's manual-update reference was read without business setup. The rubric now accepts only these explicit alternatives. All human criteria and forbidden effects remain. `expected_skills_any` lists reviewed equivalent entrypoints; unrelated requests still require no Plane skill. Original strict scores, separate rescores and fresh runs must be reported separately; input snapshots are never rewritten.

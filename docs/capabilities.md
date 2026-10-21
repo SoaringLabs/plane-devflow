@@ -1,6 +1,6 @@
 # Capabilities and evidence boundaries
 
-This is the current capability inventory. Historical validation reports retain their original versions, counts, failures and limits. A feature's implementation, deterministic checks, decision scores, native host discovery and real service effects are different kinds of evidence; none implies all the others.
+This is the current capability inventory. See [0.13.0 validation](validation-0.13.0.md) for the current release checks and retained failures. Historical validation reports retain their original versions, counts, failures and limits. A feature's implementation, deterministic checks, decision scores, native host discovery and real service effects are different kinds of evidence; none implies all the others.
 
 | Capability | Implemented behavior | Evidence to inspect | Limits |
 | --- | --- | --- | --- |

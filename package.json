@@ -1,6 +1,6 @@
 {
   "name": "plane-devflow",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Install the complete Plane DevFlow plugin and verify its three skills.",
   "type": "module",
   "bin": { "plane-devflow": "bin/plane-devflow.mjs" },

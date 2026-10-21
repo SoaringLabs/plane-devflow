@@ -2,6 +2,14 @@
 
 Implemented changes by plugin version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.13.0 — 2026-10-22
+
+- Expire synchronization connection evidence after 24 hours and share a daily metadata-probe cache across worktrees. Successful and failed routine probes both enter cooldown; local doctor checks remain offline, and expiry does not dispatch a connection workflow or stop independent development. Explicit refresh remains available.
+- Add read-only `task-status` diagnosis for checkout/head, requirements/check freshness, PR/CI, Plane snapshots, declared writeback, acceptance/merge declarations, environment and local handoff. Default diagnosis makes no remote request or cache write; explicit refresh never performs repair, fetch, dispatch or business-state changes.
+- Add five opt-in model execution evaluations using disposable Git repositories, synthetic GitHub CLI and Plane stdio MCP, grading actual effects and readbacks. Freeze evaluation inputs before sessions, preserve failures/timeouts/unrun cases and keep model execution out of default CI. Clarify active and archived reconciliation before recovering first-task creation, and calibrate documented equivalent decision routes while preserving original scores.
+- Align English/Chinese entrypoints and architecture with approved first-task creation, basic mapping state preservation, evidence depth and host-owned session portability. Multi-host and automatic-credential compatibility remain maintenance boundaries.
+- Keep the synchronization bundle at 0.10.1 byte for byte; no business-repository sync upgrade is required. See [0.13.0 validation](docs/validation-0.13.0.md) for executed checks, retained failures and unverified scope.
+
 ## 0.12.0 — 2026-10-21
 
 - Add explicitly authorized PAT creation from an existing macOS Plane App Cloud session, followed by native Keychain storage and identity/project/expiry verification. No console, clipboard transfer or terminal input is needed for this supported path; credential values stay inside the helper process.
