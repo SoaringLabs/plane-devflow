@@ -4,6 +4,10 @@ Read this when the user selected Actions and the mapped repository lacks a usabl
 
 The expected interaction is staged: guide the current page, explain the one human step, wait for that step's confirmation, then open the next page. Continue authorized independent preparation while waiting. A bare final message linking GitHub Secrets is not completed credential guidance. Use an asynchronous question, when available, to keep the handoff pending; request only progress confirmation, never token text. If the turn must end for human input, state the exact current step and how to resume. Any natural confirmation of completion is sufficient. Use [recovery.md](recovery.md) for capability routing, checkpoint commands and failure handling; save only the human-reported enum after each confirmation.
 
+## 0. Check reuse before creating a token
+
+Check the current repository Secret first. If it exists, continue connection verification. If missing, use `credential-guide --step local`; follow [local credentials](local-credentials.md) to select the Plane account, inspect local storage and offer opt-in reuse on macOS or Windows. This path works across GitHub owners and organizations. No organization-level Secret is required. If local storage is missing/unavailable, offer human input of an existing PAT; generate a new token only when needed. The native store/transfer helpers operate in a human-controlled terminal, without returning the PAT to the agent.
+
 ## 1. Open Plane and guide token creation
 
 Run `python3 /absolute/plugin/scripts/plane_workflow.py credential-guide --repo /absolute/repo --step plane`. This validates the current origin/mapping and returns the correct Plane origin/workspace, suggested title/description, and navigation. It performs no account writes.
@@ -14,7 +18,7 @@ Navigate **avatar / Open user menu → Settings (Profile settings) → Personal 
 
 Show the suggested title (`Plane DevFlow: OWNER/REPO`) and description. Explain the expiry field; the user chooses an explicit expiry appropriate to the automation and will need to renew it before expiry. Confirm they are using the intended Plane account/project permissions. No paid upgrade or new Plane project is required solely for this credential step.
 
-With computer/browser use, navigate to the form and optionally fill non-secret title/description. Stop before **Generate token** and hand control to the user to generate and copy it. Do not capture the page/AX tree after generation while the token is visible, read clipboard contents, inspect DOM token values, or move the credential through agent memory/files/tools. Login, CAPTCHA and credential creation follow the host's handoff/confirmation rules. If the user already has a suitable PAT, skip creation after their confirmation.
+With computer/browser use, navigate to the form and optionally fill non-secret title/description. Stop before **Generate token** and hand control to the user to generate and copy it. Do not capture the page/AX tree after generation while the token is visible, read clipboard contents, inspect DOM token values, or move the credential through agent memory/files/tools. Login, CAPTCHA and credential creation follow the host's handoff/confirmation rules. If the user already has a suitable PAT, skip creation after their confirmation. Offer the optional [remember-on-this-computer route](local-credentials.md#human-operated-entry-and-reuse); it is not enabled by default.
 
 Ask only whether the token is ready, e.g. “在 Plane 页面生成并复制 token，完成后告诉我‘已准备好’；不要把 token 发到聊天里。” Do not open GitHub prematurely or couple this question to merge approval.
 

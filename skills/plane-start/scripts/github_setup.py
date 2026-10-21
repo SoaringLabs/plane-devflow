@@ -44,8 +44,8 @@ def install(root, *, apply=False, upgrade=False, expected_files_sha256=None):
               "expected_files_sha256": digest, "provider": "actions", "api_version": api_version(config),
               "initialization": "partial",
               "credential_guide_command": ["python3", str(Path(__file__).resolve().with_name("plane_workflow.py")),
-                                           "credential-guide", "--repo", str(root), "--step", "plane"],
-              "next_step": "先检查 Secret；缺少时通过 credential-guide 从 Plane PAT 创建开始分步引导，再打开当前仓库 GitHub Secret 页面。已有 Secret 则复用，之后继续默认分支激活和连接检查。"}
+                                           "credential-guide", "--repo", str(root), "--step", "local"],
+              "next_step": "先检查当前仓库 Secret；缺少时选择 Plane 账号并检查本机凭据，确认后复用。没有本机凭据时可输入已有 PAT，确实没有时才创建。之后继续默认分支激活和连接检查。"}
     if apply:
         with configuration_lock(root) as metadata:
             for name, value in before.items():
@@ -139,7 +139,7 @@ def assess(config, *, local_files=False, online=None):
             "github_sync": "ready" if complete else "not_ready",
             "local_files_prepared": local_files, "checks": checks,
             "state_sync": state_sync_enabled(config),
-            "credential_step": "plane" if checks["secret_present"] is False else None,
+            "credential_step": "local" if checks["secret_present"] is False else None,
             "event_run_observed": online.get("event_run_observed", False),
             "sync_bundle": bundle, "sync_bundle_notice": notice,
             "message": "GitHub 后台同步已就绪。" if complete else "初始化尚未完成：GitHub 后台同步未就绪。",

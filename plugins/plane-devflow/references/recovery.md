@@ -52,7 +52,7 @@ Upgrade preparation, PR creation and merge follow the user's separate authorized
 
 | Result | Continue |
 | --- | --- |
-| `plane_pat` | Read credentials.md; guide Plane creation first. |
+| `local_credential` | Read credentials.md; select the Plane account and check optional local credential reuse before requesting an existing PAT or creating a new one. |
 | `confirm_pat_available_then_github` | Confirm availability, then guide storage without another creation. |
 | `check_secret_repository_name_and_scope` | Inspect the mapped repository, exact name and runner scope. |
 | `verify_secret_metadata` | Keep storage unknown; offer the exact GitHub link for an existing PAT, without requesting a new one. |

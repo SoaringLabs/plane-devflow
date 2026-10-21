@@ -54,7 +54,7 @@ class RecoveryTests(unittest.TestCase):
 
     def test_read_only_progress_leaves_no_checkpoint(self):
         data = self.run_progress(self.report(secret_present=False))
-        self.assertEqual(data['next_step'], 'plane_pat')
+        self.assertEqual(data['next_step'], 'local_credential')
         self.assertFalse(onboarding.Path(data['checkpoint_path']).exists())
 
     def test_interrupt_after_pat_creation_resumes_at_storage_confirmation(self):
@@ -76,10 +76,10 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(data['readiness']['initialization'], 'partial')
         self.assertEqual(data['credential_guide']['step'], 'github')
 
-    def test_lost_pat_returns_to_creation_only_after_explicit_confirmation(self):
+    def test_lost_pat_checks_local_reuse_before_creation(self):
         self.run_progress(self.report(secret_present=False), event='pat-ready', apply=True)
         data = self.run_progress(self.report(secret_present=False), event='pat-unavailable', apply=True)
-        self.assertEqual(data['next_step'], 'plane_pat')
+        self.assertEqual(data['next_step'], 'local_credential')
 
     def test_cached_success_is_never_proof_after_offline_restart(self):
         self.run_progress(self.report(), apply=True)

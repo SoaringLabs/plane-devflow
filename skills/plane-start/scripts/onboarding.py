@@ -71,7 +71,7 @@ def next_step(report, reported):
             return "check_secret_repository_name_and_scope"
         if reported == "pat-ready":
             return "confirm_pat_available_then_github"
-        return "plane_pat"
+        return "local_credential"
     if report.get("sync_bundle", {}).get("upgrade_required") is True:
         return "review_sync_bundle_upgrade"
     if report.get("sync_bundle", {}).get("status") == "unrecognized":
@@ -114,8 +114,8 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
               "sync_bundle": report.get("sync_bundle"), "maintenance_notice": report.get("sync_bundle_notice"),
               "cached_checks_reused_as_proof": False, "merge_authorization": "use_current_user_authorization"}
     if provider == "actions":
-        if step in {"plane_pat", "confirm_pat_available_then_github", "check_secret_repository_name_and_scope", "verify_secret_metadata"}:
-            result["credential_guide"] = credential_guide(root, step="plane" if step == "plane_pat" else "github")
+        if step in {"local_credential", "confirm_pat_available_then_github", "check_secret_repository_name_and_scope", "verify_secret_metadata"}:
+            result["credential_guide"] = credential_guide(root, step="local" if step == "local_credential" else "github")
         if step == "verify_secret_metadata":
             result["manual_storage_option"] = "Existing PAT may be saved through the linked repository Secret page; unknown metadata does not require a new PAT. Automatic verification remains pending."
     if apply:
