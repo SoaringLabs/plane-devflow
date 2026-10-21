@@ -25,6 +25,7 @@
 | **在 Plane 跟进交付** | 在任务中查看关联 PR、实现说明、实际检查结果与待验收项 |
 | **同时推进不同任务** | 各任务在独立工作区开发，换聊天后恢复对应的任务版本 |
 | **从零准备项目** | 从仓库准备、Plane 关联到同步配置，再审阅首批任务清单，确认后创建 |
+| **诊断任务状态** | 只读汇总任务目录、检查、PR/CI、回写与待收尾项，分别说明证据和未知状态 |
 | **验收后再决定合并** | 按需运行任务版本，获取可用入口与测试步骤；验收与合并分别确认 |
 
 新配置会记录 PR 活动，**默认不自动切换任务状态**。配置方式与已有集成的处理见 [GitHub 同步](#github-同步)。
@@ -66,7 +67,7 @@ npx skills add SoaringLabs/plane-devflow \
 | --- | --- |
 | **Set Up Plane** — `plane-setup` | 关联仓库、配置 GitHub 同步，或继续未完成的初始化 |
 | **Start Plane Task** — `plane-start` | 规划首批任务、创建已确认的清单，或开始、恢复已有任务 |
-| **Deliver Plane Task** — `plane-deliver` | 交付 PR、准备试用、记录验收，或按授权收尾 |
+| **Deliver Plane Task** — `plane-deliver` | 交付或诊断任务 PR、准备试用、记录验收，或按授权收尾 |
 
 Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:plane-setup`；Claude Code 使用 `/plane-setup`；OpenCode 通过原生工具加载技能。选择一种分发方式，避免重复入口。每个技能均自带运行脚本与参考文件，也可单独安装。
 
@@ -81,11 +82,13 @@ Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:pla
 
 关联项目使用浏览器授权；Actions 使用单独的 PAT。请直接在 GitHub Secrets 或由本人操作的隐藏终端输入中录入，不要发送到聊天。可选的 [本机凭据复用](skills/plane-setup/references/local-credentials.md) 使用 macOS Keychain 或 Windows Credential Manager。在 macOS 上，明确授权后的[自动创建与保存](skills/plane-setup/references/local-credentials.md#automatic-creation-from-plane-app)可复用 Plane App 的有效登录态，无需复制 PAT；会话过期时会提示先登录。
 
-初始化中断或条件不足时会保存进度，之后可继续。**连接验证通过与真实 PR 事件回写成功会分别验证。** 新映射记录 PR 活动，默认不切换任务状态；旧映射沿用既有规则，原生集成的状态变化由官方集成控制。详见 [初始化与同步](skills/plane-setup/references/setup.md)。
+初始化中断或条件不足时会保存进度，之后可继续。**连接验证、观察到真实 PR 事件运行、确认任务回写是三份独立证据。** 日常远程元数据检查最多每 24 小时一次，失败也进入冷却；证据过期会明确提示，不自动触发连接测试。任务诊断默认只读本地记录和缓存，明确要求刷新时才读取当前远程事实。 新映射记录 PR 活动，默认不切换任务状态；旧映射沿用既有规则，原生集成的状态变化由官方集成控制。详见 [初始化与同步](skills/plane-setup/references/setup.md)。
 
 ## 使用范围
 
-当前支持首版任务草案与确认后创建、已有任务开发、一条任务对应一个主 PR、Plane Cloud 和 github.com。通用任务/Cycle 管理、自定义状态规则、多 PR 聚合、完整的自托管 Plane 与 GitHub Enterprise 接入暂不支持。
+当前支持首版任务草案与确认后创建、已有任务开发、一条任务对应一个主 PR、Plane Cloud 和 github.com。通用任务/Cycle/Module 管理、自定义状态规则、多 PR 聚合、完整的自托管 Plane 与 GitHub Enterprise 接入暂不支持。
+
+本地任务记录可在宿主提供可信上下文时支持换聊天恢复。跨机器会话与聊天记录迁移由宿主 agent 提供。已实现能力、验证深度和剩余边界见 [能力与证据清单](docs/capabilities.md)。
 
 ## 更新与移除
 
@@ -109,6 +112,8 @@ npx skills update plane-setup plane-start plane-deliver --project
 | Agent 兼容 | [Codex、Claude Code、Cursor、OpenCode](docs/agent-compatibility.md) |
 | 安装、更新与移除 | [安装、更新及移除](docs/installation.md) |
 | 初始化与恢复 | [项目关联与同步](skills/plane-setup/references/setup.md) · [中断后继续](skills/plane-setup/references/recovery.md) |
+| 任务诊断 | [只读任务状态与部分完成情况](skills/plane-deliver/references/task-diagnostics.md) |
+| 能力与证据 | [当前清单与验证边界](docs/capabilities.md) |
 | 开发与交接 | [任务执行](skills/plane-start/references/task-execution.md) · [并行任务](skills/plane-start/references/parallel-tasks.md) · [验收环境](skills/plane-deliver/references/acceptance-environment.md) |
 | 配置格式 | [基础映射](examples/plane-devflow.basic.json) · [旧映射](examples/plane-devflow.example.json) |
 | 贡献与发布 | [贡献指南](CONTRIBUTING.md) · [架构](docs/architecture.md) · [发布指南](PUBLISHING.md) · [更新记录](CHANGELOG.md) |

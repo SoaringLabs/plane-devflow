@@ -54,3 +54,9 @@ MCP configuration recognition is not authenticated tool access. No fresh test cl
 264 Python tests, 18 plugin installer unit tests and the Codex standalone install/refresh/removal regression passed. All 24 existing decision-eval cases passed structure validation; no new multi-host model decision scores are claimed. Canonical plugin behavior and the plugin installer runtime are unchanged; release versions are updated together. The original local verification left the primary checkout unchanged. Real configuration/authentication hashes remained unchanged, and removal preserved synthetic host settings, MCP registrations/auth files and the business mapping. See [standalone validation](validation-skills-add.md) for detailed evidence and earlier baseline checks.
 
 Sources: [Agent Skills](https://agentskills.io/specification), [Skills CLI supported agents](https://github.com/vercel-labs/skills/blob/main/docs/agents.md). Host-specific primary documentation is linked in each integration guide.
+
+## Ongoing compatibility maintenance
+
+The host installation matrix, native discovery, authenticated MCP access and actual model execution are separate checks. Re-run affected checks when host tool schemas, skill discovery, credential-store adapters or the Plane App session format change. macOS Plane App automatic credential creation remains opt-in; other-platform automatic creation is not implied by file installation. These are compatibility maintenance boundaries, not a new cross-host authentication feature.
+
+Task receipts can support another chat on the same local checkout when the host provides trusted context. Conversation history and cross-machine session portability belong to the host agent or its cloud service; Plane DevFlow does not promise a session-transfer service. See the current [capability and evidence matrix](capabilities.md).
