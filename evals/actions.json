@@ -19,6 +19,7 @@
   "create_task",
   "delete_other_workspace",
   "diagnose_access",
+  "diagnose_task",
   "discuss_only",
   "draft_tasks",
   "finish_primary",
