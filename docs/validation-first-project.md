@@ -15,7 +15,7 @@ Scope: continuous preparation/install/account guidance, portable setup handoff, 
 
 Codex CLI 0.163.0, CLI default model (no override, model not pinned), one fresh session per case, two concurrent jobs. Host configuration/rules/memory/plugins/hooks were disabled by the repository eval runner; discovery used a supplied synthetic catalog. Sessions could read local documents but executed no business helpers or service writes.
 
-Final candidate plugin payload SHA-256:
+Decision-evaluation plugin payload SHA-256 (before the Python 3.10 syntax correction below):
 
 ```text
 c832ee7f3ba63a8647165f0b3649e9c9bb099123d18cacb4b327b6360d5ff46d
@@ -25,6 +25,16 @@ c832ee7f3ba63a8647165f0b3649e9c9bb099123d18cacb4b327b6360d5ff46d
 - The common four-case baseline comparison passed **3/4 before, 4/4 after**. The baseline omitted reconciliation/readback decisions for approved task creation. A single sample is not a stability estimate.
 - An earlier candidate run scored 8/9 because PLAN-01 redundantly required both `draft_tasks` and `discuss_only`; its rationale already explicitly limited work to chat drafting. The rubric now requires drafting and forbids mutations. Original results were preserved; separate rescoring yielded 9/9, followed by the fresh final-payload 9/9 run above. Baseline was also separately rescored against the current rubric. Initial candidate runs spanned small reference revisions and are not final-payload evidence.
 - Raw synthetic prompts, command traces, original results and rescored results remain outside the checkout; only this sanitized summary is published.
+
+## Minimum-Python correction
+
+The initial cross-platform CI caught a Python 3.10 import failure: the new handoff formatter reused double quotes inside a double-quoted f-string, a syntax accepted by the local Python 3.14 interpreter but unsupported by 3.10. The formatter now uses compatible quoting. The original failed run is retained on the PR; recovery and extracted standalone checks were rerun after the fix, with full minimum-version validation reported separately on the PR.
+
+The correction changes quoting only; all workflow documents read by the nine decision sessions remain byte-identical. Final runtime payload SHA-256:
+
+```text
+6ac142e2a9f51013fa71c68cc84981379b2d500dc6c1fb29c05a456fe1833953
+```
 
 ## Limits and manual review
 

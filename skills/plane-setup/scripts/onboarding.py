@@ -119,8 +119,8 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
     result["handoff"] = handoff(root, step)
     result["handoff"].update(repository=config["github"]["repository"], project_id=config["plane"]["project_id"],
                              config_sha256=digest, checkpoint_path=str(destination))
-    result["handoff"]["resume_prompt"] += (f" Expected mapping: {digest}, project {config["plane"]["project_id"]}, "
-                                             f"repository {config["github"]["repository"]}. Inspect any mismatch before writes.")
+    result["handoff"]["resume_prompt"] += (f" Expected mapping: {digest}, project {config['plane']['project_id']}, "
+                                             f"repository {config['github']['repository']}. Inspect any mismatch before writes.")
     result["next_user_action"] = ("Describe the first version to draft tasks; creation requires approval of the exact list."
                                   if step in {"connection_verified", "native_verified"}
                                   else "Complete only the reported next step, then refresh setup-progress.")
