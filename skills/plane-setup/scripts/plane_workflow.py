@@ -66,7 +66,7 @@ def repo_config(path):
     return root, config
 
 
-def doctor(path):
+def doctor(path, *, offline=False):
     root = repo_root(path)
     report = {"version": VERSION, "sync_bundle_version": SYNC_BUNDLE_VERSION, "repository_path": str(root),
               "python": sys.version.split()[0], "github_cli": bool(shutil.which("gh")),
@@ -92,7 +92,7 @@ def doctor(path):
             report.update(configured=True, config_valid=False, config_error=str(error))
     else:
         report.update(configured=False, config_sha256="missing")
-    if shutil.which("gh"):
+    if shutil.which("gh") and not offline:
         report["github_authenticated"] = run(["gh", "auth", "status"], check=False).returncode == 0
     report["plane_mcp"] = "Check the bundled Plane MCP connection in Codex; doctor does not read OAuth credentials."
     if report.get("config_valid"):
@@ -770,6 +770,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("doctor", help="Read local repo/config/authentication availability.")
     p.add_argument("--repo", default=".")
+    p.add_argument("--offline", action="store_true", help="Inspect only local facts; skip GitHub authentication requests.")
     p = sub.add_parser("configure", help="Plan or write project mapping; IDs are resolved by the setup Skill.")
     p.add_argument("--repo", default=".")
     for key in ("workspace", "project-id", "project-key"):
@@ -870,7 +871,9 @@ def main(argv=None):
     p.add_argument("--apply", action="store_true", help="Execute an explicitly authorized plan without terminal input; otherwise plan only.")
     p = sub.add_parser("setup-progress", help="Inspect capabilities, resume setup and optionally save non-secret progress in Git metadata.")
     p.add_argument("--repo", default=".")
-    p.add_argument("--offline", action="store_true", help="Leave remote checks unknown; never reuse cached success as current evidence.")
+    p.add_argument("--offline", action="store_true", help="Leave remote checks unknown; historical observations are not current proof.")
+    p.add_argument("--cache", action="store_true", help="Allow non-secret Git-metadata caching; routine remote probes at most once per 24 hours.")
+    p.add_argument("--refresh", action="store_true", help="Explicitly refresh GitHub metadata, bypassing cooldown; never dispatches Actions.")
     p.add_argument("--surface", action="append", choices=["browser-control", "app-control", "url-opener"], default=[],
                    help="Report only tools actually available in this host; defaults to manual links.")
     p.add_argument("--event", choices=["pat-ready", "pat-unavailable", "secret-saved"])
@@ -905,6 +908,7 @@ def main(argv=None):
     p = sub.add_parser("check-github", help="Check remote setup readiness; Secret values are never read.")
     p.add_argument("--repo", default=".")
     p.add_argument("--native-evidence-file")
+    p.add_argument("--refresh", action="store_true", help="Explicitly refresh GitHub metadata; no Actions dispatch or credential reads.")
     p = sub.add_parser("record-native", help="Record observed official integration mapping; no automatic discovery claim.")
     p.add_argument("--repo", default=".")
     p.add_argument("--evidence-file", required=True)
@@ -914,7 +918,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.command == "doctor":
-            result = doctor(args.repo)
+            result = doctor(args.repo, offline=args.offline)
         elif args.command == "configure":
             result = configure(args)
         elif args.command == "project-options":
@@ -972,7 +976,7 @@ def main(argv=None):
                             replace=args.replace, apply=args.apply)
         elif args.command == "setup-progress":
             from onboarding import progress
-            result = progress(args.repo, surfaces=args.surface, offline=args.offline, event=args.event, apply=args.apply)
+            result = progress(args.repo, surfaces=args.surface, offline=args.offline, event=args.event, apply=args.apply, cache=args.cache, refresh=args.refresh)
         elif args.command == "setup-capabilities":
             from onboarding import capabilities
             result = capabilities(args.surface)
@@ -991,7 +995,11 @@ def main(argv=None):
             result = install(args.repo, apply=args.apply, upgrade=args.upgrade, expected_files_sha256=args.expected_files_sha256)
         elif args.command == "check-github":
             from github_setup import check
-            result = check(args.repo, native_evidence_file=args.native_evidence_file)
+            if args.native_evidence_file:
+                result = check(args.repo, native_evidence_file=args.native_evidence_file)
+            else:
+                from sync_health import status
+                result = status(args.repo, refresh=args.refresh)
         elif args.command == "record-native":
             from github_setup import record_native
             result = record_native(args.repo, args.evidence_file, apply=args.apply)

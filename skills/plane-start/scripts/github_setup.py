@@ -158,9 +158,10 @@ def _github_timestamp(value):
     return timestamp
 
 
-def check(root, *, native_evidence_file=None):
+def check(root, *, native_evidence_file=None, now=None):
     from plane_workflow import repo_config, run
     root, config = repo_config(root)
+    now = now or datetime.now(timezone.utc)
     repo = config["github"]["repository"]
     if sync_provider(config) == "native":
         evidence, errors = {}, []
@@ -174,7 +175,7 @@ def check(root, *, native_evidence_file=None):
         result = assess(config, online=evidence)
         result.update(evidence=evidence, errors=errors, native_config_sha256=config_digest(config),
                       verification_limit="依据记录的 UI 观察或用户确认；配置变化会失效，官方集成变更后需重新核对。")
-        return result
+        return describe_health(result, config, now=now)
     expected = bundled_files()
     evidence, errors, issues = {}, [], []
 
@@ -256,6 +257,7 @@ def check(root, *, native_evidence_file=None):
         run_url = latest.get("html_url")
         if isinstance(run_url, str) and re.fullmatch(r"https://github\.com/" + re.escape(repo) + r"/actions/runs/[0-9]+", run_url):
             evidence["connection_run"] = run_url
+        evidence["connection_checked_at"] = checked
         evidence["connection_conclusion"] = latest.get("conclusion") if latest.get("conclusion") in {"success", "failure", "cancelled", "timed_out", "action_required"} else None
         # PR-target run metadata describes the PR head, not the trusted checkout SHA.
         # The endpoint already scopes runs to this repository's sync workflow. This
@@ -271,4 +273,48 @@ def check(root, *, native_evidence_file=None):
     result["local_sync_bundle"] = local_bundle
     result.update(evidence=evidence, errors=errors, issues=issues)
     result["verification_limit"] = "连接验证只读取项目和状态；PR 事件策略及实际写入结果仍需分别核对。"
+    return describe_health(result, config, now=now)
+
+
+EVIDENCE_TTL_SECONDS = 24 * 60 * 60
+
+
+def freshness(observed_at, *, now=None):
+    """Age is separate from the truth of a historical observation."""
+    now = now or datetime.now(timezone.utc)
+    try:
+        age = (now - _github_timestamp(observed_at)).total_seconds()
+    except (WorkflowError, ValueError, TypeError, OverflowError):
+        return "unknown"
+    return "unknown" if age < 0 else "fresh" if age < EVIDENCE_TTL_SECONDS else "expired"
+
+
+def describe_health(report, config, *, now=None):
+    """Reassess cached observations without promoting them to live proof."""
+    import copy
+    result = copy.deepcopy(report)
+    evidence = result.get("evidence", {})
+    native = sync_provider(config) == "native"
+    checked = evidence.get("observed_at" if native else "connection_checked_at")
+    age = freshness(checked, now=now)
+    key = "native_mapping_verified" if native else "connection_verified"
+    historical = evidence.get(key)
+    connection = {"checked_at": checked, "freshness": age,
+                  "source": evidence.get("source") if native else "actions_connection_run",
+                  "historical_result": historical, "status": "unknown"}
+    if historical is False:
+        connection["status"] = "failed_or_unverified"
+    elif historical is True:
+        connection["status"] = "recently_verified" if age == "fresh" else "refresh_due"
+    result["checks"][key] = historical if age == "fresh" or historical is not True else None
+    config_keys = ("native_mapping_verified",) if native else (
+        "actions_enabled", "workflow_active", "sync_bundle_verified", "remote_config_matches", "secret_present")
+    configured = all((evidence if native else result["checks"]).get(k) is True for k in config_keys)
+    result["configuration_status"] = "complete" if configured else "unverified_or_incomplete"
+    result["connection"] = connection
+    result["event_writeback_verified"] = None
+    if historical is True and age != "fresh":
+        result.update(initialization="partial", github_sync="stale" if configured else "not_ready",
+                      message="配置记录完整，连接验证证据需刷新。" if configured else "配置或连接证据尚未验证。",
+                      impact="历史验证不证明当前连接可用；可继续独立授权的本地开发。")
     return result
