@@ -739,6 +739,8 @@ def main(argv=None):
     p.add_argument("--repo", default=".")
     p.add_argument("--stage", choices=["implement", "review", "merge", "complete"], required=True)
     p.add_argument("--workitem-file", help="Fresh normalized Plane MCP task snapshot for completion checks.")
+    p = sub.add_parser("check-updates", help="Manually check the public stable plugin version; no installation or project access.")
+    p.add_argument("--offline", action="store_true", help="Skip the upstream request and leave the latest version unknown.")
     p = sub.add_parser("credential-guide", help="Guide Plane PAT creation, GitHub storage, and metadata-only verification.")
     p.add_argument("--repo", default=".")
     p.add_argument("--step", choices=["plane", "github", "verify"], default="plane")
@@ -814,6 +816,9 @@ def main(argv=None):
             from task_progress import check_task
             result = check_task(args.repo, args.task, args.stage,
                                 workitem=json.loads(Path(args.workitem_file).read_text()) if args.workitem_file else None)
+        elif args.command == "check-updates":
+            from plugin_updates import check_updates
+            result = check_updates(offline=args.offline)
         elif args.command == "credential-guide":
             result = credential_guide(args.repo, step=args.step)
         elif args.command == "setup-progress":

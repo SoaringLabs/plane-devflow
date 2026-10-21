@@ -105,7 +105,7 @@ class PackageValidationTests(unittest.TestCase):
             self.rejects("UI")
 
     def test_missing_payload_script_and_icon_rejected(self):
-        for name in ("plugin_version.py", "sync_bundle.py"):
+        for name in ("plugin_version.py", "sync_bundle.py", "plugin_updates.py"):
             script = self.plugin / "scripts" / name
             original = script.read_bytes()
             script.unlink()

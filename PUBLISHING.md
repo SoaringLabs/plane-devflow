@@ -2,7 +2,7 @@
 
 Public source: [SoaringLabs/plane-devflow](https://github.com/SoaringLabs/plane-devflow). Plane DevFlow is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.10.2; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.10.3; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Version policy
 
@@ -19,6 +19,8 @@ The 0.10.0 rename changes runtime/configuration identities without old-name alia
 5. Actions setup vendors two sync scripts and a workflow into each business repository; publishing this source is not needed for runtime. The official checkout dependency uses a verified full SHA. Existing users of the composite Action pin this repository's actual published commit SHA. Updating either copied scripts or a pin is a reviewed repository change; plugin installation cannot update other repositories' workflows automatically.
 
 Plugin releases update `plugin.json`, `scripts/plugin_version.py` and npm package metadata together. The three standalone distribution versions follow the plugin. The GitHub synchronization bundle has an independent `sync_bundle.CURRENT_VERSION`, matching `plane_sync.VERSION`; skill, documentation and local-helper releases leave its scripts/workflow byte-for-byte unchanged. Package validation checks the shipped bundle against the trusted release catalog, so changing runtime/workflow bytes requires a deliberate bundle release and matching fingerprints. Review the supported config/binding versions and mark any known release requiring an upgrade explicitly; compatible previous releases remain ready, with optional updates reported separately. Retain reviewed historical fingerprints so current business repositories do not need a metadata-only upgrade PR. Test compatibility and reinstall the plugin only for an authorized local update. Keep the marketplace name stable. Onboarding should remain conversational and require only necessary account consent and project selection.
+
+The optional manual `check-updates` command reads the canonical public stable Release; it never installs or refreshes the trusted bundle catalog and requires no repository mapping or account. Ordinary `plane-start` / `setup-progress` check project synchronization without querying the plugin's latest release. Maintain the manual probe deadline, nonblocking failure results and separation from task readiness/checkpoint writes.
 
 Record version changes in [CHANGELOG.md](CHANGELOG.md). Keep the README focused on current capabilities, installation and usage, with a link to the changelog instead of inline version history.
 
@@ -45,6 +47,8 @@ The root `action.yml` describes the composite Action, so GitHub may show a banne
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [v0.10.3 validation](docs/validation-0.10.3.md) covers manual-only plugin release discovery, default-flow guards, installation and explicit unverified items. Final source/tag CI and local-install readbacks are recorded in its Release.
 
 The [v0.10.2 validation](docs/validation-0.10.2.md) covers independent plugin/sync versions, daily compatibility notices, preserved checkpoint interoperability and the released installation payload.
 

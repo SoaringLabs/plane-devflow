@@ -90,12 +90,11 @@ Currently supports existing tasks, one primary PR per task, Plane Cloud and gith
 
 ## Update or remove
 
-Plugin and GitHub sync-bundle versions are independent. Routine task checks report compatible optional updates without interrupting work; updating skills alone does not require project sync-script PRs. See [update scope](docs/installation.md#plugin-and-github-sync-updates).
+Plugin and GitHub sync-bundle versions are independent. Routine task checks verify project sync compatibility using the installed plugin's reviewed catalog; they do not query the plugin's latest release. Updating skills alone does not require a project sync-script PR. Update skills through your chosen installation channel. An optional [manual version check](docs/installation.md#manual-plugin-version-check) reports the stable plugin release without installing it.
 
-Rerun the installation command to refresh these three skills. For GitHub-tracked installations, Skills CLI also provides update checks:
+Rerun the installation command to refresh these three skills. For GitHub-tracked installations, explicitly update the selected project skills with:
 
 ```sh
-npx skills check
 npx skills update plane-setup plane-start plane-deliver --project
 ```
 
