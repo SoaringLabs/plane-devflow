@@ -84,12 +84,14 @@ def next_step(report, reported):
         return "review_sync_bundle_files"
     if any(checks.get(k) is not True for k in ("workflow_active", "sync_bundle_verified", "remote_config_matches")):
         return "review_default_branch_setup"
+    if report.get("connection", {}).get("status") == "refresh_due":
+        return "refresh_connection_evidence"
     if checks.get("connection_verified") is not True:
         return "inspect_connection_failure" if report.get("evidence", {}).get("connection_conclusion") == "failure" else "run_connection_check"
     return "connection_verified"
 
 
-def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
+def progress(path, *, surfaces=(), offline=False, event=None, apply=False, cache=False, refresh=False):
     from plane_workflow import repo_config, configuration_lock, atomic_write, credential_guide
     require(event is None or event in EVENTS, "Use a non-secret progress event.")
     root, config = repo_config(path)
@@ -102,14 +104,15 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
     provider = sync_provider(config)
     require(event is None or provider == "actions", "Native mode skips all runner credential events.")
     if provider == "native":
-        report = check(root)  # Local exact-config UI/user receipt, no GitHub credential probe.
+        report = check(root)  # Local exact-config observation, no GitHub requests.
     elif offline or not caps["github_cli"]:
         report = assess(config)
         if not offline:
             from setup_errors import issue
             report["issues"] = [issue("cli_unavailable", "github")]
     else:
-        report = check(root)
+        from sync_health import status
+        report = status(root, persist=cache, refresh=refresh, probe=check)
     reported = event if event is not None else previous.get("reported_step")
     step = next_step(report, reported)
     result = {"version": 1, "provider": provider, "repository": config["github"]["repository"],

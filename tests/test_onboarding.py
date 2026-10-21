@@ -4,6 +4,7 @@ import io
 import json
 import subprocess
 import unittest
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import test_github_setup as fixtures
@@ -46,7 +47,9 @@ class RecoveryTests(unittest.TestCase):
     def report(self, **changes):
         evidence = fixtures.ReadinessTests().evidence()
         evidence.update(changes)
-        return github_setup.assess(fixtures.config(), online=evidence)
+        report = github_setup.assess(fixtures.config(), online=evidence)
+        report["evidence"] = dict(evidence, connection_checked_at=datetime.now(timezone.utc).isoformat())
+        return report
 
     def run_progress(self, report, **options):
         with patch.object(onboarding.shutil, 'which', return_value='/test/gh'), patch.object(onboarding, 'check', return_value=report):

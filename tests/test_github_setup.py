@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -135,7 +136,7 @@ class RepositoryTests(unittest.TestCase):
                     self.fail(f"Unexpected GitHub endpoint: {suffix}")
             return subprocess.CompletedProcess(args, 0, json.dumps(data), "")
         with patch.object(workflow, "run", side_effect=fake_run):
-            return setup.check(self.root)
+            return setup.check(self.root, now=datetime(2026, 10, 10, 2, tzinfo=timezone.utc))
 
     def test_remote_current_success_is_ready(self):
         self.assertEqual(self.remote_check()["github_sync"], "ready")
