@@ -1,130 +1,138 @@
-# 更新记录
+# Changelog
 
-按插件版本记录已实现的变化。验证范围与已知限制见对应的版本验证文档；这里的版本记录不代表已创建 GitHub Release 或版本标签。
+Implemented changes by plugin version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
+
+## 0.11.0 — 2026-10-21
+
+- Guide a first project continuously from an empty directory through prerequisite checks, repository preparation, existing account connections, Plane association and background synchronization. Present one preparation plan and only the next necessary human handoff; application development remains a separate step.
+- Add read-only `bootstrap-status` and portable setup handoffs with the target directory, current mapping and a copyable resume prompt. Resume by checking current evidence and reusing existing resources and original user decisions, without treating stored progress as authorization.
+- Draft a first-version task list in chat before any task creation. Add immutable, mapping-bound task plans, exact-list approval boundaries and reconciliation for partial creation, lost replies and conflicting existing items. Plan persistence and helpers alone never create remote tasks.
+- Preserve the three public skills, existing configurations and authorization, state-management ownership, human acceptance, merge gates and local finalization. The independently versioned GitHub synchronization bundle remains 0.10.1, with no version-only business-repository upgrade.
+- Publish English changelog entries and establish English as the default Release language. See [0.11.0 validation](docs/validation-0.11.0.md) for release checks, historical decision results, live acceptance and remaining limits.
 
 ## 0.10.3 — 2026-10-21
 
-- 新增可选的手动 `check-updates` 命令，匿名查询插件公开稳定版，只报告版本和链接，不自动安装；无需项目映射或账号登录，查询失败保持未知。
-- `plane-start` 默认流程继续检查项目同步包兼容性与连接，不查询插件自身新版。同步包仍由已安装插件的审核清单识别，技能更新交给用户、安装工具或宿主市场管理。
-- 整理中英文 README 与更新指引，移除将 `npx skills check` 当作纯只读检查的示例；保留配置、授权、检查点和在途任务。验证范围与未验证项见 [0.10.3 验证记录](docs/validation-0.10.3.md)。
+- Add an optional manual `check-updates` command that anonymously checks the plugin's public stable release and reports versions and links without installing anything. No project mapping or account login is required; failed checks remain unknown.
+- Keep project sync-bundle compatibility and connection checks in the default `plane-start` flow without querying newer plugin releases. The installed plugin's reviewed catalog still identifies sync bundles; users, installation tools or host marketplaces manage skill updates.
+- Revise the English and Chinese READMEs and update guidance, removing examples that treated `npx skills check` as purely read-only. Preserve configuration, authorization, checkpoints and in-flight tasks. See [0.10.3 validation](docs/validation-0.10.3.md) for verification scope and unverified items.
 
 ## 0.10.2 — 2026-10-21
 
-- 分离插件与 GitHub 同步包版本，技能、文档和本地辅助检查器更新不再强制修改项目同步脚本。
-- 通过完整文件哈希和配置/绑定协议兼容清单识别同步包；兼容旧包保持就绪，可选更新单独提示，未知文件和必须升级的版本需单独核对。
-- 将更新提示接入开始/恢复任务时已有的只读检查，不自动改项目配置、授权、任务、脚本或创建升级 PR。版本知识来自当前安装插件附带的清单。
-- 当前 0.10.1 业务同步包保持原字节，无项目迁移要求；新增回归、发布验证与未验证项见 [0.10.2 验证记录](docs/validation-0.10.2.md)。
+- Version the plugin and GitHub synchronization bundle independently, so skill, documentation and local-helper updates no longer require changes to project synchronization scripts.
+- Identify sync bundles through complete file hashes and a config/binding compatibility catalog. Compatible older bundles remain ready, optional updates are reported separately, and unknown files or required upgrades need separate review.
+- Surface update notices through existing read-only task-start/resume checks without automatically changing project configuration, authorization, tasks or scripts, or creating upgrade PRs. Version knowledge comes from the installed plugin's catalog.
+- Preserve the current 0.10.1 business sync bundle byte for byte; no project migration is required. See [0.10.2 validation](docs/validation-0.10.2.md) for added regressions, release validation and unverified items.
 
 ## 0.10.1 — 2026-10-21
 
-- 修复 `check-github` 对成功 `pull_request_target` 事件的漏报：GitHub 记录的 PR 分支/提交不再被误当作默认分支的连接验证条件。
-- 连接验证继续核对当前默认分支、提交、最新运行结果和 Secret 更新时间；其他事件、失败或未完成的 PR 运行不会计为成功事件。
-- 补充回归测试，并通过既有真实 PR 运行只读复查。事件观察仍不等于 Plane 写入成功，也不证明事件使用的配置版本；实际评论和状态需独立核对。
-- 本次只升级插件及独立技能包，保留配置、授权和在途任务；业务仓库中已复制的同步文件不会自动更新。验证范围、历史运行窗口及未验证项见 [0.10.1 验证记录](docs/validation-0.10.1.md)。
+- Fix missed successful `pull_request_target` events in `check-github`: GitHub's reported PR branch/commit is no longer incorrectly required to match the default branch for connection verification.
+- Continue checking the current default branch, commit, latest run result and Secret update time. Other event types and failed or incomplete PR runs do not count as successful events.
+- Add regression tests and read-only rechecks of existing real PR runs. Observing an event does not prove a successful Plane write or establish the configuration version used by that event; comments and state require independent verification.
+- Update only the plugin and standalone skill packages, preserving configuration, authorization and in-flight tasks. Copied synchronization files in business repositories do not update automatically. See [0.10.1 validation](docs/validation-0.10.1.md) for scope, historical run windows and unverified items.
 
 ## 0.10.0 — 2026-10-21
 
-- 项目统一命名为 **Plane DevFlow**，更新仓库引用、插件与 marketplace 身份、npm 包和命令、配置文件、任务记录目录、同步文件及 PR/评论标记。
-- 三个技能继续使用 `plane-setup`、`plane-start`、`plane-deliver`；插件调用前缀改为 `$plane-devflow:`。运行时仅使用新名称，无旧名称别名或回退逻辑。
-- 改名涉及运行时和配置身份，使用 `0.10.0` 标记升级边界；旧版本标签和 Release 保留历史名称，不覆盖既有发布。旧业务配置、任务记录、同步文件及 PR 标记不会自动迁移，详见 [升级边界](docs/installation.md#upgrade-from-the-previous-name)。
-- 原生客户端隔离测试采用环境变量白名单、空凭证文件和 macOS Keychain/Mach 服务访问限制，并在启动前验证隔离边界，避免测试使用真实账号授权。
-- GitHub/Skills CLI 发布无需自有 npm 包；本次不发布 `plane-devflow` npm 包，也不修改业务仓库或账号授权。验证结果及未验证项见 [0.10.0 验证记录](docs/validation-0.10.0.md)。
+- Rename the project to **Plane DevFlow**, updating repository references, plugin and marketplace identities, npm package and command, configuration file, task-record directories, sync files and PR/comment markers.
+- Retain the three skill names `plane-setup`, `plane-start` and `plane-deliver`; change the plugin invocation prefix to `$plane-devflow:`. Runtime identifiers use the new name exclusively, without old-name aliases or fallback logic.
+- Use `0.10.0` to mark the runtime/configuration migration boundary. Historical tags and Releases retain their original names and remain intact. Old business configuration, task records, sync files and PR markers do not migrate automatically; see [upgrade boundaries](docs/installation.md#upgrade-from-the-previous-name).
+- Isolate native-client tests with an environment-variable allowlist, empty credential files and macOS Keychain/Mach service restrictions. Verify isolation before startup so tests cannot use real account authorization.
+- GitHub/Skills CLI distribution requires no project-owned npm package. This release does not publish the `plane-devflow` npm package or change business repositories or account authorization. See [0.10.0 validation](docs/validation-0.10.0.md) for results and unverified items.
 
 ## 0.9.1 — 2026-10-20
 
-- 推荐安装命令改为项目范围，去掉默认 `--global`；用户可按需自行添加该参数。中英文 README、安装与兼容说明中的更新/移除示例同步采用项目范围，已有全局安装及其配置授权不自动迁移。
-- 保留 `plane-setup`、`plane-start`、`plane-deliver` 三个独立入口，推荐一次安装完整流程；README 说明各阶段职责，以及每个仓库独立运行 setup、保存 Plane 项目映射的关系。
-- 本次为文档与发布校验修订，技能行为、MCP 配置、映射格式及授权边界不变；发布指南明确小修通常递增补丁号，无需为文案调整递增次版本号。
-- 验证范围和未验证项见 [0.9.1 验证记录](docs/validation-0.9.1.md)。新客户端 OAuth、Cursor 原生技能加载和真实业务端到端流程等既有限制仍保留。
+- Default recommended installation to project scope by removing `--global`; users can add it when needed. Update installation, update and removal examples in both READMEs and compatibility guidance. Existing global installations, configuration and authorization do not migrate automatically.
+- Retain `plane-setup`, `plane-start` and `plane-deliver` as separate entrypoints and recommend installing the complete workflow together. Explain each stage and how each repository runs setup independently and stores its own Plane project mapping.
+- Revise documentation and publication checks without changing skill behavior, MCP configuration, mapping format or authorization boundaries. Clarify that small fixes normally increment the patch version; wording changes do not require a minor release.
+- See [0.9.1 validation](docs/validation-0.9.1.md) for scope and unverified items. Existing limits, including fresh-client OAuth, Cursor native skill loading and real business end-to-end workflows, remain.
 
 ## 0.9.0 — 2026-10-20
 
-- 默认通过 `npx skills add SoaringLabs/plane-for-codex --skill plane-setup plane-start plane-deliver --global` 安装；交互选择 Codex、Claude Code、Cursor 或 OpenCode，也可指定 `--agent`。无需为标准分发方式发布自有 npm 包。
-- 三个技能分别包含运行脚本、完整参考文档和其他入口的回退指南，支持用户范围、项目范围和单技能安装；生成器校验资源引用与输出漂移。
-- 新增通用宿主能力检查及四份调用/MCP 指引。区分技能安装、MCP 配置、模型登录、Plane OAuth 和实际工具访问，按宿主使用原生调用方式。
-- 保留完整 Codex 插件、原有限定技能标识、配置格式、任务记录、状态同步和授权边界；本地插件沿用既有来源升级，不自动迁移为独立技能。旧 npm 0.8.1 安装入口继续作为兼容渠道，本次不再次发布 npm。
-- 隔离验证四个 agent 的三技能全局/项目安装、重复安装、运行脚本和移除后的配置保留。Codex、Claude Code、OpenCode 原生识别通过；Cursor 原生技能加载受客户端登录限制，尚未验证。
-- MCP 配置读取通过不代表已授权访问；公开源复查时 Cursor 连续两次返回连接失败，保留该限制。四个新测试客户端的 Plane OAuth、模型驱动业务流程、真实 PR/状态回写，以及 Cursor GUI 和远程/云端运行均未验证。跨平台 CI 与公开安装的最终状态见 [0.9.0 验证记录](docs/validation-0.9.0.md)，不以文件安装成功替代端到端验证。
+- Default installation to `npx skills add SoaringLabs/plane-for-codex --skill plane-setup plane-start plane-deliver --global`; select Codex, Claude Code, Cursor or OpenCode interactively or with `--agent`. Standard distribution requires no project-owned npm publication.
+- Bundle runtime scripts, complete references and fallback guides for the other entrypoints into each skill. Support user-scope, project-scope and individual-skill installation; validate resource references and generated-output drift.
+- Add shared host-capability checks and four invocation/MCP guides. Distinguish skill installation, MCP configuration, model login, Plane OAuth and actual tool access, using each host's native invocation conventions.
+- Preserve the complete Codex plugin, qualified skill identifiers, configuration format, task records, synchronization and authorization boundaries. Existing local plugins keep their selected source and do not automatically migrate to standalone skills. The legacy npm 0.8.1 installer remains a compatibility channel; no new npm publication is made.
+- Verify isolated global/project installation of all three skills, repeated installation, runtime scripts and configuration preservation after removal across all four agents. Codex, Claude Code and OpenCode native discovery passed; Cursor native skill loading remains unverified because client login is required.
+- Reading MCP configuration does not prove authorized access. Public-source Cursor checks returned connection failure twice; retain that limitation. Fresh-client Plane OAuth, model-driven business workflows, real PR/state writeback, Cursor GUI and remote/cloud execution remain unverified. See [0.9.0 validation](docs/validation-0.9.0.md) for cross-platform CI and final public-installation results; file installation does not substitute for end-to-end validation.
 
 ## 0.8.1 — 2026-10-20
 
-- 技能显示名称统一为 `Set Up Plane`、`Start Plane Task`、`Deliver Plane Task`，卡片描述和默认调用提示同步改为英文；保留三个原有技能调用标识和行为。
-- 新增 `npx plane-for-codex@latest` 安装器，npm 包内附完整插件，保存为持久来源并通过 Codex 原生安装；校验全部文件与三个技能，保留已有注册、开发目录和账号授权。
-- 支持重复安装、版本更新和 `--check` 检查，补充安装失败重试、锁冲突和受管文件修改保护。
-- README 默认切换为 npx 安装，保留 Git marketplace 和开发目录的高级用法。
+- Standardize skill display names as `Set Up Plane`, `Start Plane Task` and `Deliver Plane Task`, with English card descriptions and default invocation prompts. Preserve existing skill identifiers and behavior.
+- Add the `npx plane-for-codex@latest` installer, bundling the complete plugin, retaining a persistent source and installing through Codex's native mechanism. Verify every file and all three skills while preserving existing registrations, development directories and account authorization.
+- Support repeated installation, version updates and `--check`; add retry coverage, installation locking and protection against overwriting managed files.
+- Lead the README with npx installation while retaining advanced Git marketplace and development-directory instructions.
 
 ## 0.8.0 — 2026-10-20
 
-- README 默认使用英文，提供完整简体中文版和双向切换；首屏加入产品标志、动态仓库徽章与工作流示意图，安装和首次使用更容易找到。
-- 新安装使用 Codex 原生 Git marketplace，一条可复制命令完成注册与安装；补充旧本地来源迁移、更新与移除说明，不增加 npm 引导依赖。
-- 重整初始化、开始任务、交付任务三个技能入口，按请求类型选择流程，详细交付与收尾规则按需读取；保留现有功能、授权边界和同步责任。
-- 新增 24 个技能场景、独立会话决策评测、评分规则与回归测试；补齐 YAML、技能清单、引用资源、锚点和安装来源校验，PyYAML 仅用于开发验证。
-- 交付后可按需从任务工作区准备验收环境，核对实际任务版本、运行入口和可用性；PR 交付、环境就绪、人工验收与合并授权分别确认。
-- 更新插件图标与 SoaringLabs 开发者信息。升级插件保留现有项目配置和授权，业务仓库中已复制的 Actions 文件仍需单独审阅升级。
+- Make English the default README and provide a complete Simplified Chinese version with links between them. Add the product logo, live repository badges and workflow diagram, making installation and first use easier to find.
+- Install through Codex's native Git marketplace with one copyable registration/install command. Document migration from old local sources, updates and removal without adding an npm bootstrap dependency.
+- Reorganize the setup, task-start and delivery skill entrypoints by request type, loading detailed delivery and completion procedures on demand. Preserve existing features, authorization boundaries and synchronization ownership.
+- Add 24 skill scenarios, fresh-session decision evaluations, scoring rubrics and regression tests. Validate YAML, the skill inventory, resource references, anchors and installation identity; PyYAML remains a development-only dependency.
+- Prepare an acceptance environment from the task workspace on request after delivery, checking the actual task version, entrypoint and availability. Confirm PR delivery, environment readiness, human acceptance and merge authorization separately.
+- Update the plugin icon and SoaringLabs developer metadata. Plugin updates preserve project configuration and authorization; copied Actions files in business repositories still require separate review before upgrading.
 
-验证范围与限制见 [0.8.0 发布验证](docs/validation-0.8.0.md)、[技能评测](docs/validation-skill-quality.md)与 [README 和安装验证](docs/validation-readme.md)。
+See [0.8.0 release validation](docs/validation-0.8.0.md), [skill evaluation](docs/validation-skill-quality.md) and [README/installation validation](docs/validation-readme.md) for scope and limitations.
 
 ## 0.7.0 — 2026-10-19
 
-- 同项目多会话的新任务默认使用独立 worktree，从刚获取的配置基础分支创建各自任务分支；恢复原任务复用记录的目录，不切换主目录或其他任务的分支。
-- 支持 Codex 受管 worktree 的明确目录准备；每次文件与终端操作使用实际任务目录，避免仅创建目录但后续操作仍落在原目录。
-- 新增 `sync-task` 将最新基线合入当前任务分支；冲突保留在该目录中，解决并提交后重新验证、更新原 PR，再执行合并。
-- 文件范围检查保留原始起点，同时排除随基线进入的其他任务文件；合并检查核对实时 PR 基线与任务提交，基线变化、未解决冲突或过期证据阻止合并。
-- 验收、合并授权、Plane 同步和完成收尾继续独立检查；完成一个任务不清理其他任务的目录、分支或未提交改动。
+- Default new tasks in concurrent chats for the same project to separate worktrees and task branches from the freshly fetched configured base. Resume the original task in its recorded directory without switching branches in the primary checkout or another task.
+- Support explicit preparation of Codex-managed worktree directories. Use the actual task directory for every subsequent file and terminal operation; creating a directory alone does not relocate later operations.
+- Add `sync-task` to merge the latest base into the current task branch. Keep conflicts in that directory, resolve and commit them, revalidate and update the existing PR before merging.
+- Preserve the original starting point in file-scope checks while excluding unrelated files brought in through base merges. Check the live PR base and task commit before merging; base changes, unresolved conflicts and stale evidence block the merge.
+- Continue checking acceptance, merge authorization, Plane synchronization and completion handoff separately. Completing one task leaves other tasks' directories, branches and uncommitted changes intact.
 
-验证范围与限制见 [0.7.0 验证记录](docs/validation-0.7.0.md)。
+See [0.7.0 validation](docs/validation-0.7.0.md) for scope and limitations.
 
 ## 0.6.1 — 2026-10-19
 
-- 开始任务入口覆盖已关联仓库的新需求讨论、调研与规划，在创建首个仓库文件前确定任务归属；纯讨论默认在会话或仓库外输出。
-- 新增只读 `write-context`：检查明确选择的任务、目录、分支、累计改动与计划写入路径；尚未创建的规划文档同样必须落在授权范围内。
-- 新需求先从刷新后的配置基础分支准备任务分支；恢复原任务保留基线与范围。仅保存文档不启动实现或触发开发状态转换。
-- 保留既有隔离、验收与收尾规则；未新增多任务并行编排或全局文件写入拦截。验证见 [0.6.1 验证记录](docs/validation-0.6.1.md)。
+- Route new-requirement discussion, research and planning in mapped repositories through the task-start entrypoint. Establish task ownership before creating the first repository artifact; keep discussion-only output in chat or outside the repository by default.
+- Add read-only `write-context` checks for the explicitly selected task, directory, branch, accumulated changes and planned write paths. Planning documents that do not exist yet must also fall within the authorized scope.
+- Prepare new task branches from the refreshed configured base; preserve the original baseline and scope when resuming. Saving documents alone does not start implementation or trigger development-state transitions.
+- Retain existing isolation, acceptance and completion rules. This release adds neither multi-task parallel orchestration nor a global file-write interceptor. See [0.6.1 validation](docs/validation-0.6.1.md).
 
 ## 0.6.0 — 2026-10-13
 
-- `prepare` 记录任务目录、分支与基础提交；新增 `task-context` 设置授权文件范围并检查累计已提交、暂存、未暂存及未跟踪差异。
-- implement／review／merge 检查阻止分支／目录漂移、范围外改动及已进入基础分支的任务；Draft PR 同样需要通过上下文检查。
-- 新增 `finish-task`：确认任务完成和 PR 合并后，自动更新主 checkout 到最新基础分支，以 `--ff-only` 拉取并核对合并提交及本地／远端一致。
-- 收尾检查保留未提交改动、本地独有提交和其他 worktree；失败保存独立待续记录，只重试本地收尾，不改变任务完成状态。
-- 本轮仅补齐上述两项，未扩展需求沉淀、设计预览、自定义状态规则或后台服务。验证见 [0.6.0 验证记录](docs/validation-0.6.0.md)。
+- Record the task directory, branch and base commit during `prepare`. Add `task-context` to set authorized file scope and check accumulated committed, staged, unstaged and untracked changes.
+- Block implementation, review and merge checks on branch/directory drift, out-of-scope changes or tasks already integrated into the base branch. Draft PRs must pass the same context checks.
+- Add `finish-task`: after verifying task completion and PR merge, update the primary checkout to the latest base with `--ff-only`, checking merge ancestry and local/remote alignment.
+- Preserve uncommitted changes, local-only commits and other worktrees during completion checks. Save a separate continuation checkpoint on failure and retry only local handoff without changing task completion state.
+- Limit this iteration to task-context guards and completion handoff; requirement capture, design previews, custom state rules and background services are outside scope. See [0.6.0 validation](docs/validation-0.6.0.md).
 
 ## 0.5.0 — 2026-10-12
 
-- 开始任务先补齐目标、范围、关键场景与验收标准；视觉交互变化按需确认方案，复用已有明确授权。
-- 新增 task-progress，在共享 Git 元数据保存任务记录、历史与环境归属；支持摘要校验、原子更新、中断恢复与重复操作保护。
-- 新增 check-task，实现、待验收、合并与完成分别检查；验证和人工确认绑定需求版本与提交，变更后旧证据失效。
-- 正式交付需要当前检查和报告证据；未完成事项可交付 Draft，已有 Draft 不自动转为待审核。
-- 当前报告从任务记录生成，区分局部验收、未验证事项、后台同步与应用验证；人工验收和合并授权分开记录。
-- 完成检查核对实时 PR 与新鲜 Plane 状态／标签、必需验证、回写及环境清理；保留原有配置格式、完成策略与同步责任，自定义状态规则未新增。
-- 后台合并文案不再断言用户尚未验收；业务仓库复制脚本需单独审阅升级。
+- Establish goals, scope, key scenarios and acceptance criteria before starting a task. Confirm visual/interaction designs when needed and reuse existing explicit authorization.
+- Add `task-progress`, storing task records, history and environment ownership in shared Git metadata with digest checks, atomic updates, interruption recovery and repeat-operation protection.
+- Add `check-task`, with separate implementation, acceptance, merge and completion checks. Bind verification and human confirmation to the requirement version and commit; changes invalidate old evidence.
+- Require current checks and report evidence for formal delivery. Incomplete work can be delivered as a Draft; existing Drafts do not automatically become ready for review.
+- Generate current reports from task records, distinguishing partial acceptance, unverified items, background synchronization and application verification. Record human acceptance and merge authorization separately.
+- Check the live PR, fresh Plane state/labels, required validation, writeback and environment cleanup before completion. Preserve existing configuration formats, completion policies and synchronization ownership; no custom state rules are added.
+- Stop background merge wording from asserting that the user has not yet accepted the work. Copied scripts in business repositories require separate review before upgrading.
 
-验证与限制：[0.5.0 验证记录](docs/validation-0.5.0.md)。
+See [0.5.0 validation](docs/validation-0.5.0.md) for results and limitations.
 
 ## 0.4.2 — 2026-10-11
 
-- 初始化先检测工具能力，支持浏览器／App 导航、仅打开网页和人工链接；不要求安装 Plane 桌面 App。
-- 新增 `setup-capabilities` 和 `setup-progress`，支持检查能力、重查服务证据，并在 Git 元数据保存非敏感配置进度。
-- 支持分阶段继续配置与跨会话恢复；历史成功不作为当前验证结果，无法读取 Secret 时不会直接要求重建 Token。
-- 权限、登录、限流、网络失败和无效响应返回分阶段的恢复建议；原生模式跳过 runner 凭据，配置变化保留原进度并重新核对。
-- 不确定的服务端写入失败先核对结果，不自动重放 POST／PATCH／DELETE 请求。
-- 2026-10-12 兼容修正：GitHub UTC 时间戳解析兼容 Python 3.10，继续拒绝缺少时区或无效的时间元数据。
+- Detect available tools before setup, supporting browser/app navigation, opening pages only and manual links. The Plane desktop app is not required.
+- Add `setup-capabilities` and `setup-progress` to inspect capabilities, refresh service evidence and store non-sensitive setup progress in Git metadata.
+- Support staged setup and cross-session recovery. Historical success is not current validation; an unreadable Secret does not immediately require a replacement token.
+- Provide stage-specific recovery guidance for permission, login, rate-limit, network and invalid-response failures. Native mode skips runner credentials; configuration changes retain progress and trigger rechecks.
+- Reconcile uncertain server-side write outcomes before retrying; do not automatically replay POST/PATCH/DELETE requests.
+- 2026-10-12 compatibility fix: parse GitHub UTC timestamps on Python 3.10 while continuing to reject missing timezones and invalid time metadata.
 
-验证与限制：[0.4.2 验证记录](docs/validation-0.4.2.md)。
+See [0.4.2 validation](docs/validation-0.4.2.md) for results and limitations.
 
 ## 0.4.1 — 2026-10-10
 
-- Actions 缺少 Secret 时按 **Plane 创建 PAT → 当前仓库的 GitHub Secret → 读取 Secret 名称确认 → 激活与连接检查** 分阶段引导。
-- 有浏览器或 computer use 能力时协助打开页面、导航到表单；缺少相关能力时提供完整路径与动态仓库链接。
-- PAT 的生成、复制、粘贴和保存由用户直接完成，不经过聊天或 agent 的剪贴板读取；合并授权与凭证阶段确认分开处理。
+- When the Actions Secret is missing, guide users through separate stages: **create a PAT in Plane → save it as the current repository's GitHub Secret → confirm the Secret name → activate and check the connection**.
+- Help open pages and navigate forms when browser/computer-use tools are available; otherwise provide the complete path and repository-specific links.
+- The user generates, copies, pastes and saves the PAT directly; it never passes through chat or agent clipboard reads. Keep merge authorization separate from credential-stage confirmation.
 
-验证与限制：[0.4.1 验证记录](docs/validation-0.4.1.md)。
+See [0.4.1 validation](docs/validation-0.4.1.md) for results and limitations.
 
 ## 0.4.0 — 2026-10-10
 
-- 新增 `sync.provider`：`actions`（默认）和 `native`，按实际就绪证据验证选定模式。
-- 新增 `sync.api_version`：默认 `v1`，评论 upsert 单独使用 `v2`；显式选择 v2 时，状态与标签仍用 v1 新鲜读取作安全检查。
-- 保持配置格式 version 1／2 和 PR 绑定协议不变；未知或无法解析的状态、验收标签阻止写入，较长的 Retry-After 不会被截短后提前重试。
-- 支持审阅、核对摘要并备份升级业务仓库内的同步文件；业务仓库分别配置自己的 `PLANE_API_KEY`，连接检查与实际 PR 回写分别报告。
+- Add `sync.provider` with `actions` (default) and `native`, verifying the selected mode against actual readiness evidence.
+- Add `sync.api_version`, defaulting to `v1` and using `v2` separately for comment upserts. When v2 is explicitly selected, state and label safety checks still use fresh v1 reads.
+- Preserve configuration formats version 1/2 and the PR binding protocol. Unknown or unparseable states and acceptance labels block writes; longer Retry-After values are not shortened to retry early.
+- Support reviewed, digest-checked and backed-up upgrades of copied synchronization files in business repositories. Each repository configures its own `PLANE_API_KEY`; connection checks and actual PR writeback are reported separately.
 
-验证与限制：[0.4.0 验证记录](docs/validation-0.4.0.md)。
+See [0.4.0 validation](docs/validation-0.4.0.md) for results and limitations.
