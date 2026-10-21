@@ -18,6 +18,17 @@ Save human confirmations with `setup-progress --event pat-ready --apply` or `--e
 
 The checkpoint contains a format version, configuration digest, human-reported stage, observation time and boolean/unknown readiness checks. It contains no PAT, clipboard, browser snapshot, task text or merge authorization. Obtain existing setup PR context from the current checkout/branch and GitHub before creating a PR; retrieve its current head/base and review changes, reusing that PR when appropriate. Merge approval follows existing user authorization and the current reviewable PR, not a stored receipt.
 
+## Explicit Plane App credential creation
+
+For an authorized create-and-save request, follow
+[the Plane App branch](local-credentials.md#automatic-creation-from-plane-app).
+Recover using its operation UUID, expiry and config digest. Its non-secret receipt
+is separate from setup's human-reported `pat-ready` event. Resume a pending local
+Keychain copy instead of minting another PAT; an ambiguous creation first needs
+Cloud metadata reconciliation. Missing login prompts Plane App login, while
+storage/network/permission errors retain distinct statuses. Ordinary progress and
+capability checks do not load desktop cookies or create credentials.
+
 ## Manual plugin version check
 
 Run this only for an explicit request to check the plugin's own version. Resolve the helper from the actively installed plugin or standalone skill and run:

@@ -6,6 +6,9 @@ and a stubbed GitHub CLI sink. No real PAT, GitHub call, or existing credential
 is involved. Requires --run; ordinary test discovery never executes this file.
 """
 import argparse
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+import hmac
 import json
 import subprocess
 import sys
@@ -130,14 +133,80 @@ def run_smoke(run_id):
     return report
 
 
+def run_app_smoke(run_id):
+    """Real no-UI Keychain and orchestration, synthetic session/Cloud only."""
+    import plane_app_credentials as automatic
+    account = 'synthetic-app-' + str(uuid.UUID(run_id)) + '@example.test'
+    value = 'synthetic-app-pat-' + run_id
+    config = json.loads((ROOT / 'examples/plane-devflow.basic.json').read_text())
+    scope = vault.Scope.from_config(config, account)
+    store = vault.MacKeychain(scope)
+    pending = None
+    owned = False
+    report = {'mode': 'plane_app', 'real_pat_used': False, 'real_cookie_used': False,
+              'cloud_http': 'synthetic', 'native_keychain': True, 'ui_allowed': False,
+              'status': 'failed', 'test_entry': scope.key}
+
+    @contextmanager
+    def session():
+        yield {'session-id': 'synthetic-app-session'}
+
+    class Client:
+        def identity(self):
+            return {'email': account}
+
+        def create(self, label, expiry):
+            return {'id': str(uuid.uuid4()), 'label': label, 'expired_at': expiry, 'token': value}
+
+        def verify(self, token, candidate, project_id):
+            require(candidate == scope and project_id == config['plane']['project_id'] and
+                    hmac.compare_digest(token, value), 'Synthetic Cloud verification failed.')
+
+    try:
+        require(not store.contains(), 'Synthetic entry already exists.')
+        owned = True
+        with tempfile.TemporaryDirectory(prefix='plane-app-native-smoke-') as temp:
+            root = Path(temp)
+            workflow.run(['git', 'init', '-b', 'main'], root)
+            workflow.run(['git', 'remote', 'add', 'origin',
+                          'https://github.com/' + config['github']['repository'] + '.git'], root)
+            (root / CONFIG_NAME).write_text(json.dumps(config))
+            with patch.object(automatic, 'app_session', side_effect=session), \
+                 patch.object(automatic, 'CloudClient', return_value=Client()), \
+                 patch.object(automatic, 'operation_directory', return_value=root / 'support/ops'):
+                plan = automatic.create(root, account=account,
+                    expires_at=(datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat())
+                pending = vault.MacKeychain(automatic.PendingScope(scope.api_url, scope.workspace,
+                                            scope.account, plan['operation_id']))
+                result = automatic.create(root, account=account, expires_at=plan['expires_at'],
+                    operation_id=plan['operation_id'], expected_config_sha256=plan['config_sha256'], apply=True)
+                require(result['status'] == 'verified', 'Automatic native flow did not verify.')
+                require(hmac.compare_digest(store.read(interactive=False), value), 'Native readback mismatch.')
+                require(not pending.contains(), 'Pending entry was not cleaned up.')
+                report.update(status='passed', readback_match=True, pending_cleanup_verified=True)
+    except Exception as error:
+        report['error_type'] = type(error).__name__
+    finally:
+        if owned:
+            try:
+                store.delete(interactive=False)
+                if pending:
+                    pending.delete(interactive=False)
+                report['cleanup_verified_absent'] = not store.contains() and (pending is None or not pending.contains())
+            except Exception:
+                report.update(status='failed', cleanup_verified_absent=False)
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run', action='store_true', help='Explicitly allow the unique synthetic native Keychain test.')
+    parser.add_argument('--plane-app', action='store_true', help='Test the automatic flow with real no-UI Keychain and synthetic HTTP/session.')
     parser.add_argument('--run-id', type=uuid.UUID, default=uuid.uuid4(), help='Non-secret unique test ID for cleanup tracking.')
     args = parser.parse_args()
     if not args.run or sys.platform != 'darwin':
         parser.error('Run explicitly with --run on macOS. Windows native verification is not part of this test.')
-    report = run_smoke(str(args.run_id))
+    report = (run_app_smoke if args.plane_app else run_smoke)(str(args.run_id))
     print(json.dumps(report, indent=2))
     return 0 if report['status'] == 'passed' else 1
 

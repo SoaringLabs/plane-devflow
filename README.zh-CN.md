@@ -79,7 +79,7 @@ Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:pla
 | **GitHub Actions（默认）** | 将 Plane PAT 存入仓库 Secret `PLANE_API_KEY`，并将映射与同步文件合入默认分支 |
 | **Plane 官方 GitHub 集成（可选）** | 已启用并核对仓库、项目映射及规则；无需本插件的 workflow 或 PAT Secret |
 
-关联项目使用浏览器授权；Actions 使用单独的 PAT。请直接在 GitHub Secrets 或由本人操作的隐藏终端输入中录入，不要发送到聊天。可选的 [本机凭据复用](skills/plane-setup/references/local-credentials.md) 使用 macOS Keychain 或 Windows Credential Manager。
+关联项目使用浏览器授权；Actions 使用单独的 PAT。请直接在 GitHub Secrets 或由本人操作的隐藏终端输入中录入，不要发送到聊天。可选的 [本机凭据复用](skills/plane-setup/references/local-credentials.md) 使用 macOS Keychain 或 Windows Credential Manager。在 macOS 上，明确授权后的[自动创建与保存](skills/plane-setup/references/local-credentials.md#automatic-creation-from-plane-app)可复用 Plane App 的有效登录态，无需复制 PAT；会话过期时会提示先登录。
 
 初始化中断或条件不足时会保存进度，之后可继续。**连接验证通过与真实 PR 事件回写成功会分别验证。** 新映射记录 PR 活动，默认不切换任务状态；旧映射沿用既有规则，原生集成的状态变化由官方集成控制。详见 [初始化与同步](skills/plane-setup/references/setup.md)。
 

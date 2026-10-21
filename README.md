@@ -79,7 +79,7 @@ Codex standalone skills use `$plane-setup`; the Codex plugin uses `$plane-devflo
 | **GitHub Actions** — default | A Plane PAT in the repository Secret `PLANE_API_KEY`, plus the mapping and sync files merged into the default branch |
 | **Official Plane integration** — optional | An enabled and verified repository/project mapping and rules; no plugin workflow or PAT Secret |
 
-Project association uses browser authorization. Actions uses a separate PAT: enter it directly through GitHub Secrets or a human-operated hidden terminal prompt, never in chat. Optional [local credential reuse](skills/plane-setup/references/local-credentials.md) uses macOS Keychain or Windows Credential Manager.
+Project association uses browser authorization. Actions uses a separate PAT: enter it directly through GitHub Secrets or a human-operated hidden terminal prompt, never in chat. Optional [local credential reuse](skills/plane-setup/references/local-credentials.md) uses macOS Keychain or Windows Credential Manager. On macOS, an explicitly authorized [create-and-save flow](skills/plane-setup/references/local-credentials.md#automatic-creation-from-plane-app) can reuse a valid Plane App session without copying a PAT; expired sessions prompt login.
 
 Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are verified separately.** New mappings record PR activity without state transitions; legacy mappings retain existing rules, and native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
 

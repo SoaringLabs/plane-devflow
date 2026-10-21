@@ -1,6 +1,7 @@
 """Capability-aware setup recovery. Local receipts are hints, never remote proof."""
 import json
 import shutil
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,7 +22,10 @@ def capabilities(surfaces=()):
             "host_surfaces": sorted(available), "guidance_route": route,
             "host_source": "caller_reports_current_tool_availability",
             "plane_desktop_required": False, "manual_guidance_available": True,
-            "authentication": "unknown_until_service_probe", "credential_transfer": "human_only"}
+            "authentication": "unknown_until_service_probe",
+            "credential_transfer": "human_only",
+            "plane_app_creation": {"platform_supported": sys.platform == "darwin", "session": "not_inspected",
+                                   "authorization_required": True}}
 
 
 def checkpoint_path(root, config):

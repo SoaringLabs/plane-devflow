@@ -2,13 +2,23 @@
 
 Read this when the user selected Actions and the mapped repository lacks a usable runner Secret. Existing OAuth is for Codex; the PAT is for GitHub Actions. Native mode skips this entire flow. A missing/unknown connection check does not by itself mean the PAT is missing: inspect Secret metadata first and reuse existing configuration. Do not overwrite an existing Secret without the user's replacement intent.
 
-The expected interaction is staged: guide the current page, explain the one human step, wait for that step's confirmation, then open the next page. Continue authorized independent preparation while waiting. A bare final message linking GitHub Secrets is not completed credential guidance. Use an asynchronous question, when available, to keep the handoff pending; request only progress confirmation, never token text. If the turn must end for human input, state the exact current step and how to resume. Any natural confirmation of completion is sufficient. Use [recovery.md](recovery.md) for capability routing, checkpoint commands and failure handling; save only the human-reported enum after each confirmation.
+For the manual browser branch, the expected interaction is staged: guide the current page, explain the one human step, wait for that step's confirmation, then open the next page. Continue authorized independent preparation while waiting. A bare final message linking GitHub Secrets is not completed credential guidance. Use an asynchronous question, when available, to keep the handoff pending; request only progress confirmation, never token text. If the turn must end for human input, state the exact current step and how to resume. Any natural confirmation of completion is sufficient. Use [recovery.md](recovery.md) for capability routing, checkpoint commands and failure handling; save only the human-reported enum after each confirmation.
 
 ## 0. Check reuse before creating a token
 
-Check the current repository Secret first. If it exists, continue connection verification. If missing, use `credential-guide --step local`; follow [local credentials](local-credentials.md) to select the Plane account, inspect local storage and offer opt-in reuse on macOS or Windows. This path works across GitHub owners and organizations. No organization-level Secret is required. If local storage is missing/unavailable, offer human input of an existing PAT; generate a new token only when needed. The native store/transfer helpers operate in a human-controlled terminal, without returning the PAT to the agent.
+Check the current repository Secret first. If it exists, continue connection verification. If missing, use `credential-guide --step local`; follow [local credentials](local-credentials.md) to select the Plane account, inspect local storage and offer opt-in reuse on macOS or Windows. This path works across GitHub owners and organizations. No organization-level Secret is required. If local storage is missing/unavailable, offer human input of an existing PAT; generate a new token only when needed. The manual store/transfer helpers operate in a human-controlled terminal, without returning the PAT to the agent.
 
-## 1. Open Plane and guide token creation
+## 1. Choose the explicitly authorized creation route
+
+When the user explicitly requests creating a PAT and saving it on this Mac,
+follow [automatic creation from Plane App](local-credentials.md#automatic-creation-from-plane-app).
+Valid session authentication lets the helper create and store the PAT in-process;
+missing/expired authentication prompts login and resumes the same operation.
+Choosing Actions alone does not enable this branch. Keep manual entry available.
+After automatic local saving, use the local saved-credential branch, not a prompt
+claiming the user copied the PAT. GitHub upload remains separately human-operated.
+
+### Manual Plane token creation
 
 Run `python3 /absolute/plugin/scripts/plane_workflow.py credential-guide --repo /absolute/repo --step plane`. This validates the current origin/mapping and returns the correct Plane origin/workspace, suggested title/description, and navigation. It performs no account writes.
 

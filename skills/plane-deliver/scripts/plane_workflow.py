@@ -532,6 +532,13 @@ def credential_guide(path, *, step="local", account=None):
     plane = config["plane"]
     result = {"provider": "actions", "repository": repo, "step": step,
               "secret_name": "PLANE_API_KEY", "writes_performed": False}
+    if step in {"local", "plane"}:
+        result["automatic_creation"] = {
+            "command": "credential-create", "source": "plane_app_session",
+            "platform_supported": sys.platform == "darwin",
+            "session": "not_inspected", "authorization": "explicit_create_and_save",
+            "requires": ["verified_plane_account", "explicit_expiry", "valid_plane_app_session"],
+            "next_step": "plan_credential_create_then_apply_with_authorization"}
     if step == "local":
         from credential_store import inspect, platform_backend
         result.update(status="select_account", backend=platform_backend(), next_step="select_plane_account",
@@ -853,6 +860,14 @@ def main(argv=None):
     p.add_argument("--action", choices=["status", "remember", "forget"], default="status")
     p.add_argument("--replace", action="store_true", help="Explicitly replace an existing local credential.")
     p.add_argument("--apply", action="store_true", help="Human-operated terminal required for remember/forget; otherwise plan only.")
+    p = sub.add_parser("credential-create", help="Explicitly create a Cloud PAT using the macOS Plane App session and save to Keychain; never prints credentials.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--account", required=True, help="Verified Plane account ID/email, kept consistent with existing local storage.")
+    p.add_argument("--expires-at", required=True, help="Explicit ISO-8601 expiry with timezone; no never-expiring default.")
+    p.add_argument("--operation-id", help="Reuse the UUID returned by the plan, including after login/retry.")
+    p.add_argument("--expected-config-sha256", help="Mapping digest returned by the plan; required for apply.")
+    p.add_argument("--replace", action="store_true", help="Explicitly replace this account's saved credential after validating the new PAT.")
+    p.add_argument("--apply", action="store_true", help="Execute an explicitly authorized plan without terminal input; otherwise plan only.")
     p = sub.add_parser("setup-progress", help="Inspect capabilities, resume setup and optionally save non-secret progress in Git metadata.")
     p.add_argument("--repo", default=".")
     p.add_argument("--offline", action="store_true", help="Leave remote checks unknown; never reuse cached success as current evidence.")
@@ -950,6 +965,11 @@ def main(argv=None):
             result = credential_guide(args.repo, step=args.step, account=args.account)
         elif args.command == "credential-store":
             result = local_credential(args.repo, action=args.action, account=args.account, replace=args.replace, apply=args.apply)
+        elif args.command == "credential-create":
+            from plane_app_credentials import create
+            result = create(args.repo, account=args.account, expires_at=args.expires_at,
+                            operation_id=args.operation_id, expected_config_sha256=args.expected_config_sha256,
+                            replace=args.replace, apply=args.apply)
         elif args.command == "setup-progress":
             from onboarding import progress
             result = progress(args.repo, surfaces=args.surface, offline=args.offline, event=args.event, apply=args.apply)
@@ -978,6 +998,8 @@ def main(argv=None):
         else:
             result = demo(args.output)
         print(json.dumps(result, ensure_ascii=False, indent=2))
+        if args.command == "credential-create":
+            return 0 if result["status"] in {"planned", "verified", "already_completed"} else 2
         return 2 if args.command in {"check-task", "finish-task", "task-context", "write-context", "sync-task"} and result.get("ready") is False else 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
         print(f"plane-devflow: {error}", file=sys.stderr)

@@ -1,7 +1,7 @@
 {
   "generator": "plane-devflow/build_skills.py",
   "skill": "plane-setup",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "sync_bundle_version": "0.10.1",
   "hosts": [
     "codex",
