@@ -16,8 +16,8 @@ sys.path.insert(0, str(ROOT / 'scripts'))
 from validate_package import frontmatter
 
 
-def read_cases(path):
-    cases = [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+def read_cases(path, *, raw=None, actions=None):
+    cases = [json.loads(line) for line in (raw.decode() if raw is not None else Path(path).read_text()).splitlines() if line.strip()]
     for case in cases:
         if not isinstance(case, dict) or not isinstance(case.get('id'), str) or not case['id']:
             raise ValueError('Each case needs a string ID')
@@ -36,7 +36,7 @@ def read_cases(path):
     ids = [case['id'] for case in cases]
     if len(ids) != len(set(ids)):
         raise ValueError('Duplicate case IDs')
-    actions = set(json.loads((ROOT / 'evals/actions.json').read_text()))
+    actions = set(actions if actions is not None else json.loads((ROOT / 'evals/actions.json').read_text()))
     for case in cases:
         if not case['must_observe'] or not case['forbidden_effects']:
             raise ValueError(f"Missing rubric: {case['id']}")
@@ -50,13 +50,13 @@ def read_cases(path):
     return cases
 
 
-def score(case, decision):
+def score(case, decision, *, catalog=None):
     if not isinstance(decision, dict):
         raise ValueError('Decision must be an object')
     actions = decision.get('actions')
     if not isinstance(actions, list) or not all(isinstance(a, str) for a in actions):
         raise ValueError('Decision actions must be a string list')
-    catalog = set(json.loads((ROOT / 'evals/actions.json').read_text()))
+    catalog = set(catalog if catalog is not None else json.loads((ROOT / 'evals/actions.json').read_text()))
     if not set(actions) <= catalog or len(actions) != len(set(actions)):
         raise ValueError('Unknown or duplicate decision actions')
     if decision.get('skill') not in (None, 'plane-setup', 'plane-start', 'plane-deliver'):
@@ -81,7 +81,7 @@ def fingerprint(plugin):
     return digest.hexdigest()
 
 
-def run_case(case, source, output, label, repeat, timeout):
+def run_case(case, source, output, label, repeat, timeout, actions_catalog=None):
     run_id = f"{case['id']}-{repeat}"
     dest = output / run_id
     dest.mkdir(parents=True, exist_ok=False)
@@ -94,7 +94,7 @@ def run_case(case, source, output, label, repeat, timeout):
             data = frontmatter(skill)
             catalog.append({'name': data['name'], 'description': data['description'],
                             'path': str(skill.relative_to(work))})
-        actions = json.loads((ROOT / 'evals/actions.json').read_text())
+        actions = actions_catalog if actions_catalog is not None else json.loads((ROOT / 'evals/actions.json').read_text())
         schema = {'type': 'object', 'properties': {
             'skill': {'type': ['string', 'null'], 'enum': [None] + [c['name'] for c in catalog]},
             'actions': {'type': 'array', 'items': {'type': 'string', 'enum': actions}},
@@ -131,7 +131,7 @@ def run_case(case, source, output, label, repeat, timeout):
             record['exit_code'] = process.returncode
             if process.returncode == 0 and (dest / 'decision.json').is_file():
                 decision = json.loads((dest / 'decision.json').read_text())
-                record.update(score(case, decision))
+                record.update(score(case, decision, catalog=actions))
                 record.update(status='scored', decision=decision)
             else:
                 record['error'] = 'CLI failed or returned no structured decision'
@@ -161,7 +161,10 @@ def main():
     parser.add_argument('--rescore', type=Path, help='Write rescored.json preserving original raw results')
     args = parser.parse_args()
     try:
-        cases = read_cases(args.cases)
+        cases_raw = args.cases.read_bytes()
+        actions_raw = (ROOT / 'evals/actions.json').read_bytes()
+        actions_catalog = json.loads(actions_raw)
+        cases = read_cases(args.cases, raw=cases_raw, actions=actions_catalog)
     except (ValueError, OSError) as error:
         parser.error(str(error))
     if args.ids:
@@ -199,8 +202,21 @@ def main():
     if output.is_relative_to(ROOT) and not output.is_relative_to(ROOT / '.plane-devflow.local'):
         parser.error('Raw traces must be outside the checkout or in ignored .plane-devflow.local/')
     output.mkdir(parents=True, exist_ok=False)
+    snapshot = output / 'snapshot'
+    snapshot.mkdir()
+    source = snapshot / 'plugin'
+    shutil.copytree(args.plugin.resolve(), source, ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+    (snapshot / 'cases.jsonl').write_bytes(cases_raw)
+    (snapshot / 'actions.json').write_bytes(actions_raw)
+    shutil.copy2(Path(__file__), snapshot / 'run.py')
+    manifest = {'payload_sha256': fingerprint(source),
+                'rubric_sha256': hashlib.sha256(cases_raw).hexdigest(),
+                'actions_sha256': hashlib.sha256(actions_raw).hexdigest(),
+                'harness_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                'frozen_before_sessions': True}
+    (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = [pool.submit(run_case, c, args.plugin.resolve(), output, args.label, r, args.timeout)
+        futures = [pool.submit(run_case, c, source, output, args.label, r, args.timeout, actions_catalog)
                    for c in cases for r in range(1, args.repeat + 1)]
         records = []
         for future in concurrent.futures.as_completed(futures):
@@ -209,11 +225,11 @@ def main():
             print(json.dumps({'case': record['case_id'], 'status': record['status'],
                               'passed': record.get('passed')}, ensure_ascii=False), flush=True)
     summary = {'kind': 'decision_only', 'label': args.label, 'expected': len(futures),
-               'rubric_sha256': hashlib.sha256(args.cases.read_bytes()).hexdigest(),
+               **manifest,
                'scored': sum(r['status'] == 'scored' for r in records),
                'passed': sum(r.get('passed', False) for r in records),
                'critical_failures': sum(r.get('critical_failure', False) for r in records),
-               'payload_sha256': fingerprint(args.plugin.resolve()), 'results': sorted(records, key=lambda r:(r['case_id'],r['repeat'])),
+               'results': sorted(records, key=lambda r:(r['case_id'],r['repeat'])),
                'limitations': ['No live tool effects', 'No native discovery/install assertion',
                                'Decision self-report is not execution evidence', 'CLI default model is not pinned; repetitions as recorded']}
     (output / 'summary.json').write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n')
