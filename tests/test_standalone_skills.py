@@ -48,6 +48,16 @@ class StandaloneSkillsTests(unittest.TestCase):
                                     cwd=self.temp.name, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(result.stdout.strip(), version)
+            target = Path(self.temp.name) / "not-created"
+            result = subprocess.run([sys.executable, str(destination / "scripts/plane_workflow.py"),
+                                     "bootstrap-status", "--repo", str(target), "--channel", "installed"],
+                                    cwd=self.temp.name, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertFalse(json.loads(result.stdout)["services_called"])
+            self.assertFalse(target.exists())
+            result = subprocess.run([sys.executable, str(destination / "scripts/plane_workflow.py"),
+                                     "task-plan", "--help"], cwd=self.temp.name, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
             result = subprocess.run([sys.executable, "-c",
                 "import sys; sys.path.insert(0, sys.argv[1]); from github_setup import bundled_files; "
                 "assert len(bundled_files()) == 3", str(destination / "scripts")],

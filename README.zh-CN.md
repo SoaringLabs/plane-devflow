@@ -21,6 +21,8 @@
 
 ### 安装
 
+新电脑或还没有代码仓库？先看[首次项目引导](docs/first-project.zh-CN.md)：向 agent 提出一次准备请求，完成账号交接后，接续初始化与首批任务规划。
+
 在目标代码仓库根目录执行：
 
 ```sh
@@ -37,6 +39,8 @@ Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插
 从 **Plane for Codex** 升级？请先查看 [0.10.0 升级边界](docs/installation.md#upgrade-from-the-previous-name)：配置路径与运行标识已变更，业务记录不会自动迁移。
 
 ### 开始第一条任务
+
+还没有任务时，可以说：“使用 plane-start 规划第一版，先给我看清单，不要创建。”审阅具体清单后，再要求创建；需要立即开发时可补充“并开始第一条”。详见[任务规划与恢复](skills/plane-start/references/task-planning.md)。
 
 下面的 `PROJECT-123` 是示例，请替换为项目中已有任务的真实编号。
 
@@ -67,8 +71,8 @@ Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插
 
 | 入口 | 什么时候用 |
 | --- | --- |
-| **Set Up Plane** | 关联项目，检查或调整映射，继续同步配置 — `plane-setup` |
-| **Start Plane Task** | 讨论、规划、开始或恢复已有任务 — `plane-start` |
+| **Set Up Plane** | 引导首次项目、关联或检查映射、继续初始化 — `plane-setup` |
+| **Start Plane Task** | 规划并创建已确认的首批任务，或开始、恢复已有任务 — `plane-start` |
 | **Deliver Plane Task** | 交付 PR、准备试用、记录验收或按授权收尾 — `plane-deliver` |
 
 推荐命令一次安装三个阶段：**关联 → 开发 → 交付**。保留独立入口，方便按当前任务调用对应阶段。每个技能自带运行脚本与参考文件；只需要部分流程时，也可以按名称单独安装。Codex 插件的调用标识使用 `$plane-devflow:` 前缀。
@@ -88,7 +92,7 @@ Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插
 
 ## 使用范围
 
-当前支持已有任务、一条任务对应一个主 PR、Plane Cloud 和 github.com。Cycle/任务管理、自定义状态规则、多 PR 聚合、完整的自托管 Plane 与 GitHub Enterprise 接入暂不支持。
+当前支持首版任务草案与确认后创建、已有任务开发、一条任务对应一个主 PR、Plane Cloud 和 github.com。通用任务/Cycle 管理、自定义状态规则、多 PR 聚合、完整的自托管 Plane 与 GitHub Enterprise 接入暂不支持。
 
 ## 更新与移除
 
@@ -106,6 +110,7 @@ npx skills update plane-setup plane-start plane-deliver --project
 
 | 想了解什么 | 文档 |
 | --- | --- |
+| 第一个项目 | [新电脑准备、恢复交接与首批任务](docs/first-project.zh-CN.md) |
 | Agent 兼容 | [Codex、Claude Code、Cursor、OpenCode](docs/agent-compatibility.md) |
 | 安装、更新与移除 | [安装、更新及移除](docs/installation.md) |
 | 初始化与恢复 | [项目关联与同步](skills/plane-setup/references/setup.md) · [中断后继续](skills/plane-setup/references/recovery.md) |

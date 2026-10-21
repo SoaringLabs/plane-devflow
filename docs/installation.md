@@ -2,6 +2,8 @@
 
 [English README](../README.md) · [中文说明](../README.zh-CN.md)
 
+No prepared repository or account connections yet? Use the [first-project guide](first-project.md) before installing. After installation, continue the same preparation rather than restarting it.
+
 ## Install with Skills CLI
 
 ```sh

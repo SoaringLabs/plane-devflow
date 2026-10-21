@@ -1,6 +1,6 @@
 # Capability detection and setup recovery
 
-Read this at initialization, when resuming, or when a setup operation fails. Use `setup-capabilities` before requiring a repository or account; after a valid association use `setup-progress`. Both belong to `scripts/plane_workflow.py`.
+Read this at initialization, when resuming, or when a setup operation fails. Use `setup-capabilities` before requiring a repository or account; `bootstrap-status --repo TARGET` also inspects an absent/unmapped target and returns a portable handoff. After association use `setup-progress`. These belong to `scripts/plane_workflow.py`. New-computer preparation follows [first-project onboarding](first-project.md).
 
 ## Detect and choose assistance
 
