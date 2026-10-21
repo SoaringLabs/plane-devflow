@@ -862,6 +862,19 @@ def main(argv=None):
     p.add_argument("--apply", action="store_true", help="Persist non-secret progress; no external writes.")
     p = sub.add_parser("setup-capabilities", help="Inspect local prerequisites and reported host surfaces without a repository or account.")
     p.add_argument("--surface", action="append", choices=["browser-control", "app-control", "url-opener"], default=[])
+    p = sub.add_parser("bootstrap-status", help="Read-only first-project checks and portable handoff, including before Git/mapping exists.")
+    p.add_argument("--repo", default=".", help="User-selected target directory; it may not exist yet.")
+    p.add_argument("--channel", choices=["skills", "plugin", "installed"], default="skills",
+                   help="Use the selected channel's requirements; installed checks only runtime prerequisites.")
+    p.add_argument("--surface", action="append", choices=["browser-control", "app-control", "url-opener"], default=[])
+    p = sub.add_parser("task-plan", help="Inspect/save a first-task draft and reconcile live MCP snapshots; never creates remote tasks.")
+    p.add_argument("--repo", default=".")
+    choice = p.add_mutually_exclusive_group(required=True)
+    choice.add_argument("--plan-file", help="JSON draft with goal, ordered tasks and acceptance criteria.")
+    choice.add_argument("--plan-id", help="Resume a saved project-bound draft.")
+    p.add_argument("--existing-file", help="Fresh normalized, complete project work-item snapshot from MCP.")
+    p.add_argument("--expected-plan-sha256", help="Exact inspected draft digest required when saving.")
+    p.add_argument("--apply", action="store_true", help="Save the local draft in Git metadata only; does not record approval.")
     p = sub.add_parser("set-secret", help="Read a Plane PAT through hidden terminal input and store it in GitHub.")
     p.add_argument("--repo", default=".")
     p.add_argument("--account", help="Verified Plane account ID/email; required with --use-saved or --remember.")
@@ -943,6 +956,14 @@ def main(argv=None):
         elif args.command == "setup-capabilities":
             from onboarding import capabilities
             result = capabilities(args.surface)
+        elif args.command == "bootstrap-status":
+            from first_project import status
+            result = status(args.repo, surfaces=args.surface, channel=args.channel)
+        elif args.command == "task-plan":
+            from task_planning import progress
+            result = progress(args.repo, plan=json.loads(Path(args.plan_file).read_text()) if args.plan_file else None,
+                              plan_id=args.plan_id, existing=json.loads(Path(args.existing_file).read_text()) if args.existing_file else None,
+                              expected=args.expected_plan_sha256, apply=args.apply)
         elif args.command == "set-secret":
             result = set_secret(args.repo, account=args.account, use_saved=args.use_saved, remember=args.remember, replace=args.replace)
         elif args.command == "setup-github":

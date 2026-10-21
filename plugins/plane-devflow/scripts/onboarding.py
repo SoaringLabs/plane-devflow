@@ -16,6 +16,8 @@ def capabilities(surfaces=()):
     available = set(surfaces)
     route = next((name for name in ("browser-control", "app-control", "url-opener") if name in available), "manual-links")
     return {"git": bool(shutil.which("git")), "github_cli": bool(shutil.which("gh")),
+            "node": bool(shutil.which("node")), "npm": bool(shutil.which("npm")),
+            "codex_cli": bool(shutil.which("codex")),
             "host_surfaces": sorted(available), "guidance_route": route,
             "host_source": "caller_reports_current_tool_availability",
             "plane_desktop_required": False, "manual_guidance_available": True,
@@ -113,6 +115,15 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
               "next_step": step, "readiness": report, "event_writeback_verified": None,
               "sync_bundle": report.get("sync_bundle"), "maintenance_notice": report.get("sync_bundle_notice"),
               "cached_checks_reused_as_proof": False, "merge_authorization": "use_current_user_authorization"}
+    from first_project import handoff
+    result["handoff"] = handoff(root, step)
+    result["handoff"].update(repository=config["github"]["repository"], project_id=config["plane"]["project_id"],
+                             config_sha256=digest, checkpoint_path=str(destination))
+    result["handoff"]["resume_prompt"] += (f" Expected mapping: {digest}, project {config['plane']['project_id']}, "
+                                             f"repository {config['github']['repository']}. Inspect any mismatch before writes.")
+    result["next_user_action"] = ("Describe the first version to draft tasks; creation requires approval of the exact list."
+                                  if step in {"connection_verified", "native_verified"}
+                                  else "Complete only the reported next step, then refresh setup-progress.")
     if provider == "actions":
         if step in {"local_credential", "confirm_pat_available_then_github", "check_secret_repository_name_and_scope", "verify_secret_metadata"}:
             result["credential_guide"] = credential_guide(root, step="local" if step == "local_credential" else "github")

@@ -21,6 +21,8 @@ Open-source Agent Skills connecting **Plane tasks, agent development and GitHub 
 
 ### Install
 
+New computer or no repository yet? Start with the [first-project guide](docs/first-project.md): give your agent one preparation request, complete account handoffs, then continue into setup and a reviewed first task list.
+
 Run this command from your target repository's root:
 
 ```sh
@@ -37,6 +39,8 @@ For the Codex plugin distribution, use `$plane-devflow:plane-setup`. See [local 
 Upgrading from **Plane for Codex**? Read the [0.10.0 upgrade boundary](docs/installation.md#upgrade-from-the-previous-name) first: configuration paths and runtime identities changed, and business records are not migrated automatically.
 
 ### Start your first task
+
+No tasks yet? Say “Use plane-start to draft the first version; show me the list before creating anything.” After reviewing the exact list, ask to create it and optionally start the first task. See [task planning and recovery](skills/plane-start/references/task-planning.md).
 
 `PROJECT-123` below is an example; replace it with an existing task ID.
 
@@ -67,8 +71,8 @@ Use the host's skill picker or request a workflow below. Codex uses `$plane-setu
 
 | Skill | Use when |
 | --- | --- |
-| **Set Up Plane** | Associate a project, inspect/reconfigure the mapping, or resume sync setup — `plane-setup` |
-| **Start Plane Task** | Discuss, plan, start or resume an existing task — `plane-start` |
+| **Set Up Plane** | Guide a first project, associate/check its mapping, or resume setup — `plane-setup` |
+| **Start Plane Task** | Draft/create an approved first task list, or start/resume an existing task — `plane-start` |
 | **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `plane-deliver` |
 
 The recommended command installs all three stages: **set up → develop → deliver**. They remain separate so you can request the right stage directly. Each skill bundles its own runtime and references and can also be installed individually for a narrower workflow. The Codex plugin uses the `$plane-devflow:` skill prefix.
@@ -88,7 +92,7 @@ Incomplete setup is saved and resumable. **A successful connection check and a r
 
 ## Scope
 
-Currently supports existing tasks, one primary PR per task, Plane Cloud and github.com. Cycle/task management, custom status rules, multi-PR aggregation, full self-hosted Plane and GitHub Enterprise support are outside the current scope.
+Supports first-version task drafting and approved creation, existing-task development, one primary PR per task, Plane Cloud and github.com. General task/Cycle management, custom status rules, multi-PR aggregation, full self-hosted Plane and GitHub Enterprise support are outside the current scope.
 
 ## Update or remove
 
@@ -106,6 +110,7 @@ Run `npx skills remove plane-setup plane-start plane-deliver` from the same repo
 
 | Topic | Read more |
 | --- | --- |
+| First project | [New-computer preparation, handoffs and first tasks](docs/first-project.md) |
 | Agent compatibility | [Codex, Claude Code, Cursor and OpenCode](docs/agent-compatibility.md) |
 | Installation and updates | [Install, update, migrate and remove](docs/installation.md) |
 | Setup and recovery | [Project association & sync](skills/plane-setup/references/setup.md) · [Resume setup](skills/plane-setup/references/recovery.md) |

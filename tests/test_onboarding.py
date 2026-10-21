@@ -96,6 +96,24 @@ class RecoveryTests(unittest.TestCase):
         self.assertEqual(data['readiness']['initialization'], 'partial')
         self.assertNotIn('credential_guide', data)
 
+    def test_handoff_binds_target_and_mapping_but_not_consent(self):
+        data = self.run_progress(self.report(secret_present=False))
+        handoff = data['handoff']
+        self.assertEqual(handoff['target_directory'], str(self.root))
+        self.assertEqual(handoff['project_id'], fixtures.config()['plane']['project_id'])
+        self.assertEqual(handoff['config_sha256'], data['config_sha256'])
+        self.assertEqual(handoff['next_step'], data['next_step'])
+        self.assertFalse(handoff['cached_checks_reused_as_proof'])
+        self.assertEqual(handoff['authorization'], 'recover_original_user_messages')
+        self.assertFalse(data['checkpoint_written'])
+
+    def test_ready_setup_offers_drafting_without_creating_or_changing_states(self):
+        before = (self.root / '.plane-devflow.json').read_bytes()
+        data = self.run_progress(self.report())
+        self.assertEqual(data['next_step'], 'connection_verified')
+        self.assertIn('draft tasks', data['next_user_action'])
+        self.assertEqual((self.root / '.plane-devflow.json').read_bytes(), before)
+
     def test_changed_config_uses_new_checkpoint_and_preserves_old(self):
         initial = self.run_progress(self.report(), event='pat-ready', apply=True)
         before = onboarding.Path(initial['checkpoint_path']).read_bytes()

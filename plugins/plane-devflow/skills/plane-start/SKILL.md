@@ -1,6 +1,6 @@
 ---
 name: plane-start
-description: Discuss or plan a task in a Plane-mapped repository, or start/resume its implementation in an isolated worktree. Check task ownership before saving repository artifacts. Ordinary work in an unmapped repository does not require this workflow.
+description: Draft a Plane project's first task list, create its approved tasks, or discuss, start and resume an existing task in an isolated worktree. Check task ownership before saving repository artifacts. Ordinary work in an unmapped repository does not require this workflow.
 ---
 
 # Start or resume a Plane task
@@ -13,12 +13,13 @@ Apply [the first-write check](../../references/checkout.md#before-the-first-repo
 
 | Request | Path and stopping condition |
 | --- | --- |
+| Plan a first version, create a reviewed task list, or resume that batch | Read [first-task planning](../../references/task-planning.md). Draft in chat without a task ID; create only the specifically approved list. Stop after readback unless implementation was also requested. |
 | Discuss, inspect or research only | Read the named sources and answer in chat. Temporary notes stay outside the checkout. No task selection, setup, branch creation, Plane writes or implementation is required. `write-context --mode discussion` reports context without changing it. Stop after the answer. |
 | Save a planning artifact | Resolve the task and prepare/check its directory and authorized file paths below. Save only the requested artifact; this does not authorize implementation or state transitions. Stop after its scoped diff is checked. |
 | Start implementation | Establish the live task, workspace, brief, design decision and environment ownership below; pass the implement gate before coding. |
 | Resume implementation | Recover the recorded task directory and prior decisions, refresh live facts and rerun ownership checks before edits. Reuse existing applicable authorization. |
 
-When task identity is ambiguous, continue independent read-only work and ask only for the missing task. Never create a Plane task silently or infer one from a new chat/current branch. When inspecting another task's branch, distinguish its changes from the configured base.
+For existing-task implementation, when identity is ambiguous continue independent read-only work and ask only for the missing task. First-version planning uses the branch above without inventing a task ID. Never create a Plane task silently or infer one from a new chat/current branch. When inspecting another task's branch, distinguish its changes from the configured base.
 
 ## Prepare document or implementation work
 
