@@ -2,6 +2,13 @@
 
 Implemented changes by plugin version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.12.0 — 2026-10-21
+
+- Add explicitly authorized PAT creation from an existing macOS Plane App Cloud session, followed by native Keychain storage and identity/project/expiry verification. No console, clipboard transfer or terminal input is needed for this supported path; credential values stay inside the helper process.
+- Bind each plan to the verified account, project mapping, explicit expiry and operation UUID. Require separate replacement intent for existing local credentials; preserve pending entries and metadata-only receipts for recovery, and reconcile ambiguous creation requests instead of blindly creating duplicates.
+- Report missing/expired login, account mismatch, permission/network failures, unsupported session layouts and unavailable Keychain access separately. Prompt users to log in to Plane App when needed; unknown/encrypted session formats and other platforms retain the manual credential route.
+- Preserve manual credential transfer and GitHub Secret upload boundaries, existing project configuration and account authorization. The GitHub synchronization bundle remains 0.10.1; this release requires no business-repository sync upgrade. See [0.12.0 validation](docs/validation-0.12.0.md) for checks, live acceptance, test cleanup and limitations.
+
 ## 0.11.0 — 2026-10-21
 
 - Guide a first project continuously from an empty directory through prerequisite checks, repository preparation, existing account connections, Plane association and background synchronization. Present one preparation plan and only the next necessary human handoff; application development remains a separate step.

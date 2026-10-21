@@ -1,2 +1,2 @@
 """Agent/plugin release version, independent of the GitHub synchronization bundle."""
-VERSION = "0.11.0"
+VERSION = "0.12.0"

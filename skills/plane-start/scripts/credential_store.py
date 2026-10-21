@@ -1,7 +1,8 @@
 """Opt-in local PAT storage. Native APIs only; no plaintext file fallback.
 
-Only the human-operated credential commands decode token values. Inspection
-returns presence/unknown, never a token or a declaration of API readiness.
+Manual credential commands and explicitly authorized Plane App creation use
+values only in-process. Inspection returns presence/unknown, never a token or
+a declaration of API readiness.
 """
 import ctypes
 import hashlib
@@ -119,9 +120,9 @@ class MacKeychain:
                 for ref in reversed(owned[1:]):
                     self.cf.CFRelease(ref)
 
-    def copy(self, *, data=False):
+    def copy(self, *, data=False, interactive=True):
         extra = [("kSecReturnData" if data else "kSecReturnAttributes", "kCFBooleanTrue")]
-        if not data:
+        if not data or not interactive:
             # Read-only setup inspection must not trigger an unlock dialog.
             extra.append(("kSecUseAuthenticationUI", "kSecUseAuthenticationUIFail"))
         result = ctypes.c_void_p()
@@ -147,18 +148,19 @@ class MacKeychain:
     def contains(self):
         return self.copy() is not None
 
-    def read(self):
-        token = self.copy(data=True)
+    def read(self, *, interactive=True):
+        token = self.copy(data=True, interactive=interactive)
         require(token is not None, "No saved credential for this Plane account and workspace.")
         return validate_token(token)
 
-    def save(self, token, *, replace=False):
+    def save(self, token, *, replace=False, interactive=True):
         validate_token(token)
-        with self.attributes(token=token) as query:
+        extra = [] if interactive else [("kSecUseAuthenticationUI", "kSecUseAuthenticationUIFail")]
+        with self.attributes(extra, token=token) as query:
             code = self.sec.SecItemAdd(query, None)
         if code == -25299:  # errSecDuplicateItem
             require(replace, "A credential is already saved. Use --replace only to replace it intentionally.")
-            with self.attributes() as query, self.attributes(token=token) as values:
+            with self.attributes(extra) as query, self.attributes(token=token) as values:
                 # SecItemUpdate accepts only changed attributes, not its class.
                 self.cf.CFDictionaryRemoveValue.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
                 self.cf.CFDictionaryRemoveValue.restype = None
@@ -168,8 +170,9 @@ class MacKeychain:
         if code != 0:
             raise VaultError("Could not save the credential in Keychain. Existing credentials were not deleted.")
 
-    def delete(self):
-        with self.attributes() as query:
+    def delete(self, *, interactive=True):
+        extra = [] if interactive else [("kSecUseAuthenticationUI", "kSecUseAuthenticationUIFail")]
+        with self.attributes(extra) as query:
             code = self.sec.SecItemDelete(query)
         if code not in (0, -25300):
             raise VaultError("Could not remove the local Keychain credential.")
