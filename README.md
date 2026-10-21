@@ -10,91 +10,86 @@
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10 or newer"></a>
 </p>
 <p align="center"><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
-<p align="center"><strong>From a Plane task to a reviewed pull request.</strong><br>Independent workspaces. Connected context. A clear handoff.</p>
-<p align="center"><a href="#quick-start">Quick start</a> · <a href="#features">Features</a> · <a href="#skills">Skills</a> · <a href="#documentation">Docs</a> · <a href="CHANGELOG.md">Changelog</a></p>
-<p align="center"><img src="docs/assets/workflow.svg" alt="Workflow illustration: Plane task → isolated agent workspace → linked GitHub pull request. DEMO-123 is an example." width="100%"></p>
+<p align="center"><strong>Connect Plane, your coding agent, and GitHub.</strong><br>Develop tasks. Deliver PRs. Sync PR activity—without Plane’s paid GitHub integration.</p>
+<p align="center"><a href="#features">Features</a> · <a href="#quick-start">Quick start</a> · <a href="#skills">Skills</a> · <a href="#documentation">Docs</a> · <a href="CHANGELOG.md">Changelog</a></p>
+<p align="center"><img src="docs/assets/workflow.svg" alt="Example workflow: Plane task DEMO-123 → coding agent in an isolated workspace → linked GitHub PR. GitHub Actions records PR activity back in Plane." width="100%"></p>
 
-Open-source Agent Skills connecting **Plane tasks, agent development and GitHub PRs**, with integration guides for **Codex, Claude Code, Cursor and OpenCode**. Start with the task's requirements, work in its own directory, and deliver a linked PR with verification and acceptance records. No additional service to deploy.
+Open-source Agent Skills with integration guides for **Codex, Claude Code, Cursor and OpenCode**. Work from a Plane task, deliver a linked PR, and use GitHub Actions to record PR activity back in Plane. No extra service to deploy.
 
+## Features
+
+| What you can do | What you get |
+| --- | --- |
+| **Connect Plane and GitHub** | Link a task to its primary PR and record PR activity through GitHub Actions, without Plane’s paid GitHub integration |
+| **Develop from a task** | Give your agent a task ID; it reads the requirements and prepares a dedicated directory and branch |
+| **Track delivery in Plane** | Find the linked PR, implementation summary, actual check results and outstanding acceptance items in the task |
+| **Keep tasks separate** | Work in isolated workspaces and resume the recorded task version in another chat |
+| **Start a new project** | Follow setup from repository preparation to Plane association, then review a first task list before creation |
+| **Try the result before merging** | Ask your agent to run the task version and provide an entry point and test steps; acceptance and merge remain separate decisions |
+
+New setups record PR activity **without automatically changing task states**. See [GitHub synchronization](#github-synchronization) for setup and existing integration options.
 
 ## Quick start
 
 ### Install
 
-New computer or no repository yet? Start with the [first-project guide](docs/first-project.md): give your agent one preparation request, complete account handoffs, then continue into setup and a reviewed first task list.
-
-Run this command from your target repository's root:
+Run from your target repository’s root and choose your agent:
 
 ```sh
 npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver
 ```
 
-Skills CLI installs three self-contained skills from GitHub into the current project and lets you choose the target agent. To make them available across projects, optionally add `--global`. To target one host directly, add `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Requires [Node.js 22.20+](https://nodejs.org/), npm, Git and an agent with local terminal and MCP support; runtime helpers use Python 3.10+, and PR operations need an authenticated [GitHub CLI](https://cli.github.com/).
+The command installs all three skills in the current project. Add `--global` to make them available across projects. See the [installation guide](docs/installation.md) for prerequisites, host selection, MCP configuration and the Codex plugin distribution.
 
-Open a **new agent session in your target repository**, select or request **plane-setup**, and follow setup to connect Plane and choose a project. Each repository keeps its own Plane association in `.plane-devflow.json`; run setup once for each repository, then reuse that mapping. Installing globally only changes where skills are available. Skills installation, MCP registration, browser authorization and GitHub background synchronization are separate steps. Existing connections and authorization are reused. See [MCP setup](docs/installation.md#plane-mcp-connection) if Plane tools are missing.
+### Connect → develop → deliver
 
-For the Codex plugin distribution, use `$plane-devflow:plane-setup`. See [local plugin installation](docs/installation.md#install-the-codex-plugin-locally). Install one distribution at a time to avoid duplicate entries.
-
-Upgrading from **Plane for Codex**? Read the [0.10.0 upgrade boundary](docs/installation.md#upgrade-from-the-previous-name) first: configuration paths and runtime identities changed, and business records are not migrated automatically.
-
-### Start your first task
-
-No tasks yet? Say “Use plane-start to draft the first version; show me the list before creating anything.” After reviewing the exact list, ask to create it and optionally start the first task. See [task planning and recovery](skills/plane-start/references/task-planning.md).
-
-`PROJECT-123` below is an example; replace it with an existing task ID.
+Open a **new agent session in the target repository**. Replace `PROJECT-123` with your task ID.
 
 | Step | Ask your agent | Expected result |
 | --- | --- | --- |
-| Connect | Use **plane-setup** | Project association and verified sync, or the precise remaining setup step |
-| Develop | “Use plane-start to start PROJECT-123” | The task's own working directory, branch, requirements and acceptance scope |
-| Deliver | “Use plane-deliver to deliver PROJECT-123; keep the PR open” | A linked PR, actual check results and outstanding acceptance items |
+| Connect | “Use plane-setup to connect this repository to Plane and configure GitHub sync” | Project association and verified sync, or the specific remaining setup step |
+| Develop | “Use plane-start to start PROJECT-123” | The task’s own directory and branch, with requirements and acceptance scope |
+| Deliver | “Use plane-deliver to deliver PROJECT-123; keep the PR open” | A linked PR, verification report and outstanding acceptance items |
 
-Setup's `.plane-devflow.json` must reach the configured base branch before independent task branches are created. You can also ask to read a task and discuss it without saving files. Delivery, acceptance and merge follow the requested scope; existing authorization is reused.
+To test the result, say: **“Run PROJECT-123 from its task workspace so I can test it.”** The agent follows the project’s run/build instructions and checks the source version before handing over the entry point. See [acceptance handoff](skills/plane-deliver/references/acceptance-environment.md).
 
-## Features
+**No repository or tasks yet?** Start with the [first-project guide](docs/first-project.md). For an existing project, say: “Use plane-start to draft the first version; show me the task list before creating anything.” Review the exact list before asking to create tasks. See [task planning](skills/plane-start/references/task-planning.md).
 
-| Capability | What it gives you |
-| --- | --- |
-| **Independent task workspaces** | A separate directory and branch for each task, preserving the primary checkout and other tasks' edits |
-| **Resume the right version** | Recover the task's recorded directory and context when continuing in another chat |
-| **Linked PR delivery** | Keep one primary PR tied to the task, with implementation and verification reports in Plane |
-| **Test when you're ready** | Ask your agent to prepare the task version for manual testing, with a usable entry point and test steps |
-| **Background GitHub sync** | Record PR events through GitHub Actions or an existing official Plane integration |
-| **Clear acceptance and completion** | Keep runtime readiness, human acceptance and merge authorization separate |
-
-To try a delivered result, say: “Run PROJECT-123 from its task workspace so I can test it.” The agent follows the project's own run/build instructions, checks the source version and hands over the entry point. PR delivery alone does not start an environment. See [acceptance handoff](skills/plane-deliver/references/acceptance-environment.md).
+Each repository runs setup once and keeps its mapping in `.plane-devflow.json`. That mapping must reach the configured base branch before independent task branches are created. Installing skills does not complete account authorization or activate GitHub sync; setup verifies each step and reuses existing connections.
 
 ## Skills
 
-Use the host's skill picker or request a workflow below. Codex uses `$plane-setup`; Claude Code uses `/plane-setup`; OpenCode loads the named skill through its native tool. See [host guides and verification status](docs/agent-compatibility.md) for syntax, MCP setup and tested limits.
+Use your host’s skill picker or request a skill by name. Invocation, MCP setup and tested limits are covered in the [agent compatibility guide](docs/agent-compatibility.md).
 
 | Skill | Use when |
 | --- | --- |
-| **Set Up Plane** | Guide a first project, associate/check its mapping, or resume setup — `plane-setup` |
-| **Start Plane Task** | Draft/create an approved first task list, or start/resume an existing task — `plane-start` |
-| **Deliver Plane Task** | Deliver a PR, prepare testing, record acceptance or finalize authorized work — `plane-deliver` |
+| **Set Up Plane** — `plane-setup` | Connect a repository, configure GitHub sync or resume incomplete setup |
+| **Start Plane Task** — `plane-start` | Plan the first tasks, create an approved list, or start/resume an existing task |
+| **Deliver Plane Task** — `plane-deliver` | Deliver a PR, prepare testing, record acceptance or finalize authorized work |
 
-The recommended command installs all three stages: **set up → develop → deliver**. They remain separate so you can request the right stage directly. Each skill bundles its own runtime and references and can also be installed individually for a narrower workflow. The Codex plugin uses the `$plane-devflow:` skill prefix.
+Codex standalone skills use `$plane-setup`; the Codex plugin uses `$plane-devflow:plane-setup`. Claude Code uses `/plane-setup`; OpenCode loads the named skill through its native tool. Choose one distribution to avoid duplicate entries. Each skill is self-contained and can also be installed individually.
 
 ## GitHub synchronization
 
+**GitHub Actions is the default:** linked PR events are recorded in Plane independently of the agent session. It does not require Plane’s paid GitHub integration or an extra service to deploy.
+
 | Provider | Requirements |
 | --- | --- |
-| **GitHub Actions** — default | A separate Plane PAT in the repository Secret `PLANE_API_KEY`, plus sync files merged into the default branch |
-| **Official Plane integration** | An enabled and verified repository/project mapping and rules; no plugin workflow or PAT Secret |
+| **GitHub Actions** — default | A Plane PAT in the repository Secret `PLANE_API_KEY`, plus the mapping and sync files merged into the default branch |
+| **Official Plane integration** — optional | An enabled and verified repository/project mapping and rules; no plugin workflow or PAT Secret |
 
-Project association uses browser authorization, without a PAT. For Actions, enter the PAT directly through GitHub Secrets or a human-operated hidden terminal prompt. Keep it out of chat.
+Project association uses browser authorization. Actions uses a separate PAT: enter it directly through GitHub Secrets or a human-operated hidden terminal prompt, never in chat. Optional [local credential reuse](skills/plane-setup/references/local-credentials.md) uses macOS Keychain or Windows Credential Manager.
 
-You can opt in to remembering a PAT on this computer: macOS uses Keychain and Windows uses Credential Manager. Later repositories can reuse the saved credential for the same Plane account and workspace after confirmation, across GitHub owners and organizations. Tokens stay outside skill/project files; cross-device synchronization is not provided. See [local credential reuse](skills/plane-setup/references/local-credentials.md).
-
-Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are reported separately.** New basic mappings record PR activity without changing task states; legacy mappings retain their existing rules. Native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
+Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are verified separately.** New mappings record PR activity without state transitions; legacy mappings retain existing rules, and native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
 
 ## Scope
 
 Supports first-version task drafting and approved creation, existing-task development, one primary PR per task, Plane Cloud and github.com. General task/Cycle management, custom status rules, multi-PR aggregation, full self-hosted Plane and GitHub Enterprise support are outside the current scope.
 
 ## Update or remove
+
+Upgrading from **Plane for Codex**? Read the [0.10.0 upgrade boundary](docs/installation.md#upgrade-from-the-previous-name): configuration paths and runtime identities changed, and business records are not migrated automatically.
 
 Plugin and GitHub sync-bundle versions are independent. Routine task checks verify project sync compatibility using the installed plugin's reviewed catalog; they do not query the plugin's latest release. Updating skills alone does not require a project sync-script PR. Update skills through your chosen installation channel. An optional [manual version check](docs/installation.md#manual-plugin-version-check) reports the stable plugin release without installing it.
 

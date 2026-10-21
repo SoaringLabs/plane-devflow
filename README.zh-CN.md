@@ -10,91 +10,86 @@
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python 3.10 及以上"></a>
 </p>
 <p align="center"><a href="README.md">English</a> · <strong>简体中文</strong></p>
-<p align="center"><strong>从 Plane 任务，到可审阅的 Pull Request。</strong><br>独立开发，衔接上下文，交付清晰可查。</p>
-<p align="center"><a href="#快速开始">快速开始</a> · <a href="#功能">功能</a> · <a href="#技能入口">技能入口</a> · <a href="#文档">文档</a> · <a href="CHANGELOG.md">更新记录</a></p>
-<p align="center"><img src="docs/assets/workflow.svg" alt="流程示意：Plane 任务 → agent 独立任务工作区 → 关联的 GitHub PR。DEMO-123 为示例任务。" width="100%"></p>
+<p align="center"><strong>连接 Plane、AI 编程助手与 GitHub。</strong><br>开发任务、交付 PR、回写进展，无需 Plane 付费集成。</p>
+<p align="center"><a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#技能入口">技能入口</a> · <a href="#文档">文档</a> · <a href="CHANGELOG.md">更新记录</a></p>
+<p align="center"><img src="docs/assets/workflow.zh-CN.svg" alt="流程示例：Plane 任务 DEMO-123 → AI 编程助手在独立工作区开发 → 关联的 GitHub PR；GitHub Actions 将 PR 活动回写到 Plane。" width="100%"></p>
 
-将 **Plane 任务、agent 开发和 GitHub PR** 串成一条工作流的开源 Agent Skills，提供 **Codex、Claude Code、Cursor、OpenCode** 的接入指引。从任务需求出发，在独立目录中开发，再交付附有验证与验收记录的关联 PR。无需部署额外服务。
+适用于 **Codex、Claude Code、Cursor、OpenCode** 的开源 Agent Skills，并提供对应接入指引。从 Plane 任务开始开发，交付关联 PR，再通过 GitHub Actions 将 PR 活动回写到 Plane。无需部署额外服务。
 
+## 功能
+
+| 你可以做什么 | 能得到什么 |
+| --- | --- |
+| **连接 Plane 与 GitHub** | 将任务关联到主 PR，通过 GitHub Actions 回写 PR 活动，无需 Plane 付费 GitHub 集成 |
+| **让 agent 按任务开发** | 提供任务编号，agent 读取需求，准备任务专属目录与分支 |
+| **在 Plane 跟进交付** | 在任务中查看关联 PR、实现说明、实际检查结果与待验收项 |
+| **同时推进不同任务** | 各任务在独立工作区开发，换聊天后恢复对应的任务版本 |
+| **从零准备项目** | 从仓库准备、Plane 关联到同步配置，再审阅首批任务清单，确认后创建 |
+| **验收后再决定合并** | 按需运行任务版本，获取可用入口与测试步骤；验收与合并分别确认 |
+
+新配置会记录 PR 活动，**默认不自动切换任务状态**。配置方式与已有集成的处理见 [GitHub 同步](#github-同步)。
 
 ## 快速开始
 
 ### 安装
 
-新电脑或还没有代码仓库？先看[首次项目引导](docs/first-project.zh-CN.md)：向 agent 提出一次准备请求，完成账号交接后，接续初始化与首批任务规划。
-
-在目标代码仓库根目录执行：
+在目标代码仓库根目录执行，并选择你的 agent：
 
 ```sh
 npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver
 ```
 
-Skills CLI 从 GitHub 将三个自包含技能安装到当前项目，并让你选择目标 agent。如需跨项目使用，可自行添加 `--global`。需要直接指定时，可加 `--agent codex`、`--agent claude-code`、`--agent cursor` 或 `--agent opencode`。需要 [Node.js 22.20+](https://nodejs.org/)、npm、Git，以及支持本地终端与 MCP 的 agent；运行辅助脚本需要 Python 3.10+，PR 操作还需要已登录的 [GitHub CLI](https://cli.github.com/)。
+该命令将三个技能安装到当前项目。添加 `--global` 可跨项目使用。环境要求、指定宿主、MCP 配置及 Codex 插件分发方式见 [安装说明](docs/installation.md)。
 
-在**目标代码仓库新开一个 agent 会话**，选择或请求使用 **plane-setup**，按引导连接 Plane 并选择项目。每个仓库通过自己的 `.plane-devflow.json` 保存 Plane 项目关联；每个仓库首次运行 setup，之后复用该映射。全局安装只改变技能的可用范围。技能安装、MCP 注册、浏览器授权与 GitHub 后台同步分别确认；已有连接和授权会复用。工具缺失时见 [MCP 配置](docs/installation.md#plane-mcp-connection)。
+### 关联 → 开发 → 交付
 
-Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插件安装](docs/installation.md#install-the-codex-plugin-locally)。选择一种分发方式，避免同时出现重复入口。
-
-从 **Plane for Codex** 升级？请先查看 [0.10.0 升级边界](docs/installation.md#upgrade-from-the-previous-name)：配置路径与运行标识已变更，业务记录不会自动迁移。
-
-### 开始第一条任务
-
-还没有任务时，可以说：“使用 plane-start 规划第一版，先给我看清单，不要创建。”审阅具体清单后，再要求创建；需要立即开发时可补充“并开始第一条”。详见[任务规划与恢复](skills/plane-start/references/task-planning.md)。
-
-下面的 `PROJECT-123` 是示例，请替换为项目中已有任务的真实编号。
+在**目标代码仓库新开一个 agent 会话**。将 `PROJECT-123` 替换为你的任务编号。
 
 | 步骤 | 对 agent 的请求 | 应看到的结果 |
 | --- | --- | --- |
-| 关联 | 使用 **plane-setup** | 已关联的项目，以及同步验证结果或具体待完成步骤 |
+| 关联 | “使用 plane-setup 关联当前仓库与 Plane，并配置 GitHub 同步” | 已关联的项目与同步验证结果，或具体待完成步骤 |
 | 开发 | “使用 plane-start 开始 PROJECT-123” | 任务专属目录、分支、需求与验收范围 |
-| 交付 | “使用 plane-deliver 交付 PROJECT-123，先不要合并” | 关联 PR、实际检查结果和待验收项 |
+| 交付 | “使用 plane-deliver 交付 PROJECT-123，先不要合并” | 关联 PR、验证报告与待验收项 |
 
-初始化生成的 `.plane-devflow.json` 需要先进入配置的基础分支，才能创建独立任务分支。仅核对需求时，可以明确要求“只讨论，不保存文件”。交付、验收与合并各按请求范围执行，已有授权会复用。
+需要试用时，可以说：**“帮我运行 PROJECT-123 的任务工作区代码，我来验收。”** Agent 会按照项目的运行或构建说明准备环境，核对代码版本，再交接可用入口。详见 [验收环境交接](skills/plane-deliver/references/acceptance-environment.md)。
 
-## 功能
+**还没有仓库或任务？** 先看 [首次项目引导](docs/first-project.zh-CN.md)。已有项目可说：“使用 plane-start 规划第一版，先给我看任务清单，不要创建。”审阅具体清单后，再要求创建任务。详见 [任务规划](skills/plane-start/references/task-planning.md)。
 
-| 能力 | 带来的帮助 |
-| --- | --- |
-| **任务独立工作区** | 每个任务使用独立目录与分支，保留主目录和其他任务的改动 |
-| **恢复正确版本** | 再次开始或换聊天时，恢复该任务记录的目录与上下文 |
-| **关联 PR 交付** | 一条任务对应一个主 PR，在 Plane 中保留实现与验证报告 |
-| **按需准备试用** | 需要时运行任务版本，提供可用入口与测试步骤 |
-| **GitHub 后台同步** | 通过 Actions 或已配置的 Plane 官方集成记录 PR 事件 |
-| **清晰的验收与完成** | 区分运行就绪、人工验收与合并授权 |
-
-交付后可说：“帮我运行 PROJECT-123 的任务工作区代码，我来验收。”Agent 会依据项目自身的运行/构建说明准备入口，核对实际来源版本，再交接测试。只交付 PR 不会强制启动环境。详见 [验收环境交接](skills/plane-deliver/references/acceptance-environment.md)。
+每个仓库首次执行 setup，通过 `.plane-devflow.json` 保存项目关联。该映射需要先进入配置的基础分支，再创建独立任务分支。安装技能不会直接完成账号授权或激活 GitHub 同步；setup 会逐步验证，并复用已有连接。
 
 ## 技能入口
 
-使用当前宿主的技能菜单，或按名称请求使用以下工作流。Codex 使用 `$plane-setup`；Claude Code 使用 `/plane-setup`；OpenCode 通过原生 skill 工具加载。调用方式、MCP 配置与实测边界见 [agent 兼容说明](docs/agent-compatibility.md)。
+使用当前宿主的技能菜单，或按名称请求使用技能。调用方式、MCP 配置与实测边界见 [agent 兼容说明](docs/agent-compatibility.md)。
 
-| 入口 | 什么时候用 |
+| 技能 | 什么时候用 |
 | --- | --- |
-| **Set Up Plane** | 引导首次项目、关联或检查映射、继续初始化 — `plane-setup` |
-| **Start Plane Task** | 规划并创建已确认的首批任务，或开始、恢复已有任务 — `plane-start` |
-| **Deliver Plane Task** | 交付 PR、准备试用、记录验收或按授权收尾 — `plane-deliver` |
+| **Set Up Plane** — `plane-setup` | 关联仓库、配置 GitHub 同步，或继续未完成的初始化 |
+| **Start Plane Task** — `plane-start` | 规划首批任务、创建已确认的清单，或开始、恢复已有任务 |
+| **Deliver Plane Task** — `plane-deliver` | 交付 PR、准备试用、记录验收，或按授权收尾 |
 
-推荐命令一次安装三个阶段：**关联 → 开发 → 交付**。保留独立入口，方便按当前任务调用对应阶段。每个技能自带运行脚本与参考文件；只需要部分流程时，也可以按名称单独安装。Codex 插件的调用标识使用 `$plane-devflow:` 前缀。
+Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:plane-setup`；Claude Code 使用 `/plane-setup`；OpenCode 通过原生工具加载技能。选择一种分发方式，避免重复入口。每个技能均自带运行脚本与参考文件，也可单独安装。
 
 ## GitHub 同步
 
+**默认使用 GitHub Actions：** 关联 PR 的事件会回写到 Plane，无需保持 agent 会话运行，也无需 Plane 付费 GitHub 集成或额外部署服务。
+
 | 方式 | 需要准备 |
 | --- | --- |
-| **GitHub Actions（默认）** | 单独的 Plane PAT，存入仓库 Secret `PLANE_API_KEY`；同步文件需要合入默认分支 |
-| **Plane 官方 GitHub 集成** | 已启用并核对仓库、项目映射及规则；无需本插件的 workflow 或 PAT Secret |
+| **GitHub Actions（默认）** | 将 Plane PAT 存入仓库 Secret `PLANE_API_KEY`，并将映射与同步文件合入默认分支 |
+| **Plane 官方 GitHub 集成（可选）** | 已启用并核对仓库、项目映射及规则；无需本插件的 workflow 或 PAT Secret |
 
-关联项目使用浏览器授权，不需要 PAT。Actions 的 PAT 请直接在 GitHub Secrets 或由本人操作的隐藏终端输入中录入，不要发送到聊天。
+关联项目使用浏览器授权；Actions 使用单独的 PAT。请直接在 GitHub Secrets 或由本人操作的隐藏终端输入中录入，不要发送到聊天。可选的 [本机凭据复用](skills/plane-setup/references/local-credentials.md) 使用 macOS Keychain 或 Windows Credential Manager。
 
-可选择“在本机记住凭据”：macOS 使用 Keychain，Windows 使用 Credential Manager。以后为其他仓库配置同步时，可确认复用同一 Plane 账号与 workspace 的已存凭据，无需重新生成 PAT；不要求仓库属于同一个 GitHub 组织。凭据不保存在 skill 或项目文件中，此功能不提供跨电脑同步。详见 [本机凭据复用](skills/plane-setup/references/local-credentials.md)。
-
-初始化中断或条件不足时会保存进度，之后可继续。**连接验证通过与真实 PR 事件回写成功会分别报告。** 新基础映射记录 PR 活动，保留任务状态；旧映射沿用既有规则，原生集成的状态变化由官方集成控制。详见 [初始化与同步](skills/plane-setup/references/setup.md)。
+初始化中断或条件不足时会保存进度，之后可继续。**连接验证通过与真实 PR 事件回写成功会分别验证。** 新映射记录 PR 活动，默认不切换任务状态；旧映射沿用既有规则，原生集成的状态变化由官方集成控制。详见 [初始化与同步](skills/plane-setup/references/setup.md)。
 
 ## 使用范围
 
 当前支持首版任务草案与确认后创建、已有任务开发、一条任务对应一个主 PR、Plane Cloud 和 github.com。通用任务/Cycle 管理、自定义状态规则、多 PR 聚合、完整的自托管 Plane 与 GitHub Enterprise 接入暂不支持。
 
 ## 更新与移除
+
+从 **Plane for Codex** 升级？请先查看 [0.10.0 升级边界](docs/installation.md#upgrade-from-the-previous-name)：配置路径与运行标识已变更，业务记录不会自动迁移。
 
 插件与 GitHub 同步包独立管理版本。日常任务检查会依据已安装插件附带的审核清单，核对项目同步包的兼容性，不查询插件自身新版。仅更新技能无需给项目提交同步脚本升级 PR。技能更新由用户通过所选安装渠道发起；也可按需使用[手动版本检查](docs/installation.md#manual-plugin-version-check)，只查看稳定版本，不自动安装。
 

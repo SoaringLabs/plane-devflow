@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="704" viewBox="0 0 1440 704" fill="none" role="img" aria-labelledby="title description" xml:lang="zh-CN">
+  <title id="title">Plane DevFlow — 串联任务开发与 PR 活动</title>
+  <desc id="description">DEMO-123 示例流程：Plane 提供任务上下文，AI 编程助手在独立工作区开发，GitHub 承载关联 PR；GitHub Actions 将 PR 活动回写到 Plane。新配置默认不自动切换任务状态。</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#17203B" flood-opacity=".04"/></filter>
+    <symbol id="plane" viewBox="0 0 24 24"><path d="m3 10 18-7-7 18-3-8-8-3Zm8 3L21 3"/></symbol>
+    <symbol id="terminal" viewBox="0 0 24 24"><path d="m5 6 6 6-6 6m9 0h5"/></symbol>
+    <symbol id="pr" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10m12 0v-5a7 7 0 0 0-7-7m3-3-3 3 3 3"/></symbol>
+    <symbol id="document" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Zm0 0v6h6M8 13h8m-8 4h6"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></symbol>
+    <symbol id="activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+    <symbol id="branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 7v10m12-10a10 10 0 0 1-10 10"/></symbol>
+    <symbol id="link" viewBox="0 0 24 24"><path d="m10 13 4-4m-6 7-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 1 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0)"/></symbol>
+    <symbol id="review" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4V4Zm4 4h8m-8 4h5"/></symbol>
+    <symbol id="actions" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6l1-7Z"/></symbol>
+  </defs>
+  <rect x=".5" y=".5" width="1439" height="703" rx="24" fill="#F7F8FC" stroke="#E2E5EE"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<text x="56" y="40" fill="#6B5DC2" font-size="14" font-weight="650" dominant-baseline="central" letter-spacing="1.3">PLANE DEVFLOW / 工作流</text>
+<text x="1384" y="40" fill="#727B8E" font-size="14" font-weight="500" dominant-baseline="central" text-anchor="end">流程示例 · DEMO-123</text>
+<text x="56" y="90" fill="#1A2135" font-size="40" font-weight="700" dominant-baseline="central" >从任务到 PR，让进展回到 Plane。</text>
+<text x="56" y="134" fill="#626C81" font-size="22" font-weight="400" dominant-baseline="central" >Agent Skills 串起开发流程，GitHub Actions 回写 PR 活动。</text>
+    <rect x="56" y="176" width="384" height="316" rx="18" fill="#FFFFFF" stroke="#DFE3ED" filter="url(#shadow)"/>
+    <rect x="80" y="200" width="40" height="40" rx="11" fill="#F0EDFC"/>
+<use href="#plane" x="88" y="208" width="24" height="24" stroke="#7862CE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="136" y="220" fill="#222A3E" font-size="24" font-weight="650" dominant-baseline="central" >Plane</text>
+<text x="416" y="220" fill="#8993A6" font-size="15" font-weight="500" dominant-baseline="central" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">01</text>
+<text x="80" y="270" fill="#737D91" font-size="14" font-weight="550" dominant-baseline="central" >任务上下文与交付记录</text>
+<text x="80" y="306" fill="#29324A" font-size="27" font-weight="650" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">DEMO-123</text>
+    <path d="M80330H416" stroke="#EBEDF3"/>
+<use href="#document" x="80" y="348" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="112" y="358" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >需求与验收条件</text>
+<use href="#check" x="80" y="390" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="112" y="400" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >实现说明与检查结果</text>
+<use href="#activity" x="80" y="432" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="112" y="442" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >关联 PR 的活动记录</text>
+    <rect x="528" y="176" width="384" height="316" rx="18" fill="#1D2338" stroke="#1D2338" filter="url(#shadow)"/>
+    <rect x="552" y="200" width="40" height="40" rx="11" fill="#7562E5"/>
+<use href="#terminal" x="560" y="208" width="24" height="24" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="608" y="220" fill="#F5F6FF" font-size="24" font-weight="650" dominant-baseline="central" >AI 编程助手</text>
+<text x="888" y="220" fill="#939DB5" font-size="15" font-weight="500" dominant-baseline="central" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">02</text>
+<text x="552" y="270" fill="#A8B2CA" font-size="14" font-weight="550" dominant-baseline="central" >任务独立工作区</text>
+<text x="552" y="306" fill="#C5B7FF" font-size="27" font-weight="650" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">codex/demo-123</text>
+    <path d="M552330H888" stroke="#363E56"/>
+<use href="#document" x="552" y="348" width="20" height="20" stroke="#B2A1FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="584" y="358" fill="#C8D0E3" font-size="21" font-weight="400" dominant-baseline="central" >读取任务需求</text>
+<use href="#branch" x="552" y="390" width="20" height="20" stroke="#B2A1FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="584" y="400" fill="#C8D0E3" font-size="21" font-weight="400" dominant-baseline="central" >在独立工作区开发</text>
+<use href="#check" x="552" y="432" width="20" height="20" stroke="#B2A1FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="584" y="442" fill="#C8D0E3" font-size="21" font-weight="400" dominant-baseline="central" >执行检查并交付 PR</text>
+    <rect x="1000" y="176" width="384" height="316" rx="18" fill="#FFFFFF" stroke="#DFE3ED" filter="url(#shadow)"/>
+    <rect x="1024" y="200" width="40" height="40" rx="11" fill="#F0EDFC"/>
+<use href="#pr" x="1032" y="208" width="24" height="24" stroke="#7862CE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1080" y="220" fill="#222A3E" font-size="24" font-weight="650" dominant-baseline="central" >GitHub</text>
+<text x="1360" y="220" fill="#8993A6" font-size="15" font-weight="500" dominant-baseline="central" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">03</text>
+<text x="1024" y="270" fill="#737D91" font-size="14" font-weight="550" dominant-baseline="central" >关联的 PULL REQUEST</text>
+<text x="1024" y="306" fill="#29324A" font-size="26" font-weight="650" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">PR #42 → DEMO-123</text>
+    <path d="M1024330H1360" stroke="#EBEDF3"/>
+<use href="#link" x="1024" y="348" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1056" y="358" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >PR 关联任务编号</text>
+<use href="#review" x="1024" y="390" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1056" y="400" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >代码审阅与检查</text>
+<use href="#activity" x="1024" y="432" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1056" y="442" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >创建 · 更新 · 合并</text>
+    <g stroke="#8A7BC7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M460 334H508m-8-8 8 8-8 8"/>
+      <path d="M932 334H980m-8-8 8 8-8 8"/>
+      <path d="M1192 498V552a16 16 0 0 1-16 16H940"/>
+      <path d="M500 568H264a16 16 0 0 1-16-16V502m-7 7 7-7 7 7"/>
+    </g>
+    <circle cx="1192" cy="498" r="4" fill="#8A7BC7"/>
+    <rect x="500" y="524" width="440" height="88" rx="16" fill="#EFECFC" stroke="#DCD5F5"/>
+    <rect x="520" y="550" width="36" height="36" rx="10" fill="#FFFFFF"/>
+<use href="#actions" x="528" y="558" width="20" height="20" stroke="#7862CE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="572" y="550" fill="#3C315E" font-size="23" font-weight="650" dominant-baseline="central" >GitHub Actions</text>
+<text x="572" y="585" fill="#70608F" font-size="20" font-weight="400" dominant-baseline="central" >将 PR 活动回写到 Plane</text>
+    <path d="M56 636H1384" stroke="#E0E4EE"/>
+<text x="56" y="666" fill="#626C81" font-size="18" font-weight="400" dominant-baseline="central" >新配置默认记录 PR 活动，不自动切换任务状态。</text>
+<text x="1384" y="666" fill="#727B8E" font-size="17" font-weight="400" dominant-baseline="central" text-anchor="end">无需部署额外服务</text>
+  </g>
+</svg>
