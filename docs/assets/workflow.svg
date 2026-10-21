@@ -1,48 +1,81 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="740" viewBox="0 0 1440 740" fill="none" role="img" aria-labelledby="title description">
-  <title id="title">Plane DevFlow — from task to pull request</title>
-  <desc id="description">Workflow illustration: a Plane task provides requirements, the agent works in an isolated task workspace, and GitHub receives a linked pull request for review and authorized merge. DEMO-123 is an example task.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="704" viewBox="0 0 1440 704" fill="none" role="img" aria-labelledby="title description" xml:lang="en">
+  <title id="title">Plane DevFlow — connected task development and PR activity</title>
+  <desc id="description">Illustrative workflow for DEMO-123: Plane provides task context, a coding agent develops in an isolated workspace, and GitHub hosts the linked pull request. GitHub Actions records PR activity back in Plane. New setups do not automatically change task states.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1440" y2="740" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F1FF"/><stop offset=".52" stop-color="#EFF4FF"/><stop offset="1" stop-color="#EAE4FF"/></linearGradient>
-    <linearGradient id="accent" x1="550" y1="240" x2="900" y2="590" gradientUnits="userSpaceOnUse"><stop stop-color="#7362F4"/><stop offset="1" stop-color="#4237BD"/></linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#25204F" flood-opacity=".09"/></filter>
-    <pattern id="grid" width="36" height="36" patternUnits="userSpaceOnUse"><path d="M36 0H0V36" stroke="#8C7DCB" stroke-opacity=".06"/></pattern>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#17203B" flood-opacity=".04"/></filter>
+    <symbol id="plane" viewBox="0 0 24 24"><path d="m3 10 18-7-7 18-3-8-8-3Zm8 3L21 3"/></symbol>
+    <symbol id="terminal" viewBox="0 0 24 24"><path d="m5 6 6 6-6 6m9 0h5"/></symbol>
+    <symbol id="pr" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M6 7v10m12 0v-5a7 7 0 0 0-7-7m3-3-3 3 3 3"/></symbol>
+    <symbol id="document" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Zm0 0v6h6M8 13h8m-8 4h6"/></symbol>
+    <symbol id="check" viewBox="0 0 24 24"><path d="m5 13 4 4L19 7"/></symbol>
+    <symbol id="activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
+    <symbol id="branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="5" r="2"/><path d="M6 7v10m12-10a10 10 0 0 1-10 10"/></symbol>
+    <symbol id="link" viewBox="0 0 24 24"><path d="m10 13 4-4m-6 7-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 1 1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0)"/></symbol>
+    <symbol id="review" viewBox="0 0 24 24"><path d="M4 4h16v12H9l-5 4V4Zm4 4h8m-8 4h5"/></symbol>
+    <symbol id="actions" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6l1-7Z"/></symbol>
   </defs>
-  <rect width="1440" height="740" rx="28" fill="url(#bg)"/>
-  <rect width="1440" height="740" rx="28" fill="url(#grid)"/>
-  <g font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif">
-    <rect x="72" y="58" width="228" height="32" rx="16" fill="#E5DFFF"/>
-    <text x="90" y="80" fill="#5A47AE" font-size="14" font-weight="700" letter-spacing="1.4">WORKFLOW OVERVIEW</text>
-    <text x="72" y="152" fill="#211A3C" font-size="48" font-weight="750" letter-spacing="-1.7">From a Plane task to a reviewed pull request.</text>
-    <text x="72" y="192" fill="#69627D" font-size="23">Keep the context. Give each task its own space. Make the handoff clear.</text>
-    <g filter="url(#shadow)">
-      <rect x="72" y="250" width="350" height="350" rx="20" fill="white" stroke="#E2DDEE"/>
-      <rect x="514" y="250" width="412" height="350" rx="20" fill="#211C37"/>
-      <rect x="1018" y="250" width="350" height="350" rx="20" fill="white" stroke="#E2DDEE"/>
+  <rect x=".5" y=".5" width="1439" height="703" rx="24" fill="#F7F8FC" stroke="#E2E5EE"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans CJK SC', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+<text x="56" y="40" fill="#6B5DC2" font-size="14" font-weight="650" dominant-baseline="central" letter-spacing="1.3">PLANE DEVFLOW / WORKFLOW</text>
+<text x="1384" y="40" fill="#727B8E" font-size="14" font-weight="500" dominant-baseline="central" text-anchor="end">EXAMPLE · DEMO-123</text>
+<text x="56" y="90" fill="#1A2135" font-size="40" font-weight="700" dominant-baseline="central" letter-spacing="-.8">From task to PR. Back to Plane.</text>
+<text x="56" y="134" fill="#626C81" font-size="22" font-weight="400" dominant-baseline="central" >Agent Skills for development. GitHub Actions for PR activity.</text>
+    <rect x="56" y="176" width="384" height="316" rx="18" fill="#FFFFFF" stroke="#DFE3ED" filter="url(#shadow)"/>
+    <rect x="80" y="200" width="40" height="40" rx="11" fill="#F0EDFC"/>
+<use href="#plane" x="88" y="208" width="24" height="24" stroke="#7862CE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="136" y="220" fill="#222A3E" font-size="24" font-weight="650" dominant-baseline="central" >Plane</text>
+<text x="416" y="220" fill="#8993A6" font-size="15" font-weight="500" dominant-baseline="central" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">01</text>
+<text x="80" y="270" fill="#737D91" font-size="14" font-weight="550" dominant-baseline="central" letter-spacing=".7">TASK CONTEXT &amp; RECORDS</text>
+<text x="80" y="306" fill="#29324A" font-size="27" font-weight="650" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">DEMO-123</text>
+    <path d="M80330H416" stroke="#EBEDF3"/>
+<use href="#document" x="80" y="348" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="112" y="358" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >Requirements &amp; acceptance</text>
+<use href="#check" x="80" y="390" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="112" y="400" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >Implementation &amp; checks</text>
+<use href="#activity" x="80" y="432" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="112" y="442" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >Linked PR activity</text>
+    <rect x="528" y="176" width="384" height="316" rx="18" fill="#1D2338" stroke="#1D2338" filter="url(#shadow)"/>
+    <rect x="552" y="200" width="40" height="40" rx="11" fill="#7562E5"/>
+<use href="#terminal" x="560" y="208" width="24" height="24" stroke="#FFFFFF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="608" y="220" fill="#F5F6FF" font-size="24" font-weight="650" dominant-baseline="central" >Coding agent</text>
+<text x="888" y="220" fill="#939DB5" font-size="15" font-weight="500" dominant-baseline="central" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">02</text>
+<text x="552" y="270" fill="#A8B2CA" font-size="14" font-weight="550" dominant-baseline="central" letter-spacing=".7">ISOLATED TASK WORKSPACE</text>
+<text x="552" y="306" fill="#C5B7FF" font-size="27" font-weight="650" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">codex/demo-123</text>
+    <path d="M552330H888" stroke="#363E56"/>
+<use href="#document" x="552" y="348" width="20" height="20" stroke="#B2A1FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="584" y="358" fill="#C8D0E3" font-size="21" font-weight="400" dominant-baseline="central" >Read task requirements</text>
+<use href="#branch" x="552" y="390" width="20" height="20" stroke="#B2A1FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="584" y="400" fill="#C8D0E3" font-size="21" font-weight="400" dominant-baseline="central" >Build in its own worktree</text>
+<use href="#check" x="552" y="432" width="20" height="20" stroke="#B2A1FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="584" y="442" fill="#C8D0E3" font-size="21" font-weight="400" dominant-baseline="central" >Run checks &amp; deliver a PR</text>
+    <rect x="1000" y="176" width="384" height="316" rx="18" fill="#FFFFFF" stroke="#DFE3ED" filter="url(#shadow)"/>
+    <rect x="1024" y="200" width="40" height="40" rx="11" fill="#F0EDFC"/>
+<use href="#pr" x="1032" y="208" width="24" height="24" stroke="#7862CE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1080" y="220" fill="#222A3E" font-size="24" font-weight="650" dominant-baseline="central" >GitHub</text>
+<text x="1360" y="220" fill="#8993A6" font-size="15" font-weight="500" dominant-baseline="central" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">03</text>
+<text x="1024" y="270" fill="#737D91" font-size="14" font-weight="550" dominant-baseline="central" letter-spacing=".7">LINKED PULL REQUEST</text>
+<text x="1024" y="306" fill="#29324A" font-size="26" font-weight="650" dominant-baseline="central" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">PR #42 → DEMO-123</text>
+    <path d="M1024330H1360" stroke="#EBEDF3"/>
+<use href="#link" x="1024" y="348" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1056" y="358" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >Linked task in the PR</text>
+<use href="#review" x="1024" y="390" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1056" y="400" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >Code review &amp; checks</text>
+<use href="#activity" x="1024" y="432" width="20" height="20" stroke="#8270C8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="1056" y="442" fill="#566179" font-size="21" font-weight="400" dominant-baseline="central" >Open · update · merge</text>
+    <g stroke="#8A7BC7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M460 334H508m-8-8 8 8-8 8"/>
+      <path d="M932 334H980m-8-8 8 8-8 8"/>
+      <path d="M1192 498V552a16 16 0 0 1-16 16H940"/>
+      <path d="M500 568H264a16 16 0 0 1-16-16V502m-7 7 7-7 7 7"/>
     </g>
-    <path d="M446 425H488m-10-10 10 10-10 10M950 425h42m-10-10 10 10-10 10" stroke="#998AC7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-    <rect x="98" y="278" width="46" height="46" rx="13" fill="#EEE9FF"/>
-    <path d="m111 298 20-8-7 21-4-9-9-4Zm9 4 11-12" stroke="#6D54CD" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="158" y="309" fill="#29223C" font-size="25" font-weight="700">Plane</text>
-    <text x="98" y="366" fill="#8D829F" font-size="15" font-weight="600" letter-spacing="1.1">EXAMPLE TASK · DEMO-123</text>
-    <text x="98" y="402" fill="#29223C" font-size="28" font-weight="700">A focused change</text>
-    <g fill="#726980" font-size="20"><text x="130" y="451">Requirements</text><text x="130" y="490">Acceptance criteria</text><text x="130" y="529">Project context</text></g>
-    <g stroke="#9074D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m100 444 5 5 10-11m-15 50 5 5 10-11m-15 50 5 5 10-11"/></g>
-    <rect x="540" y="278" width="46" height="46" rx="13" fill="url(#accent)"/>
-    <path d="m551 292 8 9-8 9m14 0h11" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="600" y="309" fill="#F7F3FF" font-size="25" font-weight="700">Agent</text>
-    <text x="540" y="370" fill="#F7F3FF" font-size="27" font-weight="700">One task. One workspace.</text>
-    <rect x="540" y="395" width="360" height="145" rx="12" fill="#181426" stroke="#3D3455"/>
-    <g font-family="SFMono-Regular,Consolas,Liberation Mono,monospace" font-size="19"><text x="561" y="431" fill="#B9A4FF">codex/demo-123</text><text x="561" y="464" fill="#C3B9D5">├─ src/</text><text x="561" y="492" fill="#C3B9D5">├─ tests/</text><text x="561" y="520" fill="#C3B9D5">└─ verification notes</text></g>
-    <circle cx="548" cy="569" r="4" fill="#B5A2EC"/><text x="561" y="576" fill="#B8ABCE" font-size="17">Build and verify in the task workspace</text>
-    <rect x="1044" y="278" width="46" height="46" rx="13" fill="#F1EDF8"/>
-    <g stroke="#6F5E8E" stroke-width="2.2" stroke-linecap="round"><circle cx="1057" cy="290" r="3"/><circle cx="1057" cy="311" r="3"/><circle cx="1077" cy="311" r="3"/><path d="M1057 293v15m20 0v-9a9 9 0 0 0-9-9h-3"/></g>
-    <text x="1104" y="309" fill="#29223C" font-size="25" font-weight="700">GitHub</text>
-    <text x="1044" y="370" fill="#29223C" font-size="27" font-weight="700">A linked pull request</text>
-    <g fill="#726980" font-size="20"><text x="1044" y="422">Changes + verification</text><text x="1044" y="461">Plane delivery report</text><text x="1044" y="500">Human acceptance</text></g>
-    <rect x="1044" y="534" width="298" height="38" rx="10" fill="#F3EFFB"/>
-    <text x="1061" y="559" fill="#76618E" font-size="17">Merge when authorized</text>
-    <path d="M72 646H1368" stroke="#DAD2EB"/>
-    <text x="72" y="688" fill="#6D627F" font-size="19">Agent Skills connecting Plane, your agent and GitHub.</text>
-    <text x="1368" y="688" fill="#8D81A5" font-size="16" text-anchor="end">Isolated work · Linked delivery · Clear acceptance</text>
+    <circle cx="1192" cy="498" r="4" fill="#8A7BC7"/>
+    <rect x="500" y="524" width="440" height="88" rx="16" fill="#EFECFC" stroke="#DCD5F5"/>
+    <rect x="520" y="550" width="36" height="36" rx="10" fill="#FFFFFF"/>
+<use href="#actions" x="528" y="558" width="20" height="20" stroke="#7862CE" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="572" y="550" fill="#3C315E" font-size="23" font-weight="650" dominant-baseline="central" >GitHub Actions</text>
+<text x="572" y="585" fill="#70608F" font-size="20" font-weight="400" dominant-baseline="central" >Record PR activity in Plane</text>
+    <path d="M56 636H1384" stroke="#E0E4EE"/>
+<text x="56" y="666" fill="#626C81" font-size="18" font-weight="400" dominant-baseline="central" >New setups record PR activity without changing task states.</text>
+<text x="1384" y="666" fill="#727B8E" font-size="17" font-weight="400" dominant-baseline="central" text-anchor="end">No extra service to deploy</text>
   </g>
 </svg>
