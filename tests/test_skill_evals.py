@@ -100,3 +100,23 @@ class SkillEvalTests(unittest.TestCase):
         for edits in ({'rationale': ''}, {'skill': 'invented'}):
             with self.subTest(edits=edits), self.assertRaises(ValueError):
                 evals.score(self.case, {**self.decision, **edits})
+
+    def test_run_freezes_rubric_before_sessions_even_if_source_file_changes(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);cases=root/'cases.jsonl';out=root/'run'
+            case=next(c for c in self.cases if c['id']=='DELIVER-03')
+            raw=(json.dumps(case)+'\n').encode();cases.write_bytes(raw)
+            def session(c,source,output,label,repeat,timeout,catalog):
+                cases.write_text('changed during run')
+                return {'case_id':c['id'],'repeat':repeat,'status':'scored','passed':True,'critical_failure':False}
+            with patch.object(evals.sys,'argv',['run.py','--cases',str(cases),'--output',str(out)]), \
+                 patch.object(evals.shutil,'which',return_value='/fixture/codex'),patch.object(evals,'run_case',side_effect=session):
+                self.assertEqual(evals.main(),0)
+            summary=json.loads((out/'summary.json').read_text())
+            self.assertEqual(summary['rubric_sha256'],evals.hashlib.sha256(raw).hexdigest())
+            self.assertEqual((out/'snapshot/cases.jsonl').read_bytes(),raw)
+            self.assertTrue(summary['frozen_before_sessions'])
+
+    def test_frozen_catalog_scoring_needs_no_later_catalog_read(self):
+        with patch.object(Path,'read_text',side_effect=AssertionError('Do not reload live rubric')):
+            self.assertTrue(evals.score(self.case,self.decision,catalog=self.case['required_decisions'])['passed'])

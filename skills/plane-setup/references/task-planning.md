@@ -48,7 +48,7 @@ The helper saves an immutable draft in shared Git metadata, tied to the entire m
 
 ## Reconcile before creating
 
-Read the live selected project and all active and archived work-item pages through MCP (include drafts where the host exposes them), explicitly requesting `id`, `project_id`, `name`, `external_id` and `external_source`. Normalize them into:
+Read the live selected project, then use the host’s active-work-item and archived-work-item listing operations separately. Finish pagination for both collections, even when the active list is empty; include drafts where the host exposes them. If either collection cannot be read, report that capability gap before any creation. Explicitly request `id`, `project_id`, `name`, `external_id` and `external_source`. Normalize them into:
 
 ```json
 {
