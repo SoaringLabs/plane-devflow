@@ -1,6 +1,6 @@
 ---
 name: plane-deliver
-description: Deliver a Plane task PR, prepare its recorded worktree for manual testing, record scoped acceptance, or finalize an authorized merge and completion. Use for these task handoffs, not ordinary Git explanations or unrelated reviews.
+description: Deliver or diagnose a Plane task PR, prepare its recorded worktree for manual testing, record scoped acceptance, or finalize an authorized merge and completion. Use for these task handoffs, not ordinary Git explanations or unrelated reviews.
 ---
 
 # Deliver a Plane task
@@ -11,6 +11,7 @@ Resolve `../../scripts/plane_workflow.py` from this installed file and invoke it
 
 | Request | Read and follow | Result |
 | --- | --- | --- |
+| Diagnose a named task or reconcile partial progress | [Task diagnosis](../task-diagnostics.md) | Read-only local/cache summary; explicit refresh only when current remote facts are requested. No repair or state change. |
 | Deliver or update implementation | [PR delivery](../delivery.md), [workflow](../workflow.md), [task execution](../task-execution.md) and [checkout](../checkout.md) | Scoped commit/push, reused or new linked PR, verified Plane writeback and actual checks. |
 | Run, preview or try the task result | [Acceptance environment](../acceptance-environment.md) | Verified task version and usable entry point, acceptance steps and resource handoff. Environment-only scope does not request commit/push/PR or merge. |
 | Record acceptance, merge, complete or finish local handoff | [Finalization](../finalization.md) and [task execution](../task-execution.md) | Only the acceptance/merge/completion/local handoff authorized by the user and supported by fresh evidence. |

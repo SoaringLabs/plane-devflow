@@ -849,6 +849,11 @@ def main(argv=None):
     p.add_argument("--repo", default=".")
     p.add_argument("--stage", choices=["implement", "review", "merge", "complete"], required=True)
     p.add_argument("--workitem-file", help="Fresh normalized Plane MCP task snapshot for completion checks.")
+    p = sub.add_parser("task-status", help="Read-only task diagnosis; defaults to local facts and existing cache.")
+    p.add_argument("task")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--refresh", action="store_true", help="Explicitly read current GitHub metadata/PR/checks; never dispatch or write.")
+    p.add_argument("--workitem-file", help="Fresh normalized task snapshot read by the host's Plane MCP tools.")
     p = sub.add_parser("check-updates", help="Manually check the public stable plugin version; no installation or project access.")
     p.add_argument("--offline", action="store_true", help="Skip the upstream request and leave the latest version unknown.")
     p = sub.add_parser("credential-guide", help="Guide local credential reuse, Plane PAT creation and GitHub storage.")
@@ -962,6 +967,10 @@ def main(argv=None):
             from task_progress import check_task
             result = check_task(args.repo, args.task, args.stage,
                                 workitem=json.loads(Path(args.workitem_file).read_text()) if args.workitem_file else None)
+        elif args.command == "task-status":
+            from task_diagnostics import status
+            result = status(args.repo, args.task, refresh=args.refresh,
+                            workitem=json.loads(Path(args.workitem_file).read_text()) if args.workitem_file else None)
         elif args.command == "check-updates":
             from plugin_updates import check_updates
             result = check_updates(offline=args.offline)

@@ -269,6 +269,7 @@ def check_task(path, task, stage, *, workitem=None):
     head = run(["git", "rev-parse", "HEAD"], root).stdout.strip()
     local_head = head
     pr = None
+    checks = None
     remote_blockers = []
     manual = True
     if stage == "complete":
@@ -343,7 +344,7 @@ def check_task(path, task, stage, *, workitem=None):
         if merge_state(root, config)["operations"]:
             result["blockers"].append("task_git_operation_in_progress")
     result["blockers"].extend(remote_blockers)
-    result.update(ready=not result["blockers"], task=parse_task(task, config), head=head, pr=pr,
+    result.update(ready=not result["blockers"], task=parse_task(task, config), head=head, pr=pr, required_checks=checks,
                   provider=sync_provider(config), state_sync=state_sync_enabled(config),
                   record_sha256=receipt["record_sha256"],
                   authority="Receipt sources are agent declarations. Verify original human messages before authorized actions; no writes performed.")
