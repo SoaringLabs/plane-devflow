@@ -18,6 +18,22 @@ Save human confirmations with `setup-progress --event pat-ready --apply` or `--e
 
 The checkpoint contains a format version, configuration digest, human-reported stage, observation time and boolean/unknown readiness checks. It contains no PAT, clipboard, browser snapshot, task text or merge authorization. Obtain existing setup PR context from the current checkout/branch and GitHub before creating a PR; retrieve its current head/base and review changes, reusing that PR when appropriate. Merge approval follows existing user authorization and the current reviewable PR, not a stored receipt.
 
+## Manual plugin version check
+
+Run this only for an explicit request to check the plugin's own version. Resolve the helper from the actively installed plugin or standalone skill and run:
+
+```sh
+python3 /absolute/installed/skill-or-plugin/scripts/plane_workflow.py check-updates
+```
+
+The command works from any directory without a repository mapping, GitHub CLI or account login. `--offline` skips the request and reports the latest version as unknown. Normal `plane-start` preparation continues using `doctor` and read-only `setup-progress` for project synchronization; these paths do not invoke this command.
+
+The check performs one anonymous GET to the canonical repository's latest stable GitHub Release endpoint. An isolated Python worker has a three-second total deadline, including DNS and response reads, with no retry loop or persistent cache. If that API is rate-limited/forbidden, one anonymous HEAD to the canonical latest-release link can identify its validated stable tag without following the redirect; both requests share the deadline. It reads no account credential store and sends no business mapping/task information. Only validated version metadata and the canonical release link enter the result; release prose and assets are discarded. See [GitHub's public release API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release).
+
+`update_available` reports a newer stable plugin with its version and link. `current` matches the reported release; `ahead` means the installed version is newer, so no downgrade is offered. `unverified` leaves the latest version unknown on timeout, offline mode, unavailable/rate-limited upstream or invalid metadata. Report the result without an authentication/retry loop. Checking never installs, changes task/sync readiness or writes setup checkpoints; actual updates follow the user's selected installation channel and authorized scope.
+
+A newer plugin notice does not establish which sync bundle it contains or whether the project needs it. Only an authorized plugin/skill update refreshes the installed catalog described below. This is a manual inspection command, separate from Skills CLI content-update tracking and background host/marketplace update settings.
+
 ## Sync bundle maintenance
 
 Starting or resuming implementation already refreshes read-only `setup-progress`; inspect `sync_bundle` and `maintenance_notice` there. Initial setup is not required for routine update detection. Pure discussion needs no account probes. `doctor` reports the plugin version, the packaged sync version and local bundle identity; only online progress establishes current Actions readiness.

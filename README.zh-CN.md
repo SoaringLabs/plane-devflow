@@ -92,12 +92,11 @@ Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插
 
 ## 更新与移除
 
-插件与 GitHub 同步包独立管理版本。日常任务检查会提示兼容的可选更新，继续当前任务；只更新技能无需给项目提交同步脚本 PR。详见 [更新范围](docs/installation.md#plugin-and-github-sync-updates)。
+插件与 GitHub 同步包独立管理版本。日常任务检查会依据已安装插件附带的审核清单，核对项目同步包的兼容性，不查询插件自身新版。仅更新技能无需给项目提交同步脚本升级 PR。技能更新由用户通过所选安装渠道发起；也可按需使用[手动版本检查](docs/installation.md#manual-plugin-version-check)，只查看稳定版本，不自动安装。
 
-再次执行安装命令即可刷新这三个技能。GitHub 来源有完整追踪记录时，也可使用 Skills CLI 的更新检查：
+再次执行安装命令即可刷新这三个技能。GitHub 来源有完整追踪记录时，也可主动更新所选项目技能：
 
 ```sh
-npx skills check
 npx skills update plane-setup plane-start plane-deliver --project
 ```
 

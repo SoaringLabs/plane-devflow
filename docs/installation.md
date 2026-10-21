@@ -27,10 +27,9 @@ The Python/Git workflow keeps the same `.plane-devflow.json`, task receipts, bra
 
 ## Update or remove standalone skills
 
-Rerun the installation command to refresh the selected skills from their source. For installations with GitHub tracking metadata, Skills CLI also supports:
+Rerun the installation command to refresh the selected skills from their source. For installations with GitHub tracking metadata, explicitly update the selected skills with:
 
 ```sh
-npx skills check
 npx skills update plane-setup plane-start plane-deliver --project
 ```
 
@@ -82,6 +81,20 @@ See [Skills CLI commands](https://github.com/vercel-labs/skills/blob/main/docs/c
 
 ## Plugin and GitHub sync updates
 
-The plugin/skill release and the copied GitHub synchronization bundle have independent versions. Updating skills or local helpers does not require an application-repository PR when synchronization bytes remain unchanged. Beginning/resuming a task uses the existing read-only progress check to identify recognized bundles and report optional or required upgrades. Compatible older bundles continue working; unknown/customized files remain preserved for review. Update knowledge comes from the installed plugin catalog, so upstream releases published after that plugin are not discovered automatically.
+The plugin/skill release and copied GitHub synchronization bundle have independent versions. Routine `plane-start` preparation uses `doctor` and read-only `setup-progress` to check the project's sync bundle and current connection. It does not query the plugin's latest release. Skill/plugin updates belong to the user's installation tool or host marketplace and its update settings.
 
-An actual sync-bundle upgrade remains a separately authorized project change with its existing reviewed PR and merge flow. It preserves mapping, credentials and in-flight tasks. Current 0.10.1 business bundles require no migration for this version separation.
+Sync compatibility uses the installed plugin's reviewed catalog. Compatible older bundles remain ready with optional maintenance notices; unknown/customized files stay preserved for review. A newer plugin version alone does not prove that a business repository needs a script update. An authorized plugin/skill update refreshes the trusted catalog; an actual sync-bundle upgrade remains a separately reviewed project change. Current 0.10.1 business bundles require no migration.
+
+### Manual plugin version check
+
+For an explicit check of the plugin's public stable version, use the helper bundled with the installed plugin or any of the three standalone skills:
+
+```sh
+python3 /absolute/installed/skill-or-plugin/scripts/plane_workflow.py check-updates
+```
+
+Resolve the absolute helper path from the installed skill/plugin directory. This works from any folder without a project mapping, GitHub CLI or account login. It reports the installed/reported stable version and a release link when an update is available. It never installs updates, changes credentials or writes project/task/checkpoint files. Run it only when you choose to check, rather than as part of ordinary task preparation.
+
+The anonymous request has a three-second total deadline. On API quota failure it can inspect the canonical public latest-release HEAD redirect within the same budget, without following it. Offline/failure results remain unknown and do not block work. Add `--offline` to skip network access. There is no persistent cache or retry loop. This release-version check is separate from Skills CLI's source/content tracking and does not invoke `npx skills check` or `update`.
+
+To install an update, deliberately use the original installation channel described above and reopen the agent session. Preserve existing project mappings, account authorization and in-flight task records.

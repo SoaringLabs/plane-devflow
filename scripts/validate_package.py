@@ -189,7 +189,7 @@ def validate_payload(plugin):
         require(not path.is_symlink(), f"Symlink in payload: {path}")
     manifest = json.loads((plugin / "plugin.json").read_text())
     require(manifest.get("name") == "plane-devflow", "Unexpected plugin name")
-    for name in ("plugin_version.py", "sync_bundle.py"):
+    for name in ("plugin_version.py", "sync_bundle.py", "plugin_updates.py"):
         resource(plugin, "scripts/" + name, plugin)
     tree = ast.parse((plugin / "scripts/plugin_version.py").read_text())
     versions = [n.value.value for n in tree.body if isinstance(n, ast.Assign) and
