@@ -2,7 +2,7 @@
 
 Public source: [SoaringLabs/plane-devflow](https://github.com/SoaringLabs/plane-devflow). Plane DevFlow is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.12.0; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.13.0; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Release language
 
@@ -53,6 +53,8 @@ The root `action.yml` describes the composite Action, so GitHub may show a banne
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [v0.13.0 validation](docs/validation-0.13.0.md) separates low-frequency readiness, task diagnosis, synthetic execution and installation checks, with retained failures and explicit service/host limits.
 
 The [v0.12.0 validation](docs/validation-0.12.0.md) covers explicitly authorized macOS Plane App session reuse, recoverable PAT creation, native Keychain storage and test-credential cleanup. Private live evidence is kept outside the public repository.
 

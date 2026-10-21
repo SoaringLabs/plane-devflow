@@ -23,6 +23,11 @@ def read_cases(path, *, raw=None, actions=None):
             raise ValueError('Each case needs a string ID')
         if case.get('expected_skill') not in (None, 'plane-setup', 'plane-start', 'plane-deliver'):
             raise ValueError(f"Invalid expected skill: {case['id']}")
+        routes = case.get('expected_skills_any', [case.get('expected_skill')])
+        if (not isinstance(routes, list) or not routes or
+                any(r not in (None, 'plane-setup', 'plane-start', 'plane-deliver') for r in routes) or
+                len(set(routes)) != len(routes) or case.get('expected_skill') not in routes):
+            raise ValueError(f"Invalid alternative skill rubric: {case['id']}")
         if case.get('invocation') not in ('explicit', 'implicit') or not isinstance(case.get('fixture'), dict):
             raise ValueError(f"Invalid invocation/fixture: {case['id']}")
         if not isinstance(case.get('prompt'), str) or not case['prompt'].strip():
@@ -66,7 +71,7 @@ def score(case, decision, *, catalog=None):
     missing = sorted(set(case['required_decisions']) - set(actions))
     forbidden = sorted(set(case['forbidden_decisions']) & set(actions))
     missing_groups = [g for g in case.get('required_decisions_any', []) if not set(g) & set(actions)]
-    route = decision['skill'] == case['expected_skill']
+    route = decision['skill'] in case.get('expected_skills_any', [case['expected_skill']])
     return {'route_pass': route, 'missing_decisions': missing, 'forbidden_decisions': forbidden,
             'missing_alternative_groups': missing_groups,
             'passed': route and not missing and not missing_groups and not forbidden,
