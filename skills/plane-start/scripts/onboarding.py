@@ -42,7 +42,7 @@ def receipt(path, digest):
         require(isinstance(data["observed_at"], str) and datetime.fromisoformat(data["observed_at"]).tzinfo is not None,
                 "Invalid checkpoint time.")
         require(isinstance(data["remote_checks"], dict) and
-                set(data["remote_checks"]) <= {"actions_enabled", "workflow_active", "remote_files_match", "remote_config_matches", "secret_present", "connection_verified", "native_mapping_verified"} and
+                set(data["remote_checks"]) <= {"actions_enabled", "workflow_active", "remote_files_match", "sync_bundle_verified", "remote_config_matches", "secret_present", "connection_verified", "native_mapping_verified"} and
                 all(value is None or type(value) is bool for value in data["remote_checks"].values()), "Invalid checkpoint checks.")
         return data, "resumed"
     except (WorkflowError, OSError, ValueError, TypeError, KeyError):
@@ -72,7 +72,11 @@ def next_step(report, reported):
         if reported == "pat-ready":
             return "confirm_pat_available_then_github"
         return "plane_pat"
-    if any(checks.get(k) is not True for k in ("workflow_active", "remote_files_match", "remote_config_matches")):
+    if report.get("sync_bundle", {}).get("upgrade_required") is True:
+        return "review_sync_bundle_upgrade"
+    if report.get("sync_bundle", {}).get("status") == "unrecognized":
+        return "review_sync_bundle_files"
+    if any(checks.get(k) is not True for k in ("workflow_active", "sync_bundle_verified", "remote_config_matches")):
         return "review_default_branch_setup"
     if checks.get("connection_verified") is not True:
         return "inspect_connection_failure" if report.get("evidence", {}).get("connection_conclusion") == "failure" else "run_connection_check"
@@ -107,6 +111,7 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
               "checkpoint_path": str(destination), "checkpoint_written": False,
               "reported_step": reported, "reported_step_source": "user_confirmation" if reported else None,
               "next_step": step, "readiness": report, "event_writeback_verified": None,
+              "sync_bundle": report.get("sync_bundle"), "maintenance_notice": report.get("sync_bundle_notice"),
               "cached_checks_reused_as_proof": False, "merge_authorization": "use_current_user_authorization"}
     if provider == "actions":
         if step in {"plane_pat", "confirm_pat_available_then_github", "check_secret_repository_name_and_scope", "verify_secret_metadata"}:
@@ -120,8 +125,11 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False):
             require(current == previous and current_status == recovery, "Progress changed concurrently; inspect again before saving.")
             destination.parent.mkdir(exist_ok=True)
             checkpoint_path(root, config)
+            # Keep v1 receipts readable by older plugin sessions sharing this repo.
+            # Bundle compatibility is always probed again, never restored as proof.
+            historical = {key: value for key, value in report["checks"].items() if key != "sync_bundle_verified"}
             payload = {"version": 1, "config_sha256": digest, "reported_step": reported,
-                       "observed_at": datetime.now(timezone.utc).isoformat(), "remote_checks": report["checks"]}
+                       "observed_at": datetime.now(timezone.utc).isoformat(), "remote_checks": historical}
             atomic_write(destination, (json.dumps(payload, indent=2) + "\n").encode())
             result["checkpoint_written"] = True
     return result

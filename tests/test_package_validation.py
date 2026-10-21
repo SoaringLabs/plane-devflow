@@ -105,6 +105,12 @@ class PackageValidationTests(unittest.TestCase):
             self.rejects("UI")
 
     def test_missing_payload_script_and_icon_rejected(self):
+        for name in ("plugin_version.py", "sync_bundle.py"):
+            script = self.plugin / "scripts" / name
+            original = script.read_bytes()
+            script.unlink()
+            self.rejects("Missing resource")
+            script.write_bytes(original)
         script = self.plugin / "scripts/plane_workflow.py"
         data = script.read_bytes()
         script.unlink()
@@ -126,6 +132,34 @@ class PackageValidationTests(unittest.TestCase):
         data["plugins"][0]["source"]["path"] = "../somewhere"
         marketplace.write_text(json.dumps(data))
         self.rejects("Marketplace")
+
+    def test_plugin_release_can_advance_without_touching_sync_bundle(self):
+        runtime = self.plugin / "scripts/plane_sync.py"
+        before = runtime.read_bytes()
+        manifest = self.plugin / "plugin.json"
+        data = json.loads(manifest.read_text())
+        current_version = data["version"]
+        next_version = "99.0.1"
+        data["version"] = next_version
+        manifest.write_text(json.dumps(data))
+        self.replace(self.plugin / "scripts/plugin_version.py", f'VERSION = "{current_version}"', f'VERSION = "{next_version}"')
+        self.assertEqual(package.validate_payload(self.plugin)["skills"], 3)
+        result = subprocess.run([sys.executable, str(self.plugin / "scripts/plane_workflow.py"), "--version"],
+                                capture_output=True, text=True, check=True)
+        self.assertEqual(result.stdout.strip(), next_version)
+        self.assertEqual(runtime.read_bytes(), before)
+
+    def test_runtime_or_generated_workflow_drift_requires_bundle_release(self):
+        for name, old, new in (("plane_sync.py", 'VERSION = "0.10.1"', 'VERSION = "0.10.2"'),
+                               ("sync_bundle.py", "timeout-minutes: 5", "timeout-minutes: 6"),
+                               ("action_runner.py", 'def fetch_config(', '# runtime change\ndef fetch_config(')):
+            with self.subTest(name=name):
+                path = self.plugin / "scripts" / name
+                original = path.read_bytes()
+                self.replace(path, old, new)
+                with self.assertRaisesRegex(package.ValidationError, "sync bundle changed"):
+                    package.validate_payload(self.plugin)
+                path.write_bytes(original)
 
     def test_readme_install_identity_is_checked(self):
         self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add another/repository")

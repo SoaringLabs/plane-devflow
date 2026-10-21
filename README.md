@@ -90,6 +90,8 @@ Currently supports existing tasks, one primary PR per task, Plane Cloud and gith
 
 ## Update or remove
 
+Plugin and GitHub sync-bundle versions are independent. Routine task checks report compatible optional updates without interrupting work; updating skills alone does not require project sync-script PRs. See [update scope](docs/installation.md#plugin-and-github-sync-updates).
+
 Rerun the installation command to refresh these three skills. For GitHub-tracked installations, Skills CLI also provides update checks:
 
 ```sh

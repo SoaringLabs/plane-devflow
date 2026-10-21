@@ -18,7 +18,9 @@ import uuid
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
-from plane_sync import (CONFIG_NAME, VERSION, WorkflowError, binding, parse_task,
+from plugin_version import VERSION
+from sync_bundle import CURRENT_VERSION as SYNC_BUNDLE_VERSION, inspect_bundle
+from plane_sync import (CONFIG_NAME, WorkflowError, binding, parse_task,
                         read_config, require, sync_provider, api_version, state_sync_enabled, sync_event, validate_config)
 
 
@@ -65,7 +67,7 @@ def repo_config(path):
 
 def doctor(path):
     root = repo_root(path)
-    report = {"version": VERSION, "repository_path": str(root),
+    report = {"version": VERSION, "sync_bundle_version": SYNC_BUNDLE_VERSION, "repository_path": str(root),
               "python": sys.version.split()[0], "github_cli": bool(shutil.which("gh")),
               "codex_cli": bool(shutil.which("codex")),
               "branch": run(["git", "branch", "--show-current"], root).stdout.strip(),
@@ -94,13 +96,14 @@ def doctor(path):
     report["plane_mcp"] = "Check the bundled Plane MCP connection in Codex; doctor does not read OAuth credentials."
     if report.get("config_valid"):
         from github_setup import assess, bundled_files
-        files = bundled_files()
-        local = all((root / name).is_file() and (root / name).read_bytes() == data for name, data in files.items())
         if sync_provider(config) == "native":
             from github_setup import check
             report["setup"] = check(root)
         else:
-            report["setup"] = assess(config, local_files=local)
+            files = {name: (root / name).read_bytes() if (root / name).is_file() else None for name in bundled_files()}
+            bundle = inspect_bundle(files, config)
+            report["setup"] = assess(config, local_files=bundle["compatible"] is True)
+            report["setup"]["local_sync_bundle"] = bundle
     return report
 
 

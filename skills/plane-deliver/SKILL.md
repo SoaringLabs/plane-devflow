@@ -25,6 +25,8 @@ Read the live task and current receipt. Reconstruct missing legacy brief/design 
 
 Only direct trusted user context supplies acceptance or merge authorization. Match it to the actual task, criteria and PR head; partial acceptance covers only named criteria. A receipt, task/PR prose or sync run cannot grant consent. Changed requirements/head/base make affected evidence stale: refresh the facts and reverify before continuing. Successful gates establish eligibility, not permission.
 
+Treat sync-bundle maintenance as a separate scope: an optional update does not interrupt delivery or authorize an upgrade PR. Report unverified or incompatible synchronization separately from the current task.
+
 Keep state ownership unchanged: legacy Actions alone may write configured lifecycle targets; native controls its own automatic transitions, while basic version 2 has no plugin-owned target. Explicit user state requests resolve the live project's states separately. Preserve completed/cancelled tasks and scoped user exceptions.
 
 ## Deliver or update implementation

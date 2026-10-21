@@ -189,11 +189,19 @@ def validate_payload(plugin):
         require(not path.is_symlink(), f"Symlink in payload: {path}")
     manifest = json.loads((plugin / "plugin.json").read_text())
     require(manifest.get("name") == "plane-devflow", "Unexpected plugin name")
-    tree = ast.parse((plugin / "scripts/plane_sync.py").read_text())
+    for name in ("plugin_version.py", "sync_bundle.py"):
+        resource(plugin, "scripts/" + name, plugin)
+    tree = ast.parse((plugin / "scripts/plugin_version.py").read_text())
     versions = [n.value.value for n in tree.body if isinstance(n, ast.Assign) and
                 any(isinstance(t, ast.Name) and t.id == "VERSION" for t in n.targets) and
                 isinstance(n.value, ast.Constant)]
     require(versions == [manifest.get("version")], "Plugin/script version mismatch")
+    import runpy
+    try:
+        bundle = runpy.run_path(str(plugin / "scripts/sync_bundle.py"))
+        bundle["verify_current_bundle"]()
+    except (ValueError, OSError, SyntaxError) as error:
+        raise ValidationError(str(error)) from None
     extension = manifest["extensions"]["com.openai"]
     resource(plugin, extension["onboardingSkill"], plugin)
     for key in ("logo", "composerIcon"):

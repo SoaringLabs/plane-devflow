@@ -90,6 +90,8 @@ Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插
 
 ## 更新与移除
 
+插件与 GitHub 同步包独立管理版本。日常任务检查会提示兼容的可选更新，继续当前任务；只更新技能无需给项目提交同步脚本 PR。详见 [更新范围](docs/installation.md#plugin-and-github-sync-updates)。
+
 再次执行安装命令即可刷新这三个技能。GitHub 来源有完整追踪记录时，也可使用 Skills CLI 的更新检查：
 
 ```sh

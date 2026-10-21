@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 import re
+import runpy
 import sys
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -91,7 +92,8 @@ def expected_files(root, name):
     files["agents/openai.yaml"] = ui.encode()
     files["LICENSE"] = (root / "LICENSE").read_bytes()
     files["distribution.json"] = (json.dumps({"generator": OWNER, "skill": name,
-        "version": json.loads((plugin / "plugin.json").read_text())["version"], "hosts": list(HOSTS)}, indent=2) + "\n").encode()
+        "version": json.loads((plugin / "plugin.json").read_text())["version"],
+        "sync_bundle_version": runpy.run_path(str(plugin / "scripts/sync_bundle.py"))["CURRENT_VERSION"], "hosts": list(HOSTS)}, indent=2) + "\n").encode()
     return files
 
 

@@ -70,6 +70,8 @@ python3 /absolute/plugin/scripts/plane_workflow.py setup-github --repo /absolute
   --upgrade --apply --expected-files-sha256 HASH_FROM_PLAN
 ```
 
+Plugin and sync-bundle releases are independent. Inspect read-only `setup-progress` before planning an upgrade: supported older bundles can remain ready, and an optional update alone grants no changes. See [bundle maintenance](recovery.md#sync-bundle-maintenance).
+
 The plan binds every destination plus the current config. A stale hash fails before writes. Original differing bytes are backed up in Git metadata; the mapping and unrelated files are preserved. Plugin updates do not silently update business repositories.
 
 The workflow uses pinned `actions/checkout` to read only synchronization files from `github.sha`, the trusted default-branch commit for `pull_request_target`; it executes no PR head code or project build scripts. It handles PR opened/edited/updated/reopened/review-ready/draft/closed events and has a read-only `workflow_dispatch` connection check. Both config versions are supported: version 1 uses existing state targets and acceptance rules; version 2 records PR events without state transitions. Keep these capabilities separate in the report.
@@ -85,7 +87,7 @@ gh workflow run plane-devflow.yml --repo OWNER/REPO --ref ACTUAL_DEFAULT_BRANCH
 python3 /absolute/plugin/scripts/plane_workflow.py check-github --repo /absolute/application/repo
 ```
 
-Wait for the new dispatch run to finish; correlate it to the current default SHA. The connection check reads the Plane project/states using the actual Secret and validates configured targets. It never changes work items/comments. `check-github` checks remote file/config equality, workflow activation, Actions enablement, Secret presence and the latest connection run at that SHA; unknown permission/API results remain incomplete. A failed newer check supersedes an older successful check. Report **连接验证通过，PR 事件回写尚未实测** until a real linked PR run has been inspected; read access alone does not prove write access. Do not create/merge a test PR or mutate Plane tasks solely to claim verification without user scope.
+Wait for the new dispatch run to finish; correlate it to the current default SHA. The connection check reads the Plane project/states using the actual Secret and validates configured targets. It never changes work items/comments. `check-github` checks recognized compatible sync-bundle fingerprints, config equality, workflow activation, Actions enablement, Secret presence and the latest connection run at that SHA; unknown permission/API results remain incomplete. A failed newer check supersedes an older successful check. Report **连接验证通过，PR 事件回写尚未实测** until a real linked PR run has been inspected; read access alone does not prove write access. Do not create/merge a test PR or mutate Plane tasks solely to claim verification without user scope.
 
 Use this incomplete-setup explanation, adjusted to the actual blocker:
 

@@ -23,7 +23,7 @@ def config():
 
 class ReadinessTests(unittest.TestCase):
     def evidence(self):
-        return {k: True for k in ("actions_enabled", "workflow_active", "remote_files_match",
+        return {k: True for k in ("actions_enabled", "workflow_active", "sync_bundle_verified",
                                   "remote_config_matches", "secret_present", "connection_verified")}
 
     def test_local_files_and_oauth_cannot_mark_setup_complete(self):
@@ -102,9 +102,11 @@ class RepositoryTests(unittest.TestCase):
 
     def remote_check(self, *, conclusions=("success",), remote_sha="a" * 40, run_sha="a" * 40, secret=True,
                      secret_updated="2026-10-10T00:00:00Z", run_started="2026-10-10T01:00:00Z",
-                     run_branch="main", event_runs=()):
+                     run_branch="main", event_runs=(), remote_files=None):
         real_run = workflow.run
         files = setup.bundled_files() | {sync.CONFIG_NAME: json.dumps(config()).encode()}
+        if remote_files is not None:
+            files.update(remote_files)
         def fake_run(args, *pos, **kw):
             if args[0] != "gh":
                 return real_run(args, *pos, **kw)
@@ -137,6 +139,18 @@ class RepositoryTests(unittest.TestCase):
 
     def test_remote_current_success_is_ready(self):
         self.assertEqual(self.remote_check()["github_sync"], "ready")
+
+    def test_supported_old_bundle_is_ready_with_optional_update(self):
+        files = setup.bundled_files()
+        files[setup.BUNDLE + "/plane_sync.py"] = files[setup.BUNDLE + "/plane_sync.py"].replace(
+            b'VERSION = "0.10.1"', b'VERSION = "0.10.0"')
+        result = self.remote_check(remote_files=files)
+        self.assertEqual(result["github_sync"], "ready")
+        self.assertFalse(result["checks"]["remote_files_match"])
+        self.assertTrue(result["checks"]["sync_bundle_verified"])
+        self.assertEqual(result["sync_bundle"]["installed_version"], "0.10.0")
+        self.assertTrue(result["sync_bundle"]["update_available"])
+        self.assertFalse(result["sync_bundle"]["upgrade_required"])
 
     def test_old_success_does_not_cover_current_commit(self):
         self.assertEqual(self.remote_check(run_sha="b" * 40)["initialization"], "partial")

@@ -2,7 +2,7 @@
 
 Public source: [SoaringLabs/plane-devflow](https://github.com/SoaringLabs/plane-devflow). Plane DevFlow is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Version is currently 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.10.2; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Version policy
 
@@ -18,7 +18,7 @@ The 0.10.0 rename changes runtime/configuration identities without old-name alia
 4. Commit the reviewed source and push only the intended branch (normally `main`) to this repository. Do not use `--mirror` or publish local snapshot refs. Repository creation, push and optional release tagging require an explicit publication request; installation testing does not publish automatically. The README uses Skills CLI to install self-contained folders directly from GitHub. The npm installer can be tested locally before a separately authorized npm publication. Contributor clone and local plugin installation instructions live in docs/installation.md.
 5. Actions setup vendors two sync scripts and a workflow into each business repository; publishing this source is not needed for runtime. The official checkout dependency uses a verified full SHA. Existing users of the composite Action pin this repository's actual published commit SHA. Updating either copied scripts or a pin is a reviewed repository change; plugin installation cannot update other repositories' workflows automatically.
 
-When changing a release, update `plugin.json` version and `plane_sync.VERSION` together, test compatibility, and reinstall the plugin to refresh its cached package. Keep the marketplace name stable. Onboarding should remain conversational and require only necessary account consent and project selection.
+Plugin releases update `plugin.json`, `scripts/plugin_version.py` and npm package metadata together. The three standalone distribution versions follow the plugin. The GitHub synchronization bundle has an independent `sync_bundle.CURRENT_VERSION`, matching `plane_sync.VERSION`; skill, documentation and local-helper releases leave its scripts/workflow byte-for-byte unchanged. Package validation checks the shipped bundle against the trusted release catalog, so changing runtime/workflow bytes requires a deliberate bundle release and matching fingerprints. Review the supported config/binding versions and mark any known release requiring an upgrade explicitly; compatible previous releases remain ready, with optional updates reported separately. Retain reviewed historical fingerprints so current business repositories do not need a metadata-only upgrade PR. Test compatibility and reinstall the plugin only for an authorized local update. Keep the marketplace name stable. Onboarding should remain conversational and require only necessary account consent and project selection.
 
 Record version changes in [CHANGELOG.md](CHANGELOG.md). Keep the README focused on current capabilities, installation and usage, with a link to the changelog instead of inline version history.
 
@@ -32,7 +32,7 @@ MCP dependency metadata, registered configuration, an unauthenticated transport 
 
 ## Publish the npm installer
 
-The npm installer is an optional complete-plugin distribution. The `plane-devflow` npm package has not been published. Skills CLI installs directly from GitHub and does not require an npm publication. When publishing a new npm tarball, the public package is `plane-devflow`; its version must match `plugin.json` and `plane_sync.VERSION`. Its executable is `bin/plane-devflow.mjs`. The npm `files` allowlist includes the full plugin and excludes tests, evals, private evidence, development dependencies and Python bytecode.
+The npm installer is an optional complete-plugin distribution. The `plane-devflow` npm package has not been published. Skills CLI installs directly from GitHub and does not require an npm publication. When publishing a new npm tarball, the public package is `plane-devflow`; its version must match `plugin.json` and `plugin_version.VERSION`; the independent sync bundle matches `plane_sync.VERSION`. Its executable is `bin/plane-devflow.mjs`. The npm `files` allowlist includes the full plugin and excludes tests, evals, private evidence, development dependencies and Python bytecode.
 
 After all source checks, pack into an isolated output directory. Extract that exact tarball, compare every plugin file to the reviewed source, install via actual npx with a fresh Codex state, and verify repeat/check/retained-source behavior. Test native loading separately from mocked command tests. Preserve the user's real configuration/authentication; never copy credentials into the test profile.
 
@@ -45,6 +45,8 @@ The root `action.yml` describes the composite Action, so GitHub may show a banne
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [v0.10.2 validation](docs/validation-0.10.2.md) covers independent plugin/sync versions, daily compatibility notices, preserved checkpoint interoperability and the released installation payload.
 
 The [v0.10.1 validation](docs/validation-0.10.1.md) covers the PR-event observation fix, connection-verification regression guards and existing live-run readbacks.
 

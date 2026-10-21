@@ -79,3 +79,9 @@ Keep existing MCP connections and account authorization. The `PLANE_API_KEY` Sec
 For an unpublished candidate, run actual Skills CLI against an isolated local Git snapshot or directory containing that candidate. The public GitHub command still resolves published source and cannot establish unpublished behavior. Validate project/global scope, selected/all skills, repeated installation, removal of source/cache, actual native discovery, helper startup and dependency parsing. Keep real user state inaccessible and test credentials empty.
 
 See [Skills CLI commands](https://github.com/vercel-labs/skills/blob/main/docs/commands.md), [OpenAI skill dependencies](https://developers.openai.com/plugins/build/skills#connect-skills-to-mcp-tools), the [standalone validation record](validation-skills-add.md) and the historical [npm installation validation](validation-npx.md).
+
+## Plugin and GitHub sync updates
+
+The plugin/skill release and the copied GitHub synchronization bundle have independent versions. Updating skills or local helpers does not require an application-repository PR when synchronization bytes remain unchanged. Beginning/resuming a task uses the existing read-only progress check to identify recognized bundles and report optional or required upgrades. Compatible older bundles continue working; unknown/customized files remain preserved for review. Update knowledge comes from the installed plugin catalog, so upstream releases published after that plugin are not discovered automatically.
+
+An actual sync-bundle upgrade remains a separately authorized project change with its existing reviewed PR and merge flow. It preserves mapping, credentials and in-flight tasks. Current 0.10.1 business bundles require no migration for this version separation.
