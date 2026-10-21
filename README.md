@@ -25,6 +25,7 @@ Open-source Agent Skills with integration guides for **Codex, Claude Code, Curso
 | **Track delivery in Plane** | Find the linked PR, implementation summary, actual check results and outstanding acceptance items in the task |
 | **Keep tasks separate** | Work in isolated workspaces and resume the recorded task version in another chat |
 | **Start a new project** | Follow setup from repository preparation to Plane association, then review a first task list before creation |
+| **Diagnose a task** | See checkout, verification, PR/CI, writeback and remaining handoff separately through a read-only summary |
 | **Try the result before merging** | Ask your agent to run the task version and provide an entry point and test steps; acceptance and merge remain separate decisions |
 
 New setups record PR activity **without automatically changing task states**. See [GitHub synchronization](#github-synchronization) for setup and existing integration options.
@@ -66,7 +67,7 @@ Use your host’s skill picker or request a skill by name. Invocation, MCP setup
 | --- | --- |
 | **Set Up Plane** — `plane-setup` | Connect a repository, configure GitHub sync or resume incomplete setup |
 | **Start Plane Task** — `plane-start` | Plan the first tasks, create an approved list, or start/resume an existing task |
-| **Deliver Plane Task** — `plane-deliver` | Deliver a PR, prepare testing, record acceptance or finalize authorized work |
+| **Deliver Plane Task** — `plane-deliver` | Deliver or diagnose a task PR, prepare testing, record acceptance or finalize authorized work |
 
 Codex standalone skills use `$plane-setup`; the Codex plugin uses `$plane-devflow:plane-setup`. Claude Code uses `/plane-setup`; OpenCode loads the named skill through its native tool. Choose one distribution to avoid duplicate entries. Each skill is self-contained and can also be installed individually.
 
@@ -81,11 +82,13 @@ Codex standalone skills use `$plane-setup`; the Codex plugin uses `$plane-devflo
 
 Project association uses browser authorization. Actions uses a separate PAT: enter it directly through GitHub Secrets or a human-operated hidden terminal prompt, never in chat. Optional [local credential reuse](skills/plane-setup/references/local-credentials.md) uses macOS Keychain or Windows Credential Manager. On macOS, an explicitly authorized [create-and-save flow](skills/plane-setup/references/local-credentials.md#automatic-creation-from-plane-app) can reuse a valid Plane App session without copying a PAT; expired sessions prompt login.
 
-Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are verified separately.** New mappings record PR activity without state transitions; legacy mappings retain existing rules, and native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
+Incomplete setup is saved and resumable. **Connection verification, an observed PR-event run and confirmed task writeback are separate evidence.** Routine remote metadata checks run at most once per 24 hours, including failed attempts; expired evidence is reported without automatic connection-test dispatch. Task diagnosis defaults to local records/cache; an explicit refresh reads current remote facts. New mappings record PR activity without state transitions; legacy mappings retain existing rules, and native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
 
 ## Scope
 
-Supports first-version task drafting and approved creation, existing-task development, one primary PR per task, Plane Cloud and github.com. General task/Cycle management, custom status rules, multi-PR aggregation, full self-hosted Plane and GitHub Enterprise support are outside the current scope.
+Supports first-version task drafting and approved creation, existing-task development, one primary PR per task, Plane Cloud and github.com. General task/Cycle/Module management, custom status rules, multi-PR aggregation, full self-hosted Plane and GitHub Enterprise support are outside the current scope.
+
+Local task records support recovery in another chat when the host provides trusted context. Cross-machine conversation/session portability belongs to the host agent. See the [capability and evidence matrix](docs/capabilities.md) for implementation, test depth and remaining limits.
 
 ## Update or remove
 
@@ -109,6 +112,8 @@ Run `npx skills remove plane-setup plane-start plane-deliver` from the same repo
 | Agent compatibility | [Codex, Claude Code, Cursor and OpenCode](docs/agent-compatibility.md) |
 | Installation and updates | [Install, update, migrate and remove](docs/installation.md) |
 | Setup and recovery | [Project association & sync](skills/plane-setup/references/setup.md) · [Resume setup](skills/plane-setup/references/recovery.md) |
+| Task diagnosis | [Read-only task status and partial progress](skills/plane-deliver/references/task-diagnostics.md) |
+| Capabilities and evidence | [Current inventory and verification boundaries](docs/capabilities.md) |
 | Development and handoff | [Task execution](skills/plane-start/references/task-execution.md) · [Parallel tasks](skills/plane-start/references/parallel-tasks.md) · [Acceptance environments](skills/plane-deliver/references/acceptance-environment.md) |
 | Configuration | [Basic mapping](examples/plane-devflow.basic.json) · [Legacy mapping](examples/plane-devflow.example.json) |
 | Contributing and releases | [Contributing](CONTRIBUTING.md) · [Architecture](docs/architecture.md) · [Publishing](PUBLISHING.md) · [Changelog](CHANGELOG.md) |
