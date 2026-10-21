@@ -66,7 +66,7 @@ def repo_config(path):
     return root, config
 
 
-def doctor(path):
+def doctor(path, *, offline=False):
     root = repo_root(path)
     report = {"version": VERSION, "sync_bundle_version": SYNC_BUNDLE_VERSION, "repository_path": str(root),
               "python": sys.version.split()[0], "github_cli": bool(shutil.which("gh")),
@@ -92,7 +92,7 @@ def doctor(path):
             report.update(configured=True, config_valid=False, config_error=str(error))
     else:
         report.update(configured=False, config_sha256="missing")
-    if shutil.which("gh"):
+    if shutil.which("gh") and not offline:
         report["github_authenticated"] = run(["gh", "auth", "status"], check=False).returncode == 0
     report["plane_mcp"] = "Check the bundled Plane MCP connection in Codex; doctor does not read OAuth credentials."
     if report.get("config_valid"):
@@ -770,6 +770,7 @@ def main(argv=None):
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("doctor", help="Read local repo/config/authentication availability.")
     p.add_argument("--repo", default=".")
+    p.add_argument("--offline", action="store_true", help="Inspect only local facts; skip GitHub authentication requests.")
     p = sub.add_parser("configure", help="Plan or write project mapping; IDs are resolved by the setup Skill.")
     p.add_argument("--repo", default=".")
     for key in ("workspace", "project-id", "project-key"):
@@ -917,7 +918,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         if args.command == "doctor":
-            result = doctor(args.repo)
+            result = doctor(args.repo, offline=args.offline)
         elif args.command == "configure":
             result = configure(args)
         elif args.command == "project-options":

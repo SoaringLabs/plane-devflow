@@ -127,3 +127,13 @@ class HealthTests(unittest.TestCase):
         self.status(persist=True,probe=probe)
         data=self.status(persist=True,refresh=True,probe=probe)
         self.assertFalse(data['checks']['connection_verified'])
+
+    def test_routine_doctor_is_local_only(self):
+        original = plane_workflow.run
+        def local_only(args, *a, **kw):
+            self.assertNotEqual(args[0], 'gh')
+            return original(args, *a, **kw)
+        with patch.object(plane_workflow, 'run', side_effect=local_only):
+            data = plane_workflow.doctor(self.root, offline=True)
+        self.assertTrue(data['config_valid'])
+        self.assertNotIn('github_authenticated', data)
