@@ -101,7 +101,8 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(target.read_text(), "keep")
 
     def remote_check(self, *, conclusions=("success",), remote_sha="a" * 40, run_sha="a" * 40, secret=True,
-                     secret_updated="2026-10-10T00:00:00Z", run_started="2026-10-10T01:00:00Z"):
+                     secret_updated="2026-10-10T00:00:00Z", run_started="2026-10-10T01:00:00Z",
+                     run_branch="main", event_runs=()):
         real_run = workflow.run
         files = setup.bundled_files() | {sync.CONFIG_NAME: json.dumps(config()).encode()}
         def fake_run(args, *pos, **kw):
@@ -123,11 +124,13 @@ class RepositoryTests(unittest.TestCase):
                     data = {"enabled": True}
                 elif suffix == "/actions/workflows/plane-devflow.yml":
                     data = {"state": "active"}
-                else:
+                elif suffix == "/actions/workflows/plane-devflow.yml/runs?per_page=100":
                     data = {"workflow_runs": [{"id": i, "event": "workflow_dispatch", "head_sha": run_sha,
-                              "head_branch": "main", "conclusion": c, "run_started_at": run_started,
+                              "head_branch": run_branch, "conclusion": c, "run_started_at": run_started,
                               "html_url": f"https://github.com/example/demo-project/actions/runs/{i}"}
-                              for i, c in enumerate(conclusions, 1)]}
+                              for i, c in enumerate(conclusions, 1)] + list(event_runs)}
+                else:
+                    self.fail(f"Unexpected GitHub endpoint: {suffix}")
             return subprocess.CompletedProcess(args, 0, json.dumps(data), "")
         with patch.object(workflow, "run", side_effect=fake_run):
             return setup.check(self.root)
@@ -137,6 +140,37 @@ class RepositoryTests(unittest.TestCase):
 
     def test_old_success_does_not_cover_current_commit(self):
         self.assertEqual(self.remote_check(run_sha="b" * 40)["initialization"], "partial")
+
+    def test_successful_pr_target_on_pr_head_is_observed(self):
+        # GitHub records the PR head here, even when the workflow checks out its trusted base.
+        event = {"event": "pull_request_target", "head_sha": "b" * 40,
+                 "head_branch": "feature/task", "conclusion": "success"}
+        result = self.remote_check(event_runs=[event])
+        self.assertTrue(result["event_run_observed"])
+        self.assertTrue(result["evidence"]["event_run_observed"])
+        self.assertEqual(result["github_sync"], "ready")
+        self.assertIn("实际写入结果仍需分别核对", result["verification_limit"])
+
+    def test_other_events_and_unsuccessful_pr_targets_are_not_observed(self):
+        for event, conclusion in (("push", "success"), ("workflow_dispatch", "success"),
+                                  ("pull_request", "success"), ("pull_request_target", "failure"),
+                                  ("pull_request_target", "cancelled"), ("pull_request_target", None)):
+            with self.subTest(event=event, conclusion=conclusion):
+                result = self.remote_check(event_runs=[{"event": event, "conclusion": conclusion,
+                    "head_sha": "b" * 40, "head_branch": "feature/task"}])
+                self.assertFalse(result["event_run_observed"])
+
+    def test_pr_observation_does_not_relax_connection_verification(self):
+        event = {"event": "pull_request_target", "head_sha": "a" * 40,
+                 "head_branch": "main", "conclusion": "success"}
+        for overrides in ({"run_sha": "b" * 40}, {"run_branch": "feature/task"},
+                          {"conclusions": ()}, {"conclusions": ("success", "failure")},
+                          {"secret_updated": "2026-10-10T02:00:00Z"}):
+            with self.subTest(overrides=overrides):
+                result = self.remote_check(event_runs=[event], **overrides)
+                self.assertTrue(result["event_run_observed"])
+                self.assertFalse(result["evidence"]["connection_verified"])
+                self.assertEqual(result["initialization"], "partial")
 
     def test_new_failure_supersedes_old_success(self):
         self.assertEqual(self.remote_check(conclusions=("success", "failure"))["initialization"], "partial")

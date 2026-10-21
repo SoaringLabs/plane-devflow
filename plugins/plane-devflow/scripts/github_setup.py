@@ -287,8 +287,11 @@ def check(root, *, native_evidence_file=None):
         if isinstance(run_url, str) and re.fullmatch(r"https://github\.com/" + re.escape(repo) + r"/actions/runs/[0-9]+", run_url):
             evidence["connection_run"] = run_url
         evidence["connection_conclusion"] = latest.get("conclusion") if latest.get("conclusion") in {"success", "failure", "cancelled", "timed_out", "action_required"} else None
+        # PR-target run metadata describes the PR head, not the trusted checkout SHA.
+        # The endpoint already scopes runs to this repository's sync workflow. This
+        # observes an event only; it does not certify its checkout or Plane writes.
         evidence["event_run_observed"] = any(r.get("event") == "pull_request_target" and
-                                                  r.get("conclusion") == "success" for r in current_runs)
+                                                  r.get("conclusion") == "success" for r in runs)
     except (WorkflowError, ValueError, KeyError, TypeError) as error:
         failed(error, "connection")
     local = all((root / name).is_file() and (root / name).read_bytes() == data for name, data in expected.items())

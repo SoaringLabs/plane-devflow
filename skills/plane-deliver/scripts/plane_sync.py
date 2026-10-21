@@ -18,7 +18,7 @@ from urllib.parse import quote, urlencode, urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 CONFIG_NAME = ".plane-devflow.json"
-VERSION = "0.10.0"
+VERSION = "0.10.1"
 REPO_RE = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 PROJECT_RE = re.compile(r"[A-Z][A-Z0-9_-]{0,29}\Z")
 BINDING_RE = re.compile(r"<!--\s*plane-devflow\s+(\{.*?\})\s*-->", re.S)
