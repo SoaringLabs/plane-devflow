@@ -2,7 +2,13 @@
 
 Public source: [SoaringLabs/plane-devflow](https://github.com/SoaringLabs/plane-devflow). Plane DevFlow is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.10.3; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. Plugin version is currently 0.11.0; the independently versioned sync bundle remains 0.10.1. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Old pinned Actions cannot read basic config version 2: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+
+## Release language
+
+Use English (`en`) by default for GitHub Release titles and notes and for all entries in [CHANGELOG.md](CHANGELOG.md), regardless of the conversation language. Use another language only when the user explicitly requests it for that release. Keep localized README files and historical validation records in their existing languages.
+
+Before publishing or editing a Release, review the complete title and body for English prose, including headings, installation guidance, verification results and limitations. Preserve version facts, historical product names, commands, links, test totals and unverified items when translating; consolidate duplicate localized sections without dropping unique information. After publication, read back the title and body and verify the language and content.
 
 ## Version policy
 
@@ -47,6 +53,8 @@ The root `action.yml` describes the composite Action, so GitHub may show a banne
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [v0.11.0 validation](docs/validation-0.11.0.md) covers continuous first-project onboarding, recovery handoffs and first-task planning. Candidate decisions and private live acceptance are reported separately from release-payload checks and cross-platform CI.
 
 The [v0.10.3 validation](docs/validation-0.10.3.md) covers manual-only plugin release discovery, default-flow guards, installation and explicit unverified items. Final source/tag CI and local-install readbacks are recorded in its Release.
 

@@ -45,4 +45,4 @@ Decision tests use synthetic fixtures and an explicit catalog; they do not certi
 
 A PR should explain the concrete problem, resulting behavior, affected contracts, actual checks and remaining limits. Include a relevant before/after scenario; do not turn an unexecuted plan into a passed test. Review the exact diff and retain source/license notices for borrowed material. Never include tokens, private task contents, real response snapshots or personal filesystem paths in public artifacts.
 
-For versioning, publication scope and release verification, follow [PUBLISHING.md](PUBLISHING.md). Passing local checks does not authorize push, merge, tagging or release.
+For release language, versioning, publication scope and release verification, follow [PUBLISHING.md](PUBLISHING.md). Passing local checks does not authorize push, merge, tagging or release.
