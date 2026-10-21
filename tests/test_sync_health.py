@@ -137,3 +137,16 @@ class HealthTests(unittest.TestCase):
             data = plane_workflow.doctor(self.root, offline=True)
         self.assertTrue(data['config_valid'])
         self.assertNotIn('github_authenticated', data)
+
+    def test_human_secret_change_refreshes_cached_missing_secret(self):
+        import onboarding
+        missing = self.report()
+        missing['checks']['secret_present'] = False
+        missing['evidence']['secret_present'] = False
+        probe = Mock(side_effect=[missing, self.report()])
+        with patch.object(onboarding.shutil, 'which', return_value='/fixture/gh'), \
+             patch.object(onboarding, 'check', probe):
+            onboarding.progress(self.root, cache=True)
+            result = onboarding.progress(self.root, cache=True, event='secret-saved')
+        self.assertEqual(probe.call_count, 2)
+        self.assertTrue(result['readiness']['checks']['secret_present'])

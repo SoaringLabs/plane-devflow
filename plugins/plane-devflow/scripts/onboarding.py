@@ -112,7 +112,7 @@ def progress(path, *, surfaces=(), offline=False, event=None, apply=False, cache
             report["issues"] = [issue("cli_unavailable", "github")]
     else:
         from sync_health import status
-        report = status(root, persist=cache, refresh=refresh, probe=check)
+        report = status(root, persist=cache, refresh=refresh or event == "secret-saved", probe=check)
     reported = event if event is not None else previous.get("reported_step")
     step = next_step(report, reported)
     result = {"version": 1, "provider": provider, "repository": config["github"]["repository"],
