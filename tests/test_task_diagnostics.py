@@ -163,3 +163,14 @@ class DiagnosticsTests(unittest.TestCase):
         self.assertTrue(result["read_only"])
         self.assertEqual(result["mode"], "local_and_cache")
         self.assertEqual(before, self.tree())
+
+    def test_repository_event_observation_never_becomes_task_writeback_proof(self):
+        with patch.object(sync_health, "status", return_value={"event_run_observed": True,
+                "observation": {"source": "cached", "probed_at": "2026-10-21T00:00:00Z"}}):
+            result = self.status()
+        event = result["actions_event"]
+        self.assertEqual(event["status"], "repository_event_observed")
+        self.assertEqual(event["source"], "cached")
+        self.assertFalse(event["task_binding_verified"])
+        self.assertFalse(event["task_writeback_verified"])
+        self.assertEqual(result["writeback"]["status"], "missing")

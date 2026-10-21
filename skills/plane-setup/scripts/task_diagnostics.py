@@ -149,8 +149,14 @@ def status(path, task, *, refresh=False, workitem=None):
         result["sync"] = {"status": "unknown", "reason": str(error)}
         limitations.append("sync_health_unverified")
     result["tools"] = doctor(root, offline=True)
-    result["actions_event"] = {"status": "unknown", "source": "not_observed",
-                               "reason": "A connection-test run does not prove a PR event or task writeback; inspect the actual event run separately."}
+    sync = result["sync"]
+    observation = sync.get("observation", {})
+    event_observed = sync.get("event_run_observed") is True
+    result["actions_event"] = {
+        "status": "repository_event_observed" if event_observed else "unknown",
+        "source": observation.get("source", "not_observed"), "observed_at": observation.get("probed_at"),
+        "task_binding_verified": False, "task_writeback_verified": False,
+        "reason": "Repository workflow metadata can show an event run; inspect the actual task-bound event and Plane readback separately."}
     result["blockers"] = sorted(set(blockers))
     result["limitations"] = sorted(set(limitations))
     result["next_actions"] = []
