@@ -82,6 +82,8 @@ The recommended command installs all three stages: **set up → develop → deli
 
 Project association uses browser authorization, without a PAT. For Actions, enter the PAT directly through GitHub Secrets or a human-operated hidden terminal prompt. Keep it out of chat.
 
+You can opt in to remembering a PAT on this computer: macOS uses Keychain and Windows uses Credential Manager. Later repositories can reuse the saved credential for the same Plane account and workspace after confirmation, across GitHub owners and organizations. Tokens stay outside skill/project files; cross-device synchronization is not provided. See [local credential reuse](skills/plane-setup/references/local-credentials.md).
+
 Incomplete setup is saved and resumable. **A successful connection check and a real PR-event writeback are reported separately.** New basic mappings record PR activity without changing task states; legacy mappings retain their existing rules. Native transitions belong to the official integration. See [setup and sync](skills/plane-setup/references/setup.md).
 
 ## Scope

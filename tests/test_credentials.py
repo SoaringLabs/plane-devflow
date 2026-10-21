@@ -22,7 +22,7 @@ class CredentialGuideTests(unittest.TestCase):
             calls.append(args)
             return real_run(args, *pos, **kw)
         with patch.object(workflow, 'run', side_effect=local_run):
-            plane = workflow.credential_guide(self.root)
+            plane = workflow.credential_guide(self.root, step='plane')
             github = workflow.credential_guide(self.root, step='github')
         self.assertTrue(all(args[0] == 'git' for args in calls))
         self.assertEqual(plane['url'], 'https://app.plane.so/example-workspace/')
@@ -61,7 +61,7 @@ class CredentialGuideTests(unittest.TestCase):
         with patch.object(workflow, 'run', side_effect=fake_run):
             result = workflow.credential_guide(self.root, step='verify')
         self.assertFalse(result['secret_present'])
-        self.assertEqual(result['next_step'], 'github')
+        self.assertEqual(result['next_step'], 'local')
 
     def test_permission_failure_is_not_reported_as_missing_or_ready(self):
         real_run = workflow.run
@@ -97,12 +97,12 @@ class CredentialGuideTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(output.getvalue())['repository'], 'example/demo-project')
 
-    def test_missing_secret_readiness_points_to_plane_creation_instead_of_bare_github(self):
+    def test_missing_secret_readiness_checks_local_reuse_before_pat_creation(self):
         import github_setup
         result = github_setup.assess(fixtures.config(), online={'secret_present':False})
-        self.assertEqual(result['credential_step'], 'plane')
+        self.assertEqual(result['credential_step'], 'local')
         unknown = github_setup.assess(fixtures.config())
         self.assertIsNone(unknown['credential_step'])
         plan = github_setup.install(self.root)
-        self.assertEqual(plan['credential_guide_command'][-2:], ['--step','plane'])
+        self.assertEqual(plan['credential_guide_command'][-2:], ['--step','local'])
         self.assertIn(str(self.root), plan['credential_guide_command'])

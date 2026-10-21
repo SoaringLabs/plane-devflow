@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+import warnings
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
@@ -521,23 +522,34 @@ def delivery(path, task, title, body_file, *, apply=False, draft=False):
 BINDING_MARKER = "<!-- plane-devflow "
 
 
-def credential_guide(path, *, step="plane"):
+def credential_guide(path, *, step="local", account=None):
     """Return non-secret browser guidance; verification reads Secret metadata only."""
     root, config = repo_config(path)
     if sync_provider(config) == "native":
         return {"status": "skipped", "provider": "native", "reason": "native_does_not_need_runner_pat"}
-    require(step in {"plane", "github", "verify"}, "Choose plane, github or verify credential step.")
+    require(step in {"local", "plane", "github", "verify"}, "Choose local, plane, github or verify credential step.")
     repo = config["github"]["repository"]
     plane = config["plane"]
     result = {"provider": "actions", "repository": repo, "step": step,
               "secret_name": "PLANE_API_KEY", "writes_performed": False}
-    if step == "plane":
+    if step == "local":
+        from credential_store import inspect, platform_backend
+        result.update(status="select_account", backend=platform_backend(), next_step="select_plane_account",
+                      handoff="Use the verified Plane account ID/email, then inspect local storage. Never request a PAT in chat.")
+        if account is not None:
+            saved = inspect(config, account)
+            result.update(local_credential=saved, status=saved["status"],
+                          next_step=("confirm_saved_credential" if saved["saved"] is True else
+                                     "existing_pat_or_create" if saved["saved"] is False else "unlock_storage_or_manual"))
+        result["manual_option"] = "User may provide an existing PAT through hidden input or GitHub's Secret form; generate a new PAT only when needed."
+    elif step == "plane":
         result.update(status="awaiting_user", url=plane["app_url"].rstrip("/") + "/" + quote(plane["workspace"], safe="") + "/",
                       navigation=["Open user menu", "Settings", "Personal Access Tokens", "Add access token"],
                       suggested_title="Plane DevFlow: " + repo,
                       suggested_description="GitHub Actions synchronization for " + repo,
                       expiry="User chooses an explicit expiry suitable for this automation.",
                       handoff="User generates and copies the PAT on Plane. Do not observe the generated value.",
+                      remember_option="Offer opt-in local system credential storage using credential-store --action remember in a human-operated terminal.",
                       next_step="github", advance_when="User confirms a PAT was created or already has a suitable PAT.")
     elif step == "github":
         result.update(status="awaiting_user", url="https://github.com/" + repo + "/settings/secrets/actions/new",
@@ -554,19 +566,109 @@ def credential_guide(path, *, step="plane"):
         found = next((row for row in records if row.get("name") == "PLANE_API_KEY"), None)
         result.update(status="secret_present" if found is not None else "secret_missing",
                       secret_present=found is not None, secret_updated_at=found.get("updatedAt") if found is not None else None,
-                      credential_value_read=False, next_step="activation" if found is not None else "github",
+                      credential_value_read=False, next_step="activation" if found is not None else "local",
                       note="Secret presence is not proof of PAT validity or workflow connection. Continue check-github and trusted default-branch activation.")
     return result
 
 
-def set_secret(path):
-    _, config = repo_config(path)
+def hidden_pat(prompt):
+    from credential_store import validate_token
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", getpass.GetPassWarning)
+            return validate_token(getpass.getpass(prompt))
+    except (getpass.GetPassWarning, EOFError, KeyboardInterrupt):
+        raise WorkflowError("Hidden input unavailable or cancelled; no credential sent. Use a human-operated terminal or GitHub Secrets page.") from None
+
+
+def credential_confirmation(prompt):
+    try:
+        return input(prompt).strip()
+    except (EOFError, KeyboardInterrupt):
+        raise WorkflowError("Cancelled; no credential loaded or changed.") from None
+
+
+def local_credential(path, *, action="status", account, replace=False, apply=False):
+    """Only status/forget plans are agent-readable; human terminals own PAT input."""
+    from credential_store import Scope, inspect, open_store, VaultError
+    root, config = repo_config(path)
+    require(sync_provider(config) == "actions", "Native mode does not need a runner PAT Secret.")
+    scope = Scope.from_config(config, account)
+    if action == "status":
+        return inspect(config, account)
+    require(action in {"remember", "forget"}, "Choose status, remember or forget.")
+    result = {**scope.metadata(), "action": action, "credential_value_returned": False}
+    if not apply:
+        return {**result, "status": "planned", "writes_performed": False}
+    require(sys.stdin.isatty(), "Run credential changes in a human-operated interactive terminal.")
+    try:
+        store = open_store(scope)
+        if action == "forget":
+            require(credential_confirmation("Remove this local credential? Type the Plane account ID/email: ").casefold() == scope.account,
+                    "Cancelled; no credential changed.")
+            require(repo_config(root)[1] == config, "Repository mapping changed; inspect it before changing local credentials.")
+            store.delete()
+            return {**result, "status": "forgotten", "writes_performed": True,
+                    "note": "GitHub Secrets and the Plane PAT itself are unchanged."}
+        require(replace or not store.contains(), "A credential is already saved. Use --replace only to replace it intentionally.")
+        token = hidden_pat("Plane PAT to remember on this computer (hidden): ")
+        try:
+            require(repo_config(root)[1] == config, "Repository mapping changed; inspect it before changing local credentials.")
+            store.save(token, replace=replace)
+        finally:
+            token = None
+        return {**result, "status": "remembered", "writes_performed": True, "credential_validity": "unverified"}
+    except (OSError, ValueError, TypeError, AttributeError):
+        raise VaultError("Local credential operation failed. No secret value is returned; use manual input or retry after unlocking storage.") from None
+
+
+def set_secret(path, *, account=None, use_saved=False, remember=False, replace=False):
+    from credential_store import Scope, open_store, validate_token, VaultError
+    root, config = repo_config(path)
     require(sync_provider(config) == "actions", "Native mode does not need a runner PAT Secret.")
     require(sys.stdin.isatty(), "Run set-secret directly in an interactive terminal, or use GitHub's repository Secrets page.")
-    token = getpass.getpass("Plane PAT (hidden; sent only to GitHub repository Secret): ")
-    require(bool(token.strip()), "No token supplied.")
-    run(["gh", "secret", "set", "PLANE_API_KEY", "--repo", config["github"]["repository"]], input_text=token)
-    return {"status": "stored", "secret": "PLANE_API_KEY", "repository": config["github"]["repository"]}
+    require(not (use_saved and remember), "Choose --use-saved or --remember, not both.")
+    scope = Scope.from_config(config, account) if use_saved or remember else None
+    repo = config["github"]["repository"]
+    # Inspect before loading any token. Unknown metadata is a blocker, not an
+    # invitation to overwrite another credential or mint a replacement PAT.
+    existing = credential_guide(root, step="verify")
+    require(replace or existing["secret_present"] is False,
+            "PLANE_API_KEY already exists. Verify it, or use --replace for an intentional replacement.")
+    require(credential_confirmation(f"Configure PLANE_API_KEY for github.com/{repo}? Type {repo}: ") == repo,
+            "Cancelled; no credential loaded or changed.")
+    require(repo_config(root)[1] == config, "Repository mapping changed; inspect it before sending credentials.")
+    local_saved = False
+    token = None
+    try:
+        store = open_store(scope) if scope else None
+        if use_saved:
+            token = validate_token(store.read())
+        else:
+            if remember:
+                require(replace or not store.contains(), "A credential is already saved. Use --replace only to replace it intentionally.")
+            token = hidden_pat("Plane PAT (hidden; sent only to GitHub repository Secret): ")
+        if remember:
+            store.save(token, replace=replace)
+            local_saved = True
+        # Revalidate repository identity after the human handoff, before sending.
+        require(repo_config(root)[1] == config, "Repository mapping changed; inspect it before sending credentials.")
+        current = credential_guide(root, step="verify")
+        require((current["secret_present"], current.get("secret_updated_at")) ==
+                (existing["secret_present"], existing.get("secret_updated_at")),
+                "GitHub Secret changed during the handoff. Inspect it before retrying; no remote credential overwritten.")
+        try:
+            run(["gh", "secret", "set", "PLANE_API_KEY", "--repo", repo], input_text=token)
+        except WorkflowError:
+            retained = " The newly remembered local credential was retained." if local_saved else ""
+            raise WorkflowError("GitHub Secret upload failed or is unconfirmed. Verify remote metadata before retrying." + retained) from None
+    except (OSError, ValueError, TypeError, AttributeError):
+        raise VaultError("Credential transfer failed; no token is returned. Inspect storage and repository access before retrying.") from None
+    finally:
+        token = None
+    return {"status": "stored", "secret": "PLANE_API_KEY", "repository": repo,
+            "source": "local_system_store" if use_saved else "human_input", "remembered_locally": local_saved,
+            "credential_value_returned": False, "next_step": "verify_secret_metadata_then_connection"}
 
 
 def demo(output=None):
@@ -739,9 +841,16 @@ def main(argv=None):
     p.add_argument("--repo", default=".")
     p.add_argument("--stage", choices=["implement", "review", "merge", "complete"], required=True)
     p.add_argument("--workitem-file", help="Fresh normalized Plane MCP task snapshot for completion checks.")
-    p = sub.add_parser("credential-guide", help="Guide Plane PAT creation, GitHub storage, and metadata-only verification.")
+    p = sub.add_parser("credential-guide", help="Guide local credential reuse, Plane PAT creation and GitHub storage.")
     p.add_argument("--repo", default=".")
-    p.add_argument("--step", choices=["plane", "github", "verify"], default="plane")
+    p.add_argument("--step", choices=["local", "plane", "github", "verify"], default="local")
+    p.add_argument("--account", help="Verified Plane account ID/email for local credential lookup.")
+    p = sub.add_parser("credential-store", help="Inspect, remember or forget a PAT in the system credential store. Never prints tokens.")
+    p.add_argument("--repo", default=".")
+    p.add_argument("--account", required=True, help="Verified Plane account ID/email; separate from GitHub login.")
+    p.add_argument("--action", choices=["status", "remember", "forget"], default="status")
+    p.add_argument("--replace", action="store_true", help="Explicitly replace an existing local credential.")
+    p.add_argument("--apply", action="store_true", help="Human-operated terminal required for remember/forget; otherwise plan only.")
     p = sub.add_parser("setup-progress", help="Inspect capabilities, resume setup and optionally save non-secret progress in Git metadata.")
     p.add_argument("--repo", default=".")
     p.add_argument("--offline", action="store_true", help="Leave remote checks unknown; never reuse cached success as current evidence.")
@@ -753,6 +862,11 @@ def main(argv=None):
     p.add_argument("--surface", action="append", choices=["browser-control", "app-control", "url-opener"], default=[])
     p = sub.add_parser("set-secret", help="Read a Plane PAT through hidden terminal input and store it in GitHub.")
     p.add_argument("--repo", default=".")
+    p.add_argument("--account", help="Verified Plane account ID/email; required with --use-saved or --remember.")
+    choice = p.add_mutually_exclusive_group()
+    choice.add_argument("--use-saved", action="store_true", help="Use this account's local credential after human target confirmation.")
+    choice.add_argument("--remember", action="store_true", help="Opt in to saving hidden input in the system credential store.")
+    p.add_argument("--replace", action="store_true", help="Intentionally replace existing remote/local credentials.")
     p = sub.add_parser("setup-github", help="Prepare bundled PR synchronization and a read-only connection check.")
     p.add_argument("--repo", default=".")
     p.add_argument("--apply", action="store_true")
@@ -815,7 +929,9 @@ def main(argv=None):
             result = check_task(args.repo, args.task, args.stage,
                                 workitem=json.loads(Path(args.workitem_file).read_text()) if args.workitem_file else None)
         elif args.command == "credential-guide":
-            result = credential_guide(args.repo, step=args.step)
+            result = credential_guide(args.repo, step=args.step, account=args.account)
+        elif args.command == "credential-store":
+            result = local_credential(args.repo, action=args.action, account=args.account, replace=args.replace, apply=args.apply)
         elif args.command == "setup-progress":
             from onboarding import progress
             result = progress(args.repo, surfaces=args.surface, offline=args.offline, event=args.event, apply=args.apply)
@@ -823,7 +939,7 @@ def main(argv=None):
             from onboarding import capabilities
             result = capabilities(args.surface)
         elif args.command == "set-secret":
-            result = set_secret(args.repo)
+            result = set_secret(args.repo, account=args.account, use_saved=args.use_saved, remember=args.remember, replace=args.replace)
         elif args.command == "setup-github":
             from github_setup import install
             result = install(args.repo, apply=args.apply, upgrade=args.upgrade, expected_files_sha256=args.expected_files_sha256)

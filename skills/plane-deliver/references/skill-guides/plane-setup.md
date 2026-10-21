@@ -1,6 +1,6 @@
 ---
 name: plane-setup
-description: Associate a repository with a Plane project, check or reconfigure its mapping, or resume native or Actions GitHub synchronization. Use for Plane setup requests, not ordinary coding or task delivery.
+description: Associate a repository with a Plane project, check or reconfigure its mapping, resume GitHub synchronization, or manage optional local runner credentials. Use for Plane setup requests, not ordinary coding or task delivery.
 ---
 
 # Set up Plane
@@ -14,7 +14,7 @@ Selecting this skill alone starts setup. Use the configured Plane MCP for accoun
 | Check existing configuration | Read [recovery](../recovery.md), run `doctor` and `setup-progress` without `--apply`, retrieve the configured project and report current readiness. Leave files, checkpoints and remote objects unchanged. |
 | New association or reconfiguration | Read [setup](../setup.md) for project selection, snapshots, replacement hashes/backups and synchronization ownership. |
 | Continue interrupted setup or repair a failure | Read [recovery](../recovery.md), reconstruct progress from current evidence and continue only the missing stage. Read the relevant setup section when needed. |
-| Missing Actions runner Secret | Read [credentials](../credentials.md); guide Plane PAT creation, GitHub storage and metadata verification in that order. |
+| Missing Actions runner Secret, or remember/reuse/forget a local PAT | Read [credentials](../credentials.md); check existing/local credentials before guiding PAT creation, GitHub storage and verification. Follow its local-storage branch for explicit remember/reuse/forget requests. |
 
 Follow an already chosen path. For an existing mapping without a selected path, offer **检查当前配置**, **重新配置**, and **继续配置 GitHub 后台同步** when incomplete. An invalid mapping can be repaired; keep it until replacement succeeds.
 
@@ -29,7 +29,7 @@ Follow an already chosen path. For an existing mapping without a selected path, 
 
 Read the matching Actions or Native section in setup. Reuse preferences; default to Actions when no provider was chosen. New/different-project mappings use basic schema version 2 without state targets; same-project reruns retain legacy preferences. Omitted provider settings preserve compatibility defaults. API v1/v2 routing is separate from mapping versions; choose v2 only for an explicit requirement.
 
-Actions requires trusted default-branch files, Secret metadata and a fresh read-only connection check. Review upgrades with the exact returned file hash and backups. Choosing Actions authorizes guidance and non-secret navigation, not agent handling of PAT values. Hand token generation/copy/paste/save to the user, outside observations and clipboard tools; continue after natural confirmation. Setup PR merge needs its own authorization, reused when already given; prepare the concrete PR and credential stage before asking for a missing merge decision.
+Actions requires trusted default-branch files, Secret metadata and a fresh read-only connection check. Review upgrades with the exact returned file hash and backups. Choosing Actions authorizes guidance and non-secret navigation, not agent handling of PAT values. Keep token generation/input and optional system-store transfer in the user's control; helpers return only non-secret results. Continue after natural confirmation. Setup PR merge needs its own authorization, reused when already given; prepare the concrete PR and credential stage before asking for a missing merge decision.
 
 Native requires observed official repository/project mapping and reviewed rules, or specific user confirmation when UI is unavailable. A paid plan alone is insufficient. Record exact-config evidence as setup describes. Native needs no plugin Actions files or PAT; its automatic state transitions belong to the official integration. Distinct Start/Deliver reports remain allowed. If official rules conflict with required manual acceptance, explain and propose Actions, leaving the choice to the user.
 

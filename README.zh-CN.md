@@ -82,6 +82,8 @@ Codex 插件使用 `$plane-devflow:plane-setup` 调用标识，详见 [本地插
 
 关联项目使用浏览器授权，不需要 PAT。Actions 的 PAT 请直接在 GitHub Secrets 或由本人操作的隐藏终端输入中录入，不要发送到聊天。
 
+可选择“在本机记住凭据”：macOS 使用 Keychain，Windows 使用 Credential Manager。以后为其他仓库配置同步时，可确认复用同一 Plane 账号与 workspace 的已存凭据，无需重新生成 PAT；不要求仓库属于同一个 GitHub 组织。凭据不保存在 skill 或项目文件中，此功能不提供跨电脑同步。详见 [本机凭据复用](skills/plane-setup/references/local-credentials.md)。
+
 初始化中断或条件不足时会保存进度，之后可继续。**连接验证通过与真实 PR 事件回写成功会分别报告。** 新基础映射记录 PR 活动，保留任务状态；旧映射沿用既有规则，原生集成的状态变化由官方集成控制。详见 [初始化与同步](skills/plane-setup/references/setup.md)。
 
 ## 使用范围

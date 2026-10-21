@@ -1,6 +1,6 @@
 # Skill behavior evaluations
 
-`cases.jsonl` contains 24 synthetic scenarios covering the three entrypoints: explicit requests, implicit routing, unrelated requests, read-only scope, recovery, task/workspace identity, partial acceptance, stale evidence and partial writeback. `actions.json` defines decision labels for scoring; labels are not executable commands.
+`cases.jsonl` contains synthetic scenarios covering the three entrypoints: explicit requests, implicit routing, unrelated requests, read-only scope, credential reuse, recovery, task/workspace identity, partial acceptance, stale evidence and partial writeback. `actions.json` defines decision labels for scoring; labels are not executable commands.
 
 ## What each check proves
 
