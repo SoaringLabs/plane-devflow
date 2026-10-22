@@ -14,6 +14,12 @@ python3 /absolute/installed/scripts/plane_workflow.py resolve-release --target-v
 
 Save its returned JSON outside tracked files as the release manifest. It must identify a published stable release, the tag's actual full commit and the product manifest asset. A missing manifest on a historical release is a migration limitation, not permission to substitute `main` or invent a commit. Unpublished candidates use isolated fixtures and separate development validation.
 
+Release metadata requests reuse the existing GitHub CLI login. If the CLI is unavailable or unconfigured, public anonymous reads remain available; invalid credentials and permission errors require their own recovery. No additional PAT or credential transfer is needed. Downloads of the public manifest remain unauthenticated and restricted to GitHub asset hosts.
+
+Routine pinned-version checks may reuse a validated public release identity for up to one hour across local repositories. The cache stores only the version, full commit, asset ID, manifest digest and public manifest under `$XDG_CACHE_HOME/plane-devflow/releases` (default `~/.cache/plane-devflow/releases`); it never stores credentials or project readiness. `evidence.product_release` identifies the source and observation time. `latest`, explicit `resolve-release`, and final `upgrade --step verify --apply` read the remote identity again. Failed refreshes cannot fall back to cached success. An unavailable cache does not block live reads.
+
+On `rate_limited`, report the affected step and UTC `retry_at`, then wait until that time before an explicit retry. Shared cooldown records suppress repeated requests through the same transport; they do not create scheduled retries. Authentication failures must not trigger an anonymous retry. Never substitute a web page, local candidate or saved connection result for the missing formal identity check.
+
 Show the changelog, exact target version/commit, original installation channel/scope and affected repository. A global skill refresh also affects other projects using that installation; it does not update their workflows. Multi-project requests require an explicit list; handle each project independently.
 
 ## Prepare before applying
@@ -51,6 +57,8 @@ Local installation, project PR, activation and verification are independent prog
 Before merge, inspect running/queued old sync jobs and retain a single listener path and the existing concurrency/PR comment identity. Merge requires its existing separate authorization. After activation, use `upgrade --step verify --apply` for explicit metadata refresh and a connection-result read. This stage does not dispatch a workflow or write Plane. If a new connection run is needed, prepare its exact target and use the existing setup flow within that scope.
 
 Report the selected version, local installation, PR link, activated reference and connection result separately. Tracked project skills must match the target on the actual activation branch, including native-provider projects. Only the required selected steps count toward upgrade completion. Real PR-event writeback is reported independently; never create a task or test PR merely to fill that evidence gap without scope.
+
+The verify result's `verification_steps` separates local installation, activation, release identity, observed connection and overall verification. A successful connection may coexist with `verification_pending` when identity checks are unavailable; preserve that distinction and the structured issue. The existing top-level completion fields still require all gates.
 
 ## Rollback
 

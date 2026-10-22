@@ -37,6 +37,13 @@ def command(root, *args):
 
 
 class ReleaseIdentityTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        environment = patch.dict(os.environ, {'XDG_CACHE_HOME': str(Path(temporary.name).resolve())})
+        environment.start()
+        self.addCleanup(environment.stop)
+
     def test_remote_default_discovery_is_a_read_only_git_protocol_query(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -58,15 +65,15 @@ class ReleaseIdentityTests(unittest.TestCase):
     def test_resolver_peels_annotated_tags_and_rejects_manifest_commit_mismatch(self):
         manifest = release_fixture()
         release = {'draft': False, 'prerelease': False, 'tag_name': 'v0.14.0', 'target_commitish': 'main',
-                   'assets': [{'name': 'plane-devflow-release.json', 'id': 1}]}
+                   'assets': [{'name': 'plane-devflow-release.json', 'id': 1,
+                               'browser_download_url': 'https://github.com/SoaringLabs/plane-devflow/releases/download/v0.14.0/plane-devflow-release.json'}]}
         data = [release, {'object': {'type': 'tag', 'sha': 'c' * 40}},
-                {'object': {'type': 'commit', 'sha': 'a' * 40}},
-                {'browser_download_url': 'https://github.com/SoaringLabs/plane-devflow/releases/download/v0.14.0/plane-devflow-release.json'}]
+                {'object': {'type': 'commit', 'sha': 'a' * 40}}]
         with patch.object(releases, 'fetch_json', side_effect=data), patch.object(releases, 'fetch_asset', return_value=manifest):
-            self.assertEqual(releases.resolve('0.14.0')['commit'], 'a' * 40)
+            self.assertEqual(releases.resolve('0.14.0', refresh=True)['commit'], 'a' * 40)
         manifest['commit'] = 'd' * 40
         with patch.object(releases, 'fetch_json', side_effect=data), patch.object(releases, 'fetch_asset', return_value=manifest), self.assertRaisesRegex(ValueError, 'identity mismatch'):
-            releases.resolve('0.14.0')
+            releases.resolve('0.14.0', refresh=True)
 
     def test_invalid_identity_and_paths_are_rejected(self):
         for field, value in [('repository', 'other/project'), ('commit', 'main'), ('tag', 'v0.13.0'),
@@ -177,6 +184,21 @@ class SharedInstallTests(fixtures.RepositoryTests):
         self.assertEqual(result['sync_bundle']['layout'], 'shared_action')
         self.assertTrue(result['checks']['sync_bundle_verified'])
 
+    def test_release_limit_does_not_hide_successful_activation_and_connection(self):
+        from setup_errors import ProbeError
+        release = release_fixture()
+        files = {shared_sync.WORKFLOW: shared_sync.workflow(release['commit'], release['version']).encode()}
+        error = ProbeError('rate_limited', 'product_release')
+        error.issue['retry_at'] = '2026-10-10T03:00:00+00:00'
+        with patch.object(releases, 'resolve', side_effect=error):
+            result = self.remote_check(remote_files=files)
+        self.assertTrue(result['checks']['workflow_active'])
+        self.assertTrue(result['checks']['connection_verified'])
+        self.assertIsNone(result['checks']['sync_bundle_verified'])
+        self.assertEqual(result['initialization'], 'partial')
+        self.assertEqual(result['issues'], [error.issue])
+        self.assertIsNone(result['event_writeback_verified'])
+
 
 class UpgradeRecoveryTests(unittest.TestCase):
     @classmethod
@@ -199,7 +221,7 @@ class UpgradeRecoveryTests(unittest.TestCase):
                 originals[path] = path.read_bytes()
         for path, content in originals.items():
             if path.name in ('VERSION', 'distribution.json', 'plugin.json', 'plugin_version.py'):
-                path.write_bytes(content.replace(b'0.14.0', b'0.13.0'))
+                path.write_bytes(content.replace(releases.VERSION.encode(), b'0.13.0'))
         command(cls.source, 'add', '.')
         command(cls.source, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Previous fixture')
         command(cls.source, 'tag', 'v0.13.0')
@@ -458,7 +480,7 @@ class UpgradeRecoveryTests(unittest.TestCase):
             activated = upgrades.install_local(self.root, plan_id, apply=True)
         self.assertEqual(activated['local_installation'], 'verified')
         self.assertEqual(command(self.root, 'status', '--porcelain'), '')
-        self.assertEqual(json.loads((self.root / '.agents/skills/plane-setup/distribution.json').read_text())['version'], '0.14.0')
+        self.assertEqual(json.loads((self.root / '.agents/skills/plane-setup/distribution.json').read_text())['version'], releases.VERSION)
 
     def test_native_tracked_installation_activates_without_an_actions_workflow(self):
         config = fixtures.config()
@@ -523,10 +545,14 @@ class UpgradeRecoveryTests(unittest.TestCase):
                                   'integrity_verified': None, 'compatible': None},
                   'evidence': {'default_sha': current}}
         self.real_run = plane_workflow.run
-        with patch.object(plane_workflow, 'run', side_effect=self.no_network), patch.object(github_setup, 'check', return_value=report):
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network), patch.object(github_setup, 'check', return_value=report) as check:
             result = upgrades.verify_project(self.root, plan_id)
+        check.assert_called_once_with(self.root.resolve(), release_refresh=True)
         self.assertFalse(result['connection_verified'])
         self.assertNotEqual(result['status'], 'complete')
+        self.assertTrue(result['verification_steps']['connection_verified'])
+        self.assertFalse(result['verification_steps']['release_identity_verified'])
+        self.assertFalse(result['verification_steps']['overall_verified'])
 
     def test_saved_source_does_not_allow_an_extra_executable_module(self):
         plan_id = self.staged()

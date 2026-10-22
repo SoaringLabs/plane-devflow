@@ -2,6 +2,13 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.14.1 — Unreleased
+
+- Reuse the existing GitHub CLI login for product Release metadata, with anonymous public reads only when the CLI is unavailable or unconfigured. Keep public manifest downloads unauthenticated and retain tag, commit, source and payload validation.
+- Share validated pinned-version release identities across local repositories for up to one hour, and remove redundant asset metadata and workflow reads. Explicit release selection and final upgrade verification always refresh the remote identity; cached success cannot mask a failed refresh.
+- Report primary and secondary GitHub rate limits with a safe, structured issue and UTC retry time. Shared transport cooldowns avoid repeated requests before the service permits a retry, without creating background jobs.
+- Separate successful activation and observed connection from pending release identity verification. Preserve the overall completion gate, existing business workflow pins, project configuration and state policies. See [0.14.1 validation](docs/validation-0.14.1.md) for scope and limits.
+
 ## 0.14.0 — 2026-10-22
 
 - Use one product version for the three skills, plugin, local helpers and public GitHub synchronization Action. Configuration schemas and PR binding protocols retain their own format numbers; historical copied bundles remain recognized for compatibility.
