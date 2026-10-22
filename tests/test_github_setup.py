@@ -74,10 +74,10 @@ class RepositoryTests(unittest.TestCase):
 
     def test_plan_and_repeated_apply_preserve_mapping(self):
         before = (self.root / sync.CONFIG_NAME).read_bytes()
-        setup.install(self.root)
+        setup.legacy_install(self.root)
         self.assertFalse((self.root / setup.WORKFLOW).exists())
-        setup.install(self.root, apply=True)
-        setup.install(self.root, apply=True)
+        setup.legacy_install(self.root, apply=True)
+        setup.legacy_install(self.root, apply=True)
         self.assertEqual((self.root / sync.CONFIG_NAME).read_bytes(), before)
         for name, data in setup.bundled_files().items():
             self.assertEqual((self.root / name).read_bytes(), data)
@@ -87,7 +87,7 @@ class RepositoryTests(unittest.TestCase):
         path.parent.mkdir(parents=True)
         path.write_text("user customization")
         with self.assertRaises(sync.WorkflowError):
-            setup.install(self.root, apply=True)
+            setup.legacy_install(self.root, apply=True)
         self.assertFalse((self.root / setup.WORKFLOW).exists())
         self.assertEqual(path.read_text(), "user customization")
 
@@ -98,7 +98,7 @@ class RepositoryTests(unittest.TestCase):
         path.parent.mkdir(parents=True)
         path.symlink_to(target)
         with self.assertRaises(sync.WorkflowError):
-            setup.install(self.root, apply=True)
+            setup.legacy_install(self.root, apply=True)
         self.assertEqual(target.read_text(), "keep")
 
     def remote_check(self, *, conclusions=("success",), remote_sha="a" * 40, run_sha="a" * 40, secret=True,

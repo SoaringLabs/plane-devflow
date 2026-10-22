@@ -3,7 +3,9 @@ import hashlib
 import re
 from pathlib import Path
 
-CURRENT_VERSION = "0.10.1"
+# Historical deployment catalog only. New deployments use the product release.
+LEGACY_VERSION = "0.10.1"
+CURRENT_VERSION = LEGACY_VERSION  # Compatibility for older helper callers.
 CONFIG_NAME = ".plane-devflow.json"
 
 WORKFLOW = ".github/workflows/plane-devflow.yml"
@@ -12,10 +14,8 @@ CHECKOUT_SHA = "3d3c42e5aac5ba805825da76410c181273ba90b1"  # actions/checkout v7
 
 
 def bundled_files():
-    scripts = Path(__file__).resolve().parent
-    return {WORKFLOW: bundled_workflow().encode(),
-            **{f"{BUNDLE}/{name}": (scripts / name).read_bytes()
-               for name in ("action_runner.py", "plane_sync.py")}}
+    import runpy
+    return runpy.run_path(str(Path(__file__).with_name('legacy_bundle_data.py')))['files']()
 
 
 def bundled_workflow():
@@ -99,8 +99,12 @@ def validate_catalog():
         raise ValueError('Current sync bundle must be supported.')
 
 
-def inspect_bundle(files, config):
+def inspect_bundle(files, config, release=None):
     """Classify exact known bytes; a project-provided version is never trusted."""
+    from shared_sync import inspect
+    shared = inspect(files, config, release)
+    if shared is not None:
+        return shared
     validate_catalog()
     result = {'installed_version': None, 'latest_known_version': CURRENT_VERSION,
               'catalog_source': 'installed_plugin', 'integrity_verified': None,
@@ -117,22 +121,15 @@ def inspect_bundle(files, config):
     version, entry = match
     compatible = (entry['support'] == 'supported' and config['version'] in entry['config_versions']
                   and 1 in entry['binding_versions'])  # Current PR binding protocol is version 1.
-    result.update(installed_version=version, integrity_verified=True, compatible=compatible,
+    result.update(layout='legacy_vendored', legacy_bundle_version=version, installed_version=version, integrity_verified=True, compatible=compatible,
                   update_available=version != CURRENT_VERSION, upgrade_required=not compatible,
                   status='upgrade_required' if not compatible else 'update_available' if version != CURRENT_VERSION else 'current')
     return result
 
 
 def verify_current_bundle():
-    """Release guard: runtime/workflow changes require a reviewed catalog/version update."""
-    import ast
+    """Keep historical bytes intact; new runtime identity follows the product."""
     validate_catalog()
     actual = {path: hashlib.sha256(data).hexdigest() for path, data in bundled_files().items()}
     if actual != RELEASES[CURRENT_VERSION]['files']:
         raise ValueError('Current sync bundle changed without a matching release fingerprint/version update.')
-    tree = ast.parse(Path(__file__).with_name('plane_sync.py').read_text())
-    versions = [node.value.value for node in tree.body if isinstance(node, ast.Assign)
-                and any(isinstance(target, ast.Name) and target.id == 'VERSION' for target in node.targets)
-                and isinstance(node.value, ast.Constant)]
-    if versions != [CURRENT_VERSION]:
-        raise ValueError('Sync runtime/bundle version mismatch.')

@@ -2,6 +2,9 @@ name: Plane DevFlow sync
 description: Synchronize one primary Plane task from a GitHub PR using trusted repository configuration.
 author: Plane DevFlow contributors
 inputs:
+  trusted-config-sha:
+    description: Full trusted default-branch commit from github.sha; never the PR head.
+    required: true
   plane-api-key:
     description: Plane personal API key stored as a repository Secret; required only in Actions mode.
     required: false
@@ -17,4 +20,5 @@ runs:
         PLANE_API_KEY: ${{ inputs.plane-api-key }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
         PLANE_ACTION_PATH: ${{ github.action_path }}
+        PLANE_CONFIG_SHA: ${{ inputs.trusted-config-sha }}
       run: python3 "$PLANE_ACTION_PATH/plugins/plane-devflow/scripts/action_runner.py"

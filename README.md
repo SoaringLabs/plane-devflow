@@ -34,10 +34,12 @@ New setups record PR activity **without automatically changing task states**. Se
 
 ### Install
 
+The unified 0.14.0 candidate is not published yet; the stable-channel command below becomes available after its formal release and channel activation. Local candidate testing is covered in the [installation guide](docs/installation.md).
+
 Run from your target repository’s root and choose your agent:
 
 ```sh
-npx skills add SoaringLabs/plane-devflow \
+npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
   --skill plane-setup plane-start plane-deliver
 ```
 
@@ -92,17 +94,27 @@ Local task records support recovery in another chat when the host provides trust
 
 ## Update or remove
 
-Upgrading from **Plane for Codex**? Read the [0.10.0 upgrade boundary](docs/installation.md#upgrade-from-the-previous-name): configuration paths and runtime identities changed, and business records are not migrated automatically.
+### Update
 
-Plugin and GitHub sync-bundle versions are independent. Routine task checks verify project sync compatibility using the installed plugin's reviewed catalog; they do not query the plugin's latest release. Updating skills alone does not require a project sync-script PR. Update skills through your chosen installation channel. An optional [manual version check](docs/installation.md#manual-plugin-version-check) reports the stable plugin release without installing it.
+Ask your agent: **“Use plane-setup to upgrade Plane DevFlow in this repository; show the target release, changelog and plan first.”** One product version covers the skills and public GitHub Action. The flow preserves your installation channel and coordinates the local refresh, project upgrade PR, activation and verification.
 
-Rerun the installation command to refresh these three skills. For GitHub-tracked installations, explicitly update the selected project skills with:
+To refresh only the skill files, rerun the installation command:
 
 ```sh
-npx skills update plane-setup plane-start plane-deliver --project
+npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable --skill '*'
 ```
 
-Run `npx skills remove plane-setup plane-start plane-deliver` from the same repository and select the intended host to remove project skills. For existing global installations, use `--global` instead of `--project` when updating and add `--global` when removing. Open a new chat after updates. Removal keeps MCP connections, account authorization, business mappings, copied workflows and task workspaces. The [installation guide](docs/installation.md) covers local plugin installation and removal.
+Add `--global` for your original global installation and open a new agent session afterward. File refresh alone does not upgrade the project's Action reference. For selected-skill updates, plugin handoffs, recovery and rollback, see the [installation guide](docs/installation.md#update-or-remove-standalone-skills).
+
+### Remove
+
+Run from the same repository and select the intended agent:
+
+```sh
+npx skills remove plane-setup plane-start plane-deliver
+```
+
+For a global installation, add `--global`. Removal preserves MCP connections, account authorization, project mappings, copied sync files and task workspaces. For Codex plugin removal, see the [installation guide](docs/installation.md#install-the-codex-plugin-locally).
 
 ## Documentation
 

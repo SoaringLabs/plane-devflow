@@ -16,7 +16,8 @@ IMPACT = ("GitHub 上创建、更新或合并 PR 后，这些事件无法自动�
           "GitHub 上发生的变化需要回到 Codex 中检查并同步。")
 
 
-def install(root, *, apply=False, upgrade=False, expected_files_sha256=None):
+def legacy_install(root, *, apply=False, upgrade=False, expected_files_sha256=None):
+    """Historical restoration adapter. New setup always uses install()."""
     from plane_workflow import configuration_lock, repo_config, snapshot, atomic_write
     root, config = repo_config(root)
     if sync_provider(config) == "native":
@@ -62,6 +63,73 @@ def install(root, *, apply=False, upgrade=False, expected_files_sha256=None):
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 atomic_write(path, files[name])
+    return result
+
+
+def install(root, *, release=None, apply=False, upgrade=False, expected_files_sha256=None):
+    from plane_workflow import configuration_lock, repo_config, snapshot, atomic_write
+    from product_release import validate_manifest, resolve
+    from shared_sync import workflow
+    root, config = repo_config(root)
+    if sync_provider(config) == 'native':
+        return {'status': 'skipped', 'provider': 'native', 'files': [], 'changes': {}, 'initialization': 'partial'}
+    from plugin_version import VERSION
+    release = validate_manifest(release if release is not None else resolve(VERSION))
+    paths = [WORKFLOW, *[name for name in bundled_files() if name != WORKFLOW]]
+    for name in [CONFIG_NAME, *paths]:
+        path = root / name
+        require(not any(parent.is_symlink() for parent in (path, *path.parents) if parent == root or root in parent.parents),
+                'Sync files must not resolve through symlinks.')
+    original = {name: (root / name).read_bytes() if (root / name).is_file() else None for name in [CONFIG_NAME, *paths]}
+    before = {name: hashlib.sha256(data).hexdigest() if data is not None else 'missing' for name, data in original.items()}
+    digest = hashlib.sha256(json.dumps({'before': before, 'target': release}, sort_keys=True).encode()).hexdigest()
+    old_scripts = [name for name in paths if name != WORKFLOW and original[name] is not None]
+    if old_scripts:
+        legacy = inspect_bundle(original, config)
+        require(legacy['integrity_verified'] is True, 'Customized or incomplete legacy sync files require a separate reviewed migration.')
+    after = workflow(release['commit'], release['version']).encode()
+    if original[WORKFLOW] is not None and original[WORKFLOW] != after and not old_scripts:
+        from shared_sync import identity
+        from plane_workflow import caller_workflow
+        text = original[WORKFLOW].decode('utf-8')
+        old_action = re.search(r'      - uses: ((?:SoaringLabs/plane-devflow|SoaringLabs/plane-for-codex)@[0-9a-fA-F]{40})\n', text)
+        require(identity(original[WORKFLOW]) is not None or
+                (old_action is not None and text == caller_workflow(old_action.group(1))),
+                'Customized workflow requires a separate reviewed migration; it will not be overwritten.')
+    changes = {name: {'before': before[name], 'after': 'missing' if name != WORKFLOW else hashlib.sha256(after).hexdigest()}
+               for name in paths if (name == WORKFLOW and original[name] != after) or name in old_scripts}
+    conflicts = [name for name in changes if original[name] is not None]
+    require(not conflicts or upgrade, 'Existing sync files differ. Review setup-github --upgrade before replacing them.')
+    if expected_files_sha256 is not None:
+        require(expected_files_sha256 == digest, 'Sync files, mapping or target changed since the plan.')
+    require(not apply or expected_files_sha256 == digest, 'Apply with --expected-files-sha256 from the reviewed plan.')
+    result = {'status': 'prepared' if apply else 'planned', 'provider': 'actions', 'product_version': release['version'],
+              'source_commit': release['commit'], 'files': [WORKFLOW], 'changes': changes,
+              'expected_files_sha256': digest, 'initialization': 'partial', 'next_step': 'default_branch_activation'}
+    result['credential_guide_command'] = ['python3', str(Path(__file__).resolve().with_name('plane_workflow.py')),
+                                          'credential-guide', '--repo', str(root), '--step', 'local']
+    if apply:
+        with configuration_lock(root) as metadata:
+            for name, expected in before.items():
+                require(snapshot(root / name)[1] == expected, 'Sync files changed before application.')
+            backup = metadata / 'sync-backups' / (digest + '-' + uuid.uuid4().hex)
+            backup.mkdir(parents=True)
+            atomic_write(backup / 'snapshot.json', (json.dumps({name: base64.b64encode(data).decode() if data is not None else None
+                                                              for name, data in original.items()}, sort_keys=True) + '\n').encode())
+            try:
+                if WORKFLOW in changes:
+                    (root / WORKFLOW).parent.mkdir(parents=True, exist_ok=True)
+                    atomic_write(root / WORKFLOW, after)
+                for name in old_scripts:
+                    (root / name).unlink()
+            except OSError:
+                for name in changes:
+                    if original[name] is None:
+                        (root / name).unlink(missing_ok=True)
+                    else:
+                        atomic_write(root / name, original[name])
+                raise
+            result['backup'] = str(backup)
     return result
 
 
@@ -206,8 +274,18 @@ def check(root, *, native_evidence_file=None, now=None):
             failed(error, "remote_config")
         except (WorkflowError, ValueError, KeyError, TypeError):
             evidence["remote_config_matches"] = False
-        matches, remote_files = [], {}
-        for name, data in expected.items():
+        from shared_sync import identity
+        from product_release import resolve
+        matches, remote_files = [], {WORKFLOW: content(WORKFLOW)}
+        shared = identity(remote_files[WORKFLOW])
+        release = None
+        if shared is not None:
+            try:
+                release = resolve(shared['version'])
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                failed(error, 'product_release')
+        selected = {WORKFLOW: remote_files[WORKFLOW]} if shared else expected
+        for name, data in selected.items():
             try:
                 remote_files[name] = content(name)
                 matches.append(hashlib.sha256(remote_files[name]).digest() == hashlib.sha256(data).digest())
@@ -217,7 +295,9 @@ def check(root, *, native_evidence_file=None, now=None):
             except (WorkflowError, ValueError, KeyError, TypeError):
                 matches.append(False)
         evidence["remote_files_match"] = False if False in matches else None if None in matches else True
-        bundle = inspect_bundle(remote_files, config)
+        bundle = inspect_bundle(remote_files, config, release)
+        if shared:
+            evidence['remote_files_match'] = bundle['integrity_verified']
         evidence["sync_bundle"] = bundle
         evidence["sync_bundle_verified"] = (bundle["integrity_verified"] and bundle["compatible"]
                                               if bundle["integrity_verified"] is not None else None)
@@ -267,7 +347,7 @@ def check(root, *, native_evidence_file=None, now=None):
     except (WorkflowError, ValueError, KeyError, TypeError) as error:
         failed(error, "connection")
     local_files = {name: (root / name).read_bytes() if (root / name).is_file() else None for name in expected}
-    local_bundle = inspect_bundle(local_files, config)
+    local_bundle = inspect_bundle(local_files, config, release if 'release' in locals() else None)
     local = local_bundle["integrity_verified"] is True and local_bundle["compatible"] is True
     result = assess(config, local_files=local, online=evidence)
     result["local_sync_bundle"] = local_bundle

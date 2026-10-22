@@ -64,6 +64,7 @@ const snapshot = path.join(root, 'source');
 for (const folder of ['skills', 'plugins', '.agents']) fs.cpSync(path.join(repo, folder), path.join(snapshot, folder),
   { recursive: true, filter: source => !source.split(path.sep).includes('__pycache__') && !source.endsWith('.pyc') });
 fs.copyFileSync(path.join(repo, 'LICENSE'), path.join(snapshot, 'LICENSE'));
+for (const name of ['VERSION', 'action.yml']) fs.copyFileSync(path.join(repo, name), path.join(snapshot, name));
 const cli = ['--yes', 'skills@1.7.4'];
 const args = ['add', pathToFileURL(snapshot).href, '--skill', ...names, '--agent', 'codex', '--global', '--yes'];
 try {
@@ -71,6 +72,7 @@ try {
   run('snapshot-git-add', 'git', ['-C', snapshot, 'add', '.'], global);
   run('snapshot-git-commit', 'git', ['-C', snapshot, '-c', 'user.name=Installation Test', '-c', 'user.email=test@example.invalid',
     'commit', '--no-gpg-sign', '-m', 'Isolated unpublished candidate'], global);
+  const selectedCommit = run('snapshot-original-commit', 'git', ['-C', snapshot, 'rev-parse', 'HEAD'], global).trim();
   const originalConfig = digest(path.join(global.state, 'config.toml'));
   run('skills-cli-version', 'npx', [...cli, '--version'], global);
   run('candidate-discovery', 'npx', [...cli, 'add', snapshot, '--list'], global);
@@ -96,6 +98,53 @@ try {
   run('changed-source-reinstall', 'npx', [...cli, ...args], global);
   assert.match(fs.readFileSync(path.join(global.home, '.agents/skills/plane-start/references/workflow.md'), 'utf8'),
     /Synthetic installation update marker/);
+  // Exercise actual GitHub tree/ref parsing with an unpublished local Git transport.
+  // Anonymous lookup of this synthetic repository fails; Git clones use only the fixture.
+  const fixed = profile('fixed-commit');
+  const fixtureRepository = `https://github.com/plane-devflow-fixture/${crypto.randomUUID()}.git`;
+  fixed.env.GIT_CONFIG_COUNT = '1';
+  fixed.env.GIT_CONFIG_KEY_0 = `url.${pathToFileURL(snapshot).href}.insteadOf`;
+  fixed.env.GIT_CONFIG_VALUE_0 = fixtureRepository;
+  run('fixed-commit-install', 'npx', [...cli, 'add', fixtureRepository.replace(/\.git$/, '') + `/tree/${selectedCommit}`,
+    '--skill', ...names, '--agent', 'codex', '--yes'], fixed);
+  for (const name of names) assert.deepEqual(inventory(path.join(fixed.project, '.agents/skills', name)), expected[name]);
+  assert.doesNotMatch(fs.readFileSync(path.join(fixed.project, '.agents/skills/plane-start/references/workflow.md'), 'utf8'),
+    /Synthetic installation update marker/);
+  const originalSource = path.join(root, 'selected-product-source');
+  run('fixed-product-worktree', 'git', ['-C', snapshot, 'worktree', 'add', '--detach', originalSource, selectedCommit], global);
+  const coordinator = String.raw`
+import json, pathlib, subprocess, sys
+sys.path.insert(0, sys.argv[1])
+import product_release, product_upgrade
+project, source = pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3])
+def git(*args):
+    return subprocess.run(['git', *args], cwd=project, check=True, capture_output=True, text=True).stdout.strip()
+git('init', '-b', 'main')
+git('remote', 'add', 'origin', 'https://github.com/example/demo-project.git')
+config = {'version':2, 'plane':{'api_url':'https://api.plane.so','app_url':'https://app.plane.so','workspace':'example-workspace','project_id':'11111111-1111-4111-8111-111111111111','project_identifier':'DEMO'}, 'github':{'repository':'example/demo-project','base_branch':'main','branch_prefix':'codex'}, 'states':{}, 'status_sync':{'enabled':False}, 'completion':{'policy':'manual','manual_label':'manual-acceptance'}, 'sync':{'provider':'native'}}
+(project/'.plane-devflow.json').write_text(json.dumps(config))
+git('add', '.')
+git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-m','Isolated mapping')
+git('update-ref','refs/remotes/origin/main','HEAD')
+commit = subprocess.run(['git','rev-parse','HEAD'],cwd=source,check=True,capture_output=True,text=True).stdout.strip()
+release = product_release.manifest(source, commit)
+product_upgrade.remote_default = lambda _: {'branch':'main','commit':git('rev-parse','refs/remotes/origin/main')}
+preview = product_upgrade.plan(project, release, scope=sys.argv[4])
+plan = product_upgrade.plan(project, release, scope=sys.argv[4], expected_plan_id=preview['plan_id'], apply=True)
+identifier = plan['plan_id']
+product_upgrade.stage(project, identifier, source=source, candidate_source=True, apply=True)
+product_upgrade.prepare_project(project, identifier, apply=True)
+result = product_upgrade.install_local(project, identifier, apply=True)
+assert result['local_installation'] == 'verified', result
+assert result['status'] == 'verification_pending', result
+assert result['validation_mode'] == 'candidate_fixture', result
+print(json.dumps(result))
+`;
+  for (const scope of ['project', 'global']) {
+    const target = profile(`coordinator-${scope}`);
+    run(`coordinator-${scope}`, process.env.PYTHON || 'python3', ['-c', coordinator,
+      path.join(repo, 'plugins/plane-devflow/scripts'), target.project, originalSource, scope], target);
+  }
   fs.writeFileSync(changedPath, originalReference);
   run('snapshot-restore-add', 'git', ['-C', snapshot, 'add', '.'], global);
   run('snapshot-restore-commit', 'git', ['-C', snapshot, '-c', 'user.name=Installation Test', '-c', 'user.email=test@example.invalid',
@@ -142,6 +191,8 @@ try {
   assert.deepEqual(profileMetadata(protectedFiles), before);
   const summary = { upstreamSkillsVersion: '1.7.4', candidateOnly: true, localGitSource: true, globalInstallation: true,
     projectSelectedInstallation: true, eachSkillAlone: true, repeat: true, changedGitSourceReinstall: true,
+    fixedCommitInstallation: true, fixedCommitTransport: 'synthetic GitHub URL rewritten to local fixture; not public-source tracking',
+    productCoordinatorInstallation: { project: true, global: true, candidateOnly: true, nativeProviderPreserved: true },
     upstreamAutomaticUpdateVerified: false, upstreamUpdateLimit: 'file source has no GitHub tracking; public candidate is unpublished',
     sourceAndCacheRemoval: true,
     nativeSkills: native, mcpDependencyParsed: true, skillsCliDoesNotRegisterMcp: true,

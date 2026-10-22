@@ -146,33 +146,33 @@ class ProviderTests(unittest.TestCase):
 class UpgradeTests(unittest.TestCase):
     setUp = setup_tests.RepositoryTests.setUp
     def test_reviewed_upgrade_backs_up_original_bytes_and_preserves_config(self):
-        setup.install(self.root, apply=True)
+        setup.legacy_install(self.root, apply=True)
         old = self.root / setup.BUNDLE / 'plane_sync.py'
         old.write_text('previous-reviewed-version')
         before = (self.root / sync.CONFIG_NAME).read_bytes()
-        plan = setup.install(self.root, upgrade=True)
+        plan = setup.legacy_install(self.root, upgrade=True)
         with self.assertRaises(sync.WorkflowError):
-            setup.install(self.root, apply=True, upgrade=True)
-        result = setup.install(self.root, apply=True, upgrade=True, expected_files_sha256=plan['expected_files_sha256'])
+            setup.legacy_install(self.root, apply=True, upgrade=True)
+        result = setup.legacy_install(self.root, apply=True, upgrade=True, expected_files_sha256=plan['expected_files_sha256'])
         self.assertEqual((Path(result['backup']) / setup.BUNDLE / 'plane_sync.py').read_text(), 'previous-reviewed-version')
         self.assertEqual((self.root / sync.CONFIG_NAME).read_bytes(), before)
         self.assertEqual(old.read_bytes(), setup.bundled_files()[setup.BUNDLE + '/plane_sync.py'])
 
     def test_upgrade_stale_manifest_cannot_overwrite(self):
-        setup.install(self.root, apply=True)
+        setup.legacy_install(self.root, apply=True)
         path = self.root / setup.BUNDLE / 'plane_sync.py'
         path.write_text('old')
-        plan = setup.install(self.root, upgrade=True)
+        plan = setup.legacy_install(self.root, upgrade=True)
         path.write_text('new-unrelated-change')
         with self.assertRaises(sync.WorkflowError):
-            setup.install(self.root, upgrade=True, apply=True, expected_files_sha256=plan['expected_files_sha256'])
+            setup.legacy_install(self.root, upgrade=True, apply=True, expected_files_sha256=plan['expected_files_sha256'])
         self.assertEqual(path.read_text(), 'new-unrelated-change')
 
     def test_native_install_skips_files_and_evidence_binds_exact_configuration(self):
         cfg = config()
         cfg['sync'] = {'provider':'native'}
         (self.root / sync.CONFIG_NAME).write_text(json.dumps(cfg))
-        self.assertEqual(setup.install(self.root, apply=True)['files'], [])
+        self.assertEqual(setup.legacy_install(self.root, apply=True)['files'], [])
         self.assertFalse((self.root / setup.WORKFLOW).exists())
         evidence = dict(config_sha256=setup.config_digest(cfg), workspace=cfg['plane']['workspace'], project_id=cfg['plane']['project_id'], repository=cfg['github']['repository'], repository_mapped=True, workflow_rules_verified=True, overlapping_actions_disabled=True, source='user_confirmation', observed_at=datetime.now(timezone.utc).isoformat())
         receipt = self.root / 'observation.json'

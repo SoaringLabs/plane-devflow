@@ -196,6 +196,10 @@ def validate_payload(plugin):
                 any(isinstance(t, ast.Name) and t.id == "VERSION" for t in n.targets) and
                 isinstance(n.value, ast.Constant)]
     require(versions == [manifest.get("version")], "Plugin/script version mismatch")
+    runtime = ast.parse((plugin / 'scripts/plane_sync.py').read_text())
+    require(any(isinstance(node, ast.ImportFrom) and node.module == 'plugin_version' and
+                any(alias.name == 'VERSION' for alias in node.names) for node in runtime.body),
+            'Sync runtime must use the unified product version')
     import runpy
     try:
         bundle = runpy.run_path(str(plugin / "scripts/sync_bundle.py"))
@@ -266,6 +270,11 @@ def validate(root=ROOT, *, payload_only=False):
     plugin = root if payload_only else root / "plugins/plane-devflow"
     result = validate_payload(plugin)
     if not payload_only:
+        from build_version import generate as version_metadata
+        try:
+            version_metadata(root, check=True)
+        except ValueError as error:
+            raise ValidationError(str(error)) from None
         marketplace = json.loads((root / ".agents/plugins/marketplace.json").read_text())
         entries = marketplace.get("plugins", [])
         require(len(entries) == 1 and entries[0]["name"] == "plane-devflow", "Unexpected marketplace inventory")
@@ -285,7 +294,7 @@ def validate(root=ROOT, *, payload_only=False):
         for path in readmes:
             text = path.read_text()
             steps = installation_steps(text)
-            require(steps == [["npx", "skills", "add", "SoaringLabs/plane-devflow", "--skill",
+            require(steps == [["npx", "skills", "add", "https://github.com/SoaringLabs/plane-devflow/tree/stable", "--skill",
                     "plane-setup", "plane-start", "plane-deliver"]],
                     f"{path.name}: README Skills CLI installer mismatch")
             for name in SKILLS:

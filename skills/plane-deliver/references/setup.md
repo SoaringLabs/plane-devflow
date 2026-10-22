@@ -61,7 +61,7 @@ python3 /absolute/plugin/scripts/plane_workflow.py check-github --repo /absolute
 python3 /absolute/plugin/scripts/plane_workflow.py setup-github --repo /absolute/application/repo
 ```
 
-The second command plans a repository-local workflow plus two bundled standard-library Python scripts. Repeat with `--apply` to prepare the files. No published plugin repository, extra service or invented Action SHA is required. Existing differing files require a reviewed upgrade:
+The second command resolves the installed product version’s formal release and plans one small workflow referencing its full Action commit. A reviewed `--release-file` can supply the same official manifest. Repeat with `--apply --expected-files-sha256 RETURNED_DIGEST` to prepare the files. Public Action access and a formal release are required; unpublished candidates use isolated fixtures. Existing differing files require the [product upgrade flow](product-upgrades.md):
 
 ```sh
 python3 /absolute/plugin/scripts/plane_workflow.py setup-github --repo /absolute/application/repo --upgrade
@@ -70,11 +70,11 @@ python3 /absolute/plugin/scripts/plane_workflow.py setup-github --repo /absolute
   --upgrade --apply --expected-files-sha256 HASH_FROM_PLAN
 ```
 
-Plugin and sync-bundle releases are independent. Inspect read-only `setup-progress` before planning an upgrade: supported older bundles can remain ready, and an optional update alone grants no changes. See [bundle maintenance](recovery.md#sync-bundle-maintenance).
+Skills, local tools and the public Action share one product release. Inspect read-only `setup-progress` before a scoped [product upgrade](product-upgrades.md). Recognized supported historical deployments can remain ready; an optional upgrade notice grants no changes.
 
 The plan binds every destination plus the current config. A stale hash fails before writes. Original differing bytes are backed up in Git metadata; the mapping and unrelated files are preserved. Plugin updates do not silently update business repositories.
 
-The workflow uses pinned `actions/checkout` to read only synchronization files from `github.sha`, the trusted default-branch commit for `pull_request_target`; it executes no PR head code or project build scripts. It handles PR opened/edited/updated/reopened/review-ready/draft/closed events and has a read-only `workflow_dispatch` connection check. Both config versions are supported: version 1 uses existing state targets and acceptance rules; version 2 records PR events without state transitions. Keep these capabilities separate in the report.
+The workflow calls the product Action at its full release commit and passes `github.sha` as the trusted default-branch configuration commit for `pull_request_target`; it executes no PR head code or project build scripts. The implementation lives in the Action payload, not copied business-repository scripts. It handles PR opened/edited/updated/reopened/review-ready/draft/closed events and has a read-only `workflow_dispatch` connection check. Both config versions are supported: version 1 uses existing state targets and acceptance rules; version 2 records PR events without state transitions. Keep these capabilities separate in the report.
 
 Inspect repository Actions permissions and applicable event policies. GitHub public repositories can block `pull_request_target` through event policy; explain the specific restriction if present rather than claiming a connection check proves event delivery. Leave unrelated security policies intact. See [GitHub event security and policies](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target).
 

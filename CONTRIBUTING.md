@@ -23,6 +23,7 @@ Use Node.js 22.20+ for Skills CLI checks (the compatibility installer still supp
 ```sh
 npm ci
 npm test
+python3 scripts/build_version.py --check
 python3 scripts/build_skills.py --check
 python3 -m venv .venv
 .venv/bin/python -m pip install -r requirements-dev.txt

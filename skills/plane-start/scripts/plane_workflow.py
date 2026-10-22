@@ -68,7 +68,7 @@ def repo_config(path):
 
 def doctor(path, *, offline=False):
     root = repo_root(path)
-    report = {"version": VERSION, "sync_bundle_version": SYNC_BUNDLE_VERSION, "repository_path": str(root),
+    report = {"version": VERSION, "repository_path": str(root),
               "python": sys.version.split()[0], "github_cli": bool(shutil.which("gh")),
               "codex_cli": bool(shutil.which("codex")),
               "branch": run(["git", "branch", "--show-current"], root).stdout.strip(),
@@ -856,6 +856,19 @@ def main(argv=None):
     p.add_argument("--workitem-file", help="Fresh normalized task snapshot read by the host's Plane MCP tools.")
     p = sub.add_parser("check-updates", help="Manually check the public stable plugin version; no installation or project access.")
     p.add_argument("--offline", action="store_true", help="Skip the upstream request and leave the latest version unknown.")
+    p = sub.add_parser('resolve-release', help='Read an official product release identity; never install or publish.')
+    p.add_argument('--target-version')
+    p = sub.add_parser('upgrade', help='Plan, stage and resume a scoped product upgrade; mutations require --apply.')
+    p.add_argument('--repo', default='.')
+    p.add_argument('--step', choices=['plan', 'stage', 'project', 'install', 'pr', 'verify', 'status', 'rollback', 'confirm-plugin'], default='plan')
+    p.add_argument('--release-file')
+    p.add_argument('--plan-id')
+    p.add_argument('--expected-plan-id')
+    p.add_argument('--scope', choices=['project', 'global'], default='project')
+    p.add_argument('--host', choices=['codex', 'claude-code', 'cursor', 'opencode'], default='codex')
+    p.add_argument('--channel', choices=['skills', 'plugin'], default='skills')
+    p.add_argument('--plugin-root')
+    p.add_argument('--apply', action='store_true')
     p = sub.add_parser("credential-guide", help="Guide local credential reuse, Plane PAT creation and GitHub storage.")
     p.add_argument("--repo", default=".")
     p.add_argument("--step", choices=["local", "plane", "github", "verify"], default="local")
@@ -905,11 +918,12 @@ def main(argv=None):
     choice.add_argument("--use-saved", action="store_true", help="Use this account's local credential after human target confirmation.")
     choice.add_argument("--remember", action="store_true", help="Opt in to saving hidden input in the system credential store.")
     p.add_argument("--replace", action="store_true", help="Intentionally replace existing remote/local credentials.")
-    p = sub.add_parser("setup-github", help="Prepare bundled PR synchronization and a read-only connection check.")
+    p = sub.add_parser("setup-github", help="Prepare a fixed product Action entrypoint and a read-only connection check.")
     p.add_argument("--repo", default=".")
     p.add_argument("--apply", action="store_true")
     p.add_argument("--upgrade", action="store_true")
     p.add_argument("--expected-files-sha256")
+    p.add_argument("--release-file", help="Reviewed official product release manifest.")
     p = sub.add_parser("check-github", help="Check remote setup readiness; Secret values are never read.")
     p.add_argument("--repo", default=".")
     p.add_argument("--native-evidence-file")
@@ -974,6 +988,28 @@ def main(argv=None):
         elif args.command == "check-updates":
             from plugin_updates import check_updates
             result = check_updates(offline=args.offline)
+        elif args.command == 'resolve-release':
+            from product_release import resolve
+            result = resolve(args.target_version)
+        elif args.command == 'upgrade':
+            import product_upgrade as upgrades
+            if args.step == 'plan':
+                require(args.release_file, 'Select and inspect a formal release manifest first.')
+                result = upgrades.plan(args.repo, json.loads(Path(args.release_file).read_text()), scope=args.scope,
+                                       host=args.host, channel=args.channel, plugin_root=args.plugin_root,
+                                       expected_plan_id=args.expected_plan_id, apply=args.apply)
+            else:
+                require(args.plan_id, 'Select the saved upgrade plan ID.')
+                if args.step == 'status':
+                    result = upgrades.status(args.repo, args.plan_id)
+                elif args.step == 'verify':
+                    require(args.apply, 'Explicit --apply is required to refresh upgrade evidence; no Plane writes occur.')
+                    result = upgrades.verify_project(args.repo, args.plan_id)
+                else:
+                    operation = {'stage': upgrades.stage, 'project': upgrades.prepare_project,
+                                 'install': upgrades.install_local, 'pr': upgrades.project_pr,
+                                 'rollback': upgrades.rollback, 'confirm-plugin': upgrades.confirm_plugin}[args.step]
+                    result = operation(args.repo, args.plan_id, apply=args.apply)
         elif args.command == "credential-guide":
             result = credential_guide(args.repo, step=args.step, account=args.account)
         elif args.command == "credential-store":
@@ -1001,7 +1037,8 @@ def main(argv=None):
             result = set_secret(args.repo, account=args.account, use_saved=args.use_saved, remember=args.remember, replace=args.replace)
         elif args.command == "setup-github":
             from github_setup import install
-            result = install(args.repo, apply=args.apply, upgrade=args.upgrade, expected_files_sha256=args.expected_files_sha256)
+            result = install(args.repo, release=json.loads(Path(args.release_file).read_text()) if args.release_file else None,
+                             apply=args.apply, upgrade=args.upgrade, expected_files_sha256=args.expected_files_sha256)
         elif args.command == "check-github":
             from github_setup import check
             if args.native_evidence_file:

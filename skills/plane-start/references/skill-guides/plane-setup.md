@@ -1,6 +1,6 @@
 ---
 name: plane-setup
-description: Guide a first project into Plane, associate or check its repository mapping, resume GitHub synchronization, or manage optional local runner credentials. Use for Plane onboarding/setup requests, not ordinary coding or task delivery.
+description: Guide a first project into Plane, associate or check its repository mapping, resume GitHub synchronization, upgrade Plane DevFlow, or manage optional local runner credentials. Use for Plane onboarding/setup and scoped product upgrades, not ordinary coding or task delivery.
 ---
 
 # Set up Plane
@@ -11,6 +11,7 @@ Selecting this skill alone starts setup. Use the configured Plane MCP for accoun
 
 | Request | Read and do |
 | --- | --- |
+| Upgrade Plane DevFlow, migrate its sync entrypoint, resume an upgrade or roll back | Follow [product upgrades](../product-upgrades.md); select one formal version and original installation scope, prepare a reviewed plan and preserve separate installation, PR, activation and verification results. |
 | New computer/project, install-to-account handoff, or no repository yet | Read [first-project onboarding](../first-project.md); inspect prerequisites, present the preparation plan, then continue within its authorized scope. |
 | Check existing configuration | Read [recovery](../recovery.md), run `doctor` and `setup-progress` without `--apply`, retrieve the configured project and report current readiness. Leave files, checkpoints and remote objects unchanged. |
 | New association or reconfiguration | Read [setup](../setup.md) for project selection, snapshots, replacement hashes/backups and synchronization ownership. |
