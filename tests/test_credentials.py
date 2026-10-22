@@ -103,6 +103,6 @@ class CredentialGuideTests(unittest.TestCase):
         self.assertEqual(result['credential_step'], 'local')
         unknown = github_setup.assess(fixtures.config())
         self.assertIsNone(unknown['credential_step'])
-        plan = github_setup.install(self.root)
+        plan = github_setup.install(self.root, release=__import__("test_product_upgrade").release_fixture())
         self.assertEqual(plan['credential_guide_command'][-2:], ['--step','local'])
         self.assertIn(str(self.root), plan['credential_guide_command'])

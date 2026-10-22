@@ -6,8 +6,10 @@ No prepared repository or account connections yet? Use the [first-project guide]
 
 ## Install with Skills CLI
 
+The 0.14.0 unified-release candidate is local and unpublished. The proposed `stable` distribution branch is activated only after a formal release; the command below is the intended stable entrypoint, not evidence that it is already available. Candidate checks install isolated local snapshots and do not change real user installations.
+
 ```sh
-npx skills add SoaringLabs/plane-devflow \
+npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
   --skill plane-setup plane-start plane-deliver
 ```
 
@@ -29,21 +31,45 @@ The Python/Git workflow keeps the same `.plane-devflow.json`, task receipts, bra
 
 ## Update or remove standalone skills
 
-Rerun the installation command to refresh the selected skills from their source. For installations with GitHub tracking metadata, explicitly update the selected skills with:
+### Upgrade the complete product
+
+Ask `plane-setup` to upgrade the current project to a selected formal Plane DevFlow release. It presents the changelog and a plan, verifies one fixed source commit, prepares an isolated project upgrade PR and refreshes the original installation. PR merge, activation, fresh connection evidence and actual event writeback remain separate results. Multi-project upgrades use an explicit list.
+
+See the [operator workflow](../plugins/plane-devflow/references/product-upgrades.md) for the implemented `resolve-release` and `upgrade` helper stages. The first unified release must exist with its manifest before public-source setup/upgrades can succeed. Earlier installed versions do not contain these helpers: bootstrap the verified target helper from its formal source outside the active installation before changing it, then follow the same scoped plan. No npm publication is required.
+
+### Refresh the complete skill collection only
+
+Rerun the installation command from the repository where you installed Plane DevFlow and select the same agent:
+
+```sh
+npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable --skill '*'
+```
+
+This refreshes all skills provided by the repository and includes any newly added skills. For a global installation, add `--global`. Reopen the agent session after updating.
+
+### Update only installed skills
+
+To keep your current skill selection, update only the installed Plane DevFlow skills with GitHub tracking metadata:
 
 ```sh
 npx skills update plane-setup plane-start plane-deliver --project
 ```
 
+Only matching installed skills are updated; newly added skills are not installed. For a global installation, replace `--project` with `--global`.
+
 Local directories and file-based test sources may not create GitHub update-tracking records; a zero exit code with no tracked skills is not a successful update check. Reinstall from that source to refresh it. Public GitHub update tracking for an unpublished candidate must be verified after an authorized publication.
 
-Run these commands from the repository where the skills were installed. Reopen the agent session after updates. Remove project entries with:
+Run the update command from the repository where the skills were installed and reopen the agent session afterward.
+
+### Remove skills
+
+Remove project entries from the same repository with:
 
 ```sh
 npx skills remove plane-setup plane-start plane-deliver
 ```
 
-For an existing global installation, use `--global` instead of `--project` when updating, and add `--global` when removing. Changing the recommended command does not migrate or remove existing global installations. Removing skills preserves MCP connections and credentials, business `.plane-devflow.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
+For a global installation, add `--global` when removing. Changing the recommended command does not migrate or remove existing global installations. Removing skills preserves MCP connections and credentials, business `.plane-devflow.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
 
 ## Install the Codex plugin locally
 
@@ -83,9 +109,9 @@ See [Skills CLI commands](https://github.com/vercel-labs/skills/blob/main/docs/c
 
 ## Plugin and GitHub sync updates
 
-The plugin/skill release and copied GitHub synchronization bundle have independent versions. Routine `plane-start` preparation uses `doctor` and read-only `setup-progress` to check the project's sync bundle and current connection. It does not query the plugin's latest release. Skill/plugin updates belong to the user's installation tool or host marketplace and its update settings.
+Skills, local helpers and the public Action share one product release. A business repository keeps its mapping and a small workflow referencing that release's full commit; common Python scripts are no longer copied by new setup. Formal release identity and complete template verification replace exact equality with a current copied bundle. Historical known copied layouts remain recognized without automatic changes; customized files require review.
 
-Sync compatibility uses the installed plugin's reviewed catalog. Compatible older bundles remain ready with optional maintenance notices; unknown/customized files stay preserved for review. A newer plugin version alone does not prove that a business repository needs a script update. An authorized plugin/skill update refreshes the trusted catalog; an actual sync-bundle upgrade remains a separately reviewed project change. Current 0.10.1 business bundles require no migration.
+Ordinary task preparation still checks synchronization readiness, without querying the latest product release or installing anything. A direct file refresh changes the local installation only; the unified upgrade flow handles the project's fixed reference and reports pending PR/activation/verification separately. Native provider projects retain official integration ownership.
 
 ### Manual plugin version check
 

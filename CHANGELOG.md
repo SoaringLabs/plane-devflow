@@ -2,6 +2,14 @@
 
 Implemented changes by plugin version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## Unreleased — 0.14.0 candidate
+
+- Use one product version for skills, local tools and the public synchronization Action, with committed-source release manifests and an explicit stable distribution channel.
+- Generate a small project workflow pinned to the product Action instead of copying Python synchronization scripts. Preserve recognized legacy deployments and customized files for explicit migration.
+- Add a scoped, resumable upgrade flow for release selection, source verification, isolated project diffs/PRs, installation refresh, activation checks and reverse rollback diffs.
+- Keep native integration ownership, existing configuration formats, task bindings and state policies. This candidate does not migrate business repositories, publish a Release/tag/npm package or activate the stable branch.
+
+
 ## 0.13.0 — 2026-10-22
 
 - Expire synchronization connection evidence after 24 hours and share a daily metadata-probe cache across worktrees. Successful and failed routine probes both enter cooldown; local doctor checks remain offline, and expiry does not dispatch a connection workflow or stop independent development. Explicit refresh remains available.

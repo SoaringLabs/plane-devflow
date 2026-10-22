@@ -133,7 +133,7 @@ class PackageValidationTests(unittest.TestCase):
         marketplace.write_text(json.dumps(data))
         self.rejects("Marketplace")
 
-    def test_plugin_release_can_advance_without_touching_sync_bundle(self):
+    def test_product_version_change_flows_to_public_runtime(self):
         runtime = self.plugin / "scripts/plane_sync.py"
         before = runtime.read_bytes()
         manifest = self.plugin / "plugin.json"
@@ -149,24 +149,22 @@ class PackageValidationTests(unittest.TestCase):
         self.assertEqual(result.stdout.strip(), next_version)
         self.assertEqual(runtime.read_bytes(), before)
 
-    def test_runtime_or_generated_workflow_drift_requires_bundle_release(self):
-        for name, old, new in (("plane_sync.py", 'VERSION = "0.10.1"', 'VERSION = "0.10.2"'),
-                               ("sync_bundle.py", "timeout-minutes: 5", "timeout-minutes: 6"),
-                               ("action_runner.py", 'def fetch_config(', '# runtime change\ndef fetch_config(')):
-            with self.subTest(name=name):
-                path = self.plugin / "scripts" / name
-                original = path.read_bytes()
-                self.replace(path, old, new)
-                with self.assertRaisesRegex(package.ValidationError, "sync bundle changed"):
-                    package.validate_payload(self.plugin)
-                path.write_bytes(original)
+    def test_runtime_uses_the_product_version_and_root_version_is_checked(self):
+        runtime = self.plugin / 'scripts/plane_sync.py'
+        self.replace(runtime, 'from plugin_version import VERSION', 'VERSION = "0.10.1"')
+        with self.assertRaisesRegex(package.ValidationError, 'unified product version'):
+            package.validate_payload(self.plugin)
+
+    def test_root_version_cannot_drift_from_generated_metadata(self):
+        (self.root / 'VERSION').write_text('99.0.0\n')
+        self.rejects('Version metadata drift')
 
     def test_readme_install_identity_is_checked(self):
-        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add another/repository")
+        self.replace(self.root / "README.md", "npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable", "npx skills add another/repository")
         self.rejects("Skills CLI installer mismatch")
 
     def test_localized_readme_installation_is_checked(self):
-        self.replace(self.root / "README.zh-CN.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add another/repository")
+        self.replace(self.root / "README.zh-CN.md", "npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable", "npx skills add another/repository")
         self.rejects("Skills CLI installer mismatch")
 
     def test_html_images_and_navigation_are_checked(self):
@@ -179,7 +177,7 @@ class PackageValidationTests(unittest.TestCase):
         self.rejects("missing anchor")
 
     def test_installation_does_not_continue_after_registration_failure(self):
-        self.replace(self.root / "README.md", "npx skills add SoaringLabs/plane-devflow", "npx skills add SoaringLabs/plane-devflow ; echo success")
+        self.replace(self.root / "README.md", "npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable", "npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable ; echo success")
         self.rejects("stop if a step fails")
 
     def test_cli_failure_is_nonzero_even_with_python_optimization(self):

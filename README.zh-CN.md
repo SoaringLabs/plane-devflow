@@ -34,10 +34,12 @@
 
 ### 安装
 
+统一版本的 0.14.0 候选尚未发布；以下稳定渠道命令在正式发布并激活渠道后可用。本地候选验证见[安装说明](docs/installation.md)。
+
 在目标代码仓库根目录执行，并选择你的 agent：
 
 ```sh
-npx skills add SoaringLabs/plane-devflow \
+npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
   --skill plane-setup plane-start plane-deliver
 ```
 
@@ -92,17 +94,27 @@ Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:pla
 
 ## 更新与移除
 
-从 **Plane for Codex** 升级？请先查看 [0.10.0 升级边界](docs/installation.md#upgrade-from-the-previous-name)：配置路径与运行标识已变更，业务记录不会自动迁移。
+### 更新
 
-插件与 GitHub 同步包独立管理版本。日常任务检查会依据已安装插件附带的审核清单，核对项目同步包的兼容性，不查询插件自身新版。仅更新技能无需给项目提交同步脚本升级 PR。技能更新由用户通过所选安装渠道发起；也可按需使用[手动版本检查](docs/installation.md#manual-plugin-version-check)，只查看稳定版本，不自动安装。
+对 agent 说：**“使用 plane-setup 升级当前仓库的 Plane DevFlow，先展示目标版本、changelog 和改动计划。”** 技能与公共 GitHub Action 使用同一个产品版本；升级流程沿用原安装渠道，协调本地刷新、项目升级 PR、激活和验证。
 
-再次执行安装命令即可刷新这三个技能。GitHub 来源有完整追踪记录时，也可主动更新所选项目技能：
+仅刷新技能文件时，重新执行安装命令：
 
 ```sh
-npx skills update plane-setup plane-start plane-deliver --project
+npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable --skill '*'
 ```
 
-在同一仓库执行 `npx skills remove plane-setup plane-start plane-deliver` 并选择目标宿主，即可移除项目技能。已有全局安装在更新时将 `--project` 换成 `--global`，移除时添加 `--global`。更新后新开聊天。移除技能会保留 MCP 连接、账号授权、业务映射、已复制的同步文件和任务工作区。本地插件安装及移除见 [安装说明](docs/installation.md)。
+原来是全局安装则添加 `--global`，刷新后新开 agent 会话。仅刷新文件不会更新项目的 Action 引用。只更新已安装技能、插件交接、恢复和回滚见[安装说明](docs/installation.md#update-or-remove-standalone-skills)。
+
+### 移除
+
+在原安装仓库中执行，并选择目标 agent：
+
+```sh
+npx skills remove plane-setup plane-start plane-deliver
+```
+
+全局安装添加 `--global`。移除技能会保留 MCP 连接、账号授权、项目映射、已复制的同步文件和任务工作区。Codex 插件的移除方式见[安装说明](docs/installation.md#install-the-codex-plugin-locally)。
 
 ## 文档
 

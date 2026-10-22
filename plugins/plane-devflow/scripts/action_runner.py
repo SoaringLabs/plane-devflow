@@ -87,9 +87,13 @@ def main():
     try:
         kind = os.getenv("GITHUB_EVENT_NAME")
         require(kind in {"pull_request_target", "workflow_dispatch"}, "Run on pull_request_target or workflow_dispatch.")
+        trusted = os.getenv("PLANE_CONFIG_SHA", "")
+        require(re.fullmatch(r"[0-9a-fA-F]{40}", trusted) and trusted == os.getenv("GITHUB_SHA"),
+                "The public Action requires the trusted event github.sha.")
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
         handler = check_connection if kind == "workflow_dispatch" else run_action
         result = handler(event, os.environ["GITHUB_REPOSITORY"], os.getenv("GITHUB_TOKEN"), os.getenv("PLANE_API_KEY"))
+        result["product_version"] = VERSION
         print(json.dumps(result, indent=2))
         return 0
     except (WorkflowError, OSError, ValueError, KeyError, TypeError) as error:

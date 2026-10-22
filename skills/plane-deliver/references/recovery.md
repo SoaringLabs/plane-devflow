@@ -49,7 +49,9 @@ A newer plugin notice does not establish which sync bundle it contains or whethe
 
 Starting or resuming implementation uses `setup-progress --cache`; inspect `sync_bundle` and `maintenance_notice` there. Initial setup is not required for routine update detection. Pure discussion needs no account probes. `doctor` reports the plugin version, the packaged sync version and local bundle identity; only online progress establishes current Actions readiness.
 
-Plugin and sync-bundle versions are independent. The installed plugin ships a trusted catalog of full SHA-256 fingerprints for the workflow and both runtime scripts, supported config schemas and PR binding protocol. Detection uses this installed catalog, not a network query for the latest upstream release; upgrading the plugin refreshes its knowledge. A project-provided version string alone is never proof. `remote_files_match` still means exact equality with the currently packaged bundle; `sync_bundle_verified` establishes recognized bytes and compatibility and is the readiness gate.
+One product version covers the local skills/helpers and public Action. For a shared Action deployment, verify the generated workflow against its full formal release commit and supported configuration/binding formats. Explicit online readiness may resolve that deployed version’s manifest; it never queries the latest release. For historical copied layouts, the installed catalog still recognizes full workflow/script fingerprints. A version comment alone is never proof. `sync_bundle_verified` remains the compatibility readiness gate; `remote_files_match` describes exact historical bytes or a verified shared Action entrypoint according to layout.
+
+Use [product upgrades](product-upgrades.md) for a selected-version upgrade, migration or rollback. Ordinary task preparation reports notices without changing installations or project files.
 
 - `current`: continue when the other provider checks pass.
 - `update_available`: the old bundle is supported. Continue the user's task and mention the optional update briefly; `next_step` remains connection verification rather than an upgrade.

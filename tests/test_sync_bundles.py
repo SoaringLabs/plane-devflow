@@ -86,7 +86,7 @@ class DailyBundleTests(unittest.TestCase):
     remote_check = fixtures.RepositoryTests.remote_check
 
     def daily(self, files):
-        github_setup.install(self.root, apply=True)
+        github_setup.legacy_install(self.root, apply=True)
         for name, data in files.items():
             (self.root / name).write_bytes(data)
         task = self.root / '.git/plane-devflow/tasks/in-flight.json'

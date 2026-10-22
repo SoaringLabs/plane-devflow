@@ -93,7 +93,7 @@ def expected_files(root, name):
     files["LICENSE"] = (root / "LICENSE").read_bytes()
     files["distribution.json"] = (json.dumps({"generator": OWNER, "skill": name,
         "version": json.loads((plugin / "plugin.json").read_text())["version"],
-        "sync_bundle_version": runpy.run_path(str(plugin / "scripts/sync_bundle.py"))["CURRENT_VERSION"], "hosts": list(HOSTS)}, indent=2) + "\n").encode()
+        "hosts": list(HOSTS)}, indent=2) + "\n").encode()
     return files
 
 

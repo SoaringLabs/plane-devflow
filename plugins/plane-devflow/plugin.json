@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "plane-devflow",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Develop independent Plane tasks across chats using isolated main-based worktrees, resolve base conflicts, and deliver linked pull requests in Codex.",
   "extensions": {
     "com.openai": {
