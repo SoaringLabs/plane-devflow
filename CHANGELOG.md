@@ -2,7 +2,7 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
-## 0.14.1 — Unreleased
+## 0.14.1 — 2026-10-23
 
 - Reuse the existing GitHub CLI login for product Release metadata, with anonymous public reads only when the CLI is unavailable or unconfigured. Keep public manifest downloads unauthenticated and retain tag, commit, source and payload validation.
 - Share validated pinned-version release identities across local repositories for up to one hour, and remove redundant asset metadata and workflow reads. Explicit release selection and final upgrade verification always refresh the remote identity; cached success cannot mask a failed refresh.
