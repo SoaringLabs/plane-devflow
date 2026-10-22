@@ -6,7 +6,7 @@ No prepared repository or account connections yet? Use the [first-project guide]
 
 ## Install with Skills CLI
 
-The 0.14.0 unified-release candidate is local and unpublished. The proposed `stable` distribution branch is activated only after a formal release; the command below is the intended stable entrypoint, not evidence that it is already available. Candidate checks install isolated local snapshots and do not change real user installations.
+Stable installation requires a formal product release with its manifest and an activated `stable` branch pointing to that release. Until both are available, use the [candidate validation procedure](#validation-scope). Candidate checks install isolated local snapshots and do not change real user installations.
 
 ```sh
 npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \

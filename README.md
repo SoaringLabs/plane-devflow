@@ -34,7 +34,7 @@ New setups record PR activity **without automatically changing task states**. Se
 
 ### Install
 
-The unified 0.14.0 candidate is not published yet; the stable-channel command below becomes available after its formal release and channel activation. Local candidate testing is covered in the [installation guide](docs/installation.md).
+The stable-channel command below requires a published product release and an activated `stable` branch. Until both are available, use the candidate-testing instructions in the [installation guide](docs/installation.md).
 
 Run from your target repository’s root and choose your agent:
 
