@@ -3,8 +3,12 @@ import hashlib
 import json
 import re
 import subprocess
+import time
 from pathlib import Path, PurePosixPath
 from urllib.request import Request, build_opener
+
+from release_transport import fetch_json
+import release_cache
 
 from plugin_version import VERSION
 
@@ -90,15 +94,6 @@ def verify_source(root, release, *, allow_candidate=False):
     return release
 
 
-def fetch_json(url):
-    from plugin_updates import NoRedirect
-    request = Request(url, headers={'Accept': 'application/vnd.github+json', 'User-Agent': 'plane-devflow-release'})
-    with build_opener(NoRedirect()).open(request, timeout=3) as response:
-        content = response.read(4 * 1024 * 1024 + 1)
-    require(len(content) <= 4 * 1024 * 1024, 'Release metadata too large.')
-    return json.loads(content)
-
-
 def fetch_asset(url):
     from urllib.parse import urlsplit
     from urllib.request import HTTPRedirectHandler
@@ -117,10 +112,14 @@ def fetch_asset(url):
     return json.loads(content)
 
 
-def resolve(version=None):
-    """Explicit read of an official release. No installation, caching or fallback to main."""
+def resolve(version=None, *, refresh=False, observation=None):
+    """Resolve an official release; explicit selection/acceptance bypasses identity cache."""
     if version is not None:
         require(SEMVER.fullmatch(version), 'Expected a stable product version.')
+        if not refresh:
+            cached = release_cache.load_identity(version, observation=observation)
+            if cached is not None:
+                return cached
     endpoint = 'latest' if version is None else 'tags/v' + version
     data = fetch_json(f'https://api.github.com/repos/{REPOSITORY}/releases/{endpoint}')
     require(data.get('draft') is False and data.get('prerelease') is False, 'Expected a published stable release.')
@@ -135,19 +134,17 @@ def resolve(version=None):
         require(ref.get('type') == 'tag' and SHA.fullmatch(ref.get('sha', '')), 'Invalid release tag object.')
         ref = fetch_json(f'https://api.github.com/repos/{REPOSITORY}/git/tags/{ref["sha"]}')['object']
     require(ref.get('type') == 'commit' and SHA.fullmatch(ref.get('sha', '')), 'Cannot resolve release commit.')
-    # Read the manifest asset through its canonical API endpoint; reject redirects.
+    # Release metadata already contains the asset identity and download source.
     assets = [asset for asset in data.get('assets', []) if asset.get('name') == 'plane-devflow-release.json']
     require(len(assets) == 1, 'Release has no unique product manifest; legacy release needs an explicit migration path.')
     asset_id = assets[0].get('id')
     require(type(asset_id) is int and asset_id > 0, 'Invalid manifest asset.')
-    from plugin_updates import NoRedirect
-    url = f'https://api.github.com/repos/{REPOSITORY}/releases/assets/{asset_id}'
-    # GitHub's JSON asset metadata is not its contents. Download URL is canonical,
-    # but may redirect to GitHub's asset CDN; accept only that unauthenticated source.
-    asset = fetch_json(url)
-    download = asset.get('browser_download_url')
+    download = assets[0].get('browser_download_url')
     expected = f'https://github.com/{REPOSITORY}/releases/download/{tag}/plane-devflow-release.json'
     require(download == expected, 'Unexpected manifest download source.')
     release = validate_manifest(fetch_asset(download))
     require(release['tag'] == tag and release['commit'] == ref['sha'], 'Manifest/tag identity mismatch.')
+    release_cache.save_identity(release, asset_id)
+    if observation is not None:
+        observation.update(source='github_release', observed_at=time.time())
     return release

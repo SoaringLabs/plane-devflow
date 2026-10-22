@@ -992,7 +992,7 @@ def main(argv=None):
             result = check_updates(offline=args.offline)
         elif args.command == 'resolve-release':
             from product_release import resolve
-            result = resolve(args.target_version)
+            result = resolve(args.target_version, refresh=True)
         elif args.command == 'upgrade':
             import product_upgrade as upgrades
             require(not args.source or (args.step == 'stage' and args.candidate_source),
@@ -1072,6 +1072,9 @@ def main(argv=None):
             return 0 if result["status"] in {"planned", "verified", "already_completed"} else 2
         return 2 if args.command in {"check-task", "finish-task", "task-context", "write-context", "sync-task"} and result.get("ready") is False else 0
     except (WorkflowError, OSError, ValueError, TypeError) as error:
+        from setup_errors import ProbeError
+        if isinstance(error, ProbeError):
+            print(json.dumps({'status': 'unverified', 'issue': error.issue}, ensure_ascii=False, indent=2))
         print(f"plane-devflow: {error}", file=sys.stderr)
         return 1
 

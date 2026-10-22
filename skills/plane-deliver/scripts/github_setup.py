@@ -255,7 +255,7 @@ def _github_timestamp(value):
     return timestamp
 
 
-def check(root, *, native_evidence_file=None, now=None):
+def check(root, *, native_evidence_file=None, now=None, release_refresh=False):
     from plane_workflow import repo_config, run
     root, config = repo_config(root)
     now = now or datetime.now(timezone.utc)
@@ -309,14 +309,18 @@ def check(root, *, native_evidence_file=None, now=None):
         shared = identity(remote_files[WORKFLOW])
         release = None
         if shared is not None:
+            release_observation = {}
             try:
-                release = resolve(shared['version'])
-            except (OSError, ValueError, KeyError, TypeError) as error:
+                release = resolve(shared['version'], refresh=release_refresh, observation=release_observation)
+            except (ProbeError, OSError, ValueError, KeyError, TypeError) as error:
                 failed(error, 'product_release')
+            evidence['product_release'] = {'version': shared['version'], 'verified': release is not None,
+                                           'fresh_read_required': release_refresh, **release_observation}
         selected = {WORKFLOW: remote_files[WORKFLOW]} if shared else expected
         for name, data in selected.items():
             try:
-                remote_files[name] = content(name)
+                if name not in remote_files:
+                    remote_files[name] = content(name)
                 matches.append(hashlib.sha256(remote_files[name]).digest() == hashlib.sha256(data).digest())
             except ProbeError as error:
                 failed(error, "remote_files")

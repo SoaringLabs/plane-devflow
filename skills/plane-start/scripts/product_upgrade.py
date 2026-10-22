@@ -574,7 +574,7 @@ def verify_project(root, plan_id):
     root, record = read(root, plan_id)
     require(remote_default(root)['branch'] == record['plan']['base'], 'Remote default branch changed; refresh the upgrade plan.')
     run(['git', 'fetch', '--', 'origin', record['plan']['base']], root)
-    result = check(root)
+    result = check(root, release_refresh=True)
     native = sync_provider(json.loads((root / CONFIG_NAME).read_text())) == 'native'
     bundle = result.get('sync_bundle', {})
     target = record['plan']['target']
@@ -594,6 +594,12 @@ def verify_project(root, plan_id):
         save(root, plan_id, record)
     output = status(root, plan_id)
     output['verification_report'] = result
+    output['verification_steps'] = {
+        'local_installation': output['local_installation'],
+        'project_activated': output['project_activated'],
+        'release_identity_verified': identity_verified,
+        'connection_verified': result['checks'].get('native_mapping_verified' if native else 'connection_verified'),
+        'overall_verified': verified}
     return output
 
 
