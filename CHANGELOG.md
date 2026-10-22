@@ -2,7 +2,7 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
-## Unreleased — 0.14.0
+## 0.14.0 — 2026-10-22
 
 - Use one product version for the three skills, plugin, local helpers and public GitHub synchronization Action. Configuration schemas and PR binding protocols retain their own format numbers; historical copied bundles remain recognized for compatibility.
 - Replace copied synchronization scripts in new Actions setups with a small workflow pinned to the product's full release commit. Project mapping and the Plane runner Secret remain in the consuming repository; existing native integrations keep ownership of PR events.
