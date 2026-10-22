@@ -1,14 +1,19 @@
 # Changelog
 
-Implemented changes by plugin version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
+Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
-## Unreleased — 0.14.0 candidate
+## Unreleased — 0.14.0
 
-- Use one product version for skills, local tools and the public synchronization Action, with committed-source release manifests and an explicit stable distribution channel.
-- Generate a small project workflow pinned to the product Action instead of copying Python synchronization scripts. Preserve recognized legacy deployments and customized files for explicit migration.
-- Add a scoped, resumable upgrade flow for release selection, source verification, isolated project diffs/PRs, installation refresh, activation checks and reverse rollback diffs.
-- Keep native integration ownership, existing configuration formats, task bindings and state policies. This candidate does not migrate business repositories, publish a Release/tag/npm package or activate the stable branch.
+- Use one product version for the three skills, plugin, local helpers and public GitHub synchronization Action. Configuration schemas and PR binding protocols retain their own format numbers; historical copied bundles remain recognized for compatibility.
+- Replace copied synchronization scripts in new Actions setups with a small workflow pinned to the product's full release commit. Project mapping and the Plane runner Secret remain in the consuming repository; existing native integrations keep ownership of PR events.
+- Add one resumable upgrade flow that selects a published version, verifies its manifest and source, prepares an isolated project PR, refreshes the original local installation, and checks remote activation and connection evidence separately. Repeated PR creation reconciles the existing PR.
+- Bind release manifests to committed files and the actual tag target. Use an explicitly promoted `stable` branch for Skills CLI distribution. Re-running the installation command refreshes the complete skill set; refreshing skill files alone does not update a project's Action pin.
+- Protect customized skills, unrelated lockfile entries, installation scope and repository mappings. Refuse legacy script removal when other callers are detected; preserve unknown files and recover interrupted staging, backup and worktree preparation.
+- Prepare rollback as a scoped reverse project diff, preserving later edits. Plugin refresh retains an original-channel handoff and verifies the active installation before reporting success.
+- Preserve mapping schemas 1/2, PR binding protocol 1, manual acceptance and existing state policies. New basic mappings continue to record PR activity without changing task states. Existing projects require a separately reviewed upgrade; installation or publication does not migrate them automatically.
+- Verify the public Action against real GitHub and Plane in an isolated private test project, including lifecycle updates, idempotent retries, stale-event readback and trusted configuration. Formal release-asset resolution and stable-channel installation remain pending publication.
 
+See [candidate validation](docs/validation-0.14.0.md), [review and recovery fixes](docs/review-0.14.0.md), and [release preparation](docs/release-readiness-0.14.0.md) for evidence and remaining publication checks.
 
 ## 0.13.0 — 2026-10-22
 

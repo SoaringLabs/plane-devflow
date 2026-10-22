@@ -2,7 +2,7 @@
 
 Public source: [SoaringLabs/plane-devflow](https://github.com/SoaringLabs/plane-devflow). Plane DevFlow is a community project distributed under the MIT License; GitHub publication does not imply inclusion in the official Codex catalog.
 
-This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. The current development candidate is product version 0.14.0. Skills, plugin/local helpers and the public Action share that version; historical copied bundles are recognized only for compatibility and migration. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Historical pinned Actions may have older configuration contracts: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
+This repository is a generic plugin; no real user/project mapping or credential belongs in it. Example UUIDs are synthetic fixtures. The source tree uses product version 0.14.0; release availability must be verified from the published tag, manifest and distribution channel. Skills, plugin/local helpers and the public Action share that version; historical copied bundles are recognized only for compatibility and migration. Both legacy config version 1 and basic config version 2 are supported; PR binding protocol remains version 1. Historical pinned Actions may have older configuration contracts: resolve existing event workflows before changing the mapping. Full setup requires verified native or Actions synchronization; native requires observed mapping/rules and no runner Secret, Actions requires trusted remote files and runner verification; deferred credentials/workflow activation remain partial setup.
 
 ## Release language
 
@@ -56,6 +56,8 @@ The root `action.yml` describes the composite Action, so GitHub may show a banne
 Consider a listing if the composite Action is promoted as a standalone reusable component with its own usage documentation and versioned releases. GitHub documents publication through a tagged release and the "Publish this Action to the GitHub Marketplace" option; the banner alone does not publish anything. See [Publishing actions in GitHub Marketplace](https://docs.github.com/en/actions/how-tos/create-and-publish-actions/publish-in-github-marketplace).
 
 ## Verification scope
+
+The [0.14.0 release preparation](docs/release-readiness-0.14.0.md) joins the implementation/review evidence, later remote CI and private live validation, and the remaining publication sequence. The [English release notes](docs/release-notes-0.14.0.md) remain a local draft until publication is authorized.
 
 The [0.14.0 candidate validation](docs/validation-0.14.0.md) records the unified release/Action/upgrade implementation, fixed-commit installation and explicit unpublished/unmigrated limits. It is not a released version record.
 
