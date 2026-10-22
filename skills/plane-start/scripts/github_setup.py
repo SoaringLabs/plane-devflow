@@ -66,7 +66,34 @@ def legacy_install(root, *, apply=False, upgrade=False, expected_files_sha256=No
     return result
 
 
-def install(root, *, release=None, apply=False, upgrade=False, expected_files_sha256=None):
+def review_sync_callers(root, owned_paths, old_scripts):
+    """Preserve extra listeners and callers before changing the canonical entrypoint."""
+    from plane_workflow import run
+    from product_release import SKILLS
+    names = run(['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'], root).stdout.split('\0')
+    code_suffixes = {'.py', '.sh', '.bash', '.zsh', '.js', '.cjs', '.mjs', '.ts', '.json', '.yaml', '.yml', '.toml'}
+    for name in sorted(set(names) - set(owned_paths) - {CONFIG_NAME, ''}):
+        # Installed product helpers describe legacy paths; they are not extra CI callers.
+        if any(name.startswith(folder + '/' + skill + '/') for folder in
+               ('.agents/skills', '.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for skill in SKILLS):
+            continue
+        path = root / name
+        is_workflow = name.startswith('.github/workflows/') and path.suffix.lower() in ('.yaml', '.yml')
+        if not is_workflow and path.suffix.lower() not in code_suffixes and path.name not in {'Makefile', 'Justfile', 'Dockerfile'}:
+            continue
+        require(not path.is_symlink(), 'Additional workflow or executable configuration uses a symlink; review sync callers before migration.')
+        if not path.is_file():
+            continue
+        text = path.read_text(errors='replace')
+        listener = is_workflow and re.search(r'uses\s*:\s*[\'\"]?(?:SoaringLabs/plane-devflow|SoaringLabs/plane-for-codex)(?:/[^@\s]+)?@', text, re.I)
+        # A directory reference also catches commands that cd before invoking Python.
+        caller = (bool(old_scripts) and any(script in text or str(Path(script).parent) in text for script in old_scripts)) or (
+            is_workflow and any(directory in text for directory in ('.github/plane-devflow', '.github/plane-for-codex')))
+        require(not listener and not caller,
+                f'Additional sync listener or legacy script caller requires a separate reviewed migration: {name}')
+
+
+def install(root, *, release=None, apply=False, upgrade=False, expected_files_sha256=None, candidate_source=False):
     from plane_workflow import configuration_lock, repo_config, snapshot, atomic_write
     from product_release import validate_manifest, resolve
     from shared_sync import workflow
@@ -74,7 +101,7 @@ def install(root, *, release=None, apply=False, upgrade=False, expected_files_sh
     if sync_provider(config) == 'native':
         return {'status': 'skipped', 'provider': 'native', 'files': [], 'changes': {}, 'initialization': 'partial'}
     from plugin_version import VERSION
-    release = validate_manifest(release if release is not None else resolve(VERSION))
+    release = validate_manifest(release if release is not None else resolve(VERSION), allow_candidate=candidate_source)
     paths = [WORKFLOW, *[name for name in bundled_files() if name != WORKFLOW]]
     for name in [CONFIG_NAME, *paths]:
         path = root / name
@@ -87,6 +114,7 @@ def install(root, *, release=None, apply=False, upgrade=False, expected_files_sh
     if old_scripts:
         legacy = inspect_bundle(original, config)
         require(legacy['integrity_verified'] is True, 'Customized or incomplete legacy sync files require a separate reviewed migration.')
+    review_sync_callers(root, paths, old_scripts)
     after = workflow(release['commit'], release['version']).encode()
     if original[WORKFLOW] is not None and original[WORKFLOW] != after and not old_scripts:
         from shared_sync import identity
@@ -110,6 +138,7 @@ def install(root, *, release=None, apply=False, upgrade=False, expected_files_sh
                                           'credential-guide', '--repo', str(root), '--step', 'local']
     if apply:
         with configuration_lock(root) as metadata:
+            review_sync_callers(root, paths, old_scripts)
             for name, expected in before.items():
                 require(snapshot(root / name)[1] == expected, 'Sync files changed before application.')
             backup = metadata / 'sync-backups' / (digest + '-' + uuid.uuid4().hex)

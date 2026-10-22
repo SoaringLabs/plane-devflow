@@ -1,5 +1,7 @@
 # 0.14.0 unified-release candidate validation
 
+The follow-up [code review and recovery fixes](review-0.14.0.md) record the later review separately from the original implementation checks below.
+
 2026-10-22. Mother-repository implementation only. No business repository was migrated, no real user installation was updated, and no source branch, tag, GitHub Release, npm package or stable-channel update was published.
 
 ## Implemented contracts

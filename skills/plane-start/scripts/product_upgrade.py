@@ -8,9 +8,135 @@ import tempfile
 from pathlib import Path
 
 from product_release import REPOSITORY, SKILLS, validate_manifest, verify_source, git
-from plane_sync import CONFIG_NAME, require, sync_provider
+from plane_sync import CONFIG_NAME, WorkflowError, require, sync_provider
 
 HOSTS = ('codex', 'claude-code', 'cursor', 'opencode')
+HOST_SKILL_FOLDERS = ('.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills')
+
+
+def host_entries(base, canonical):
+    """Snapshot host entries without following redirects outside the chosen scope."""
+    base, canonical = Path(base), Path(canonical)
+    entries = {}
+    for folder in HOST_SKILL_FOLDERS:
+        parent = base / folder
+        require(not any(path.is_symlink() for path in (parent, *parent.parents) if path == base or base in path.parents),
+                'Host installation parents must not be symlinks; preserve them for review.')
+        for name in SKILLS:
+            path = parent / name
+            if path.is_symlink():
+                require(path.resolve() == canonical / name and path.exists(),
+                        'Host skill link redirects to another installation; preserve it for review.')
+                entry = {'kind': 'canonical_link'}
+            else:
+                files = inventory(path)
+                entry = None if files is None else {'kind': 'copy', 'files': files}
+            entries[folder + '/' + name] = entry
+    return entries
+
+
+def verify_host_entries(selected, base, canonical, expected, *, resumed=False):
+    current = host_entries(base, canonical)
+    for key, previous in selected['host_entries'].items():
+        found = current[key]
+        # Skills 1.7.4 uses the universal .agents location for the other hosts.
+        selected_copy = selected['host'] == 'claude-code' and key.startswith('.claude/skills/')
+        name = key.rsplit('/', 1)[1]
+        refreshed = found == {'kind': 'canonical_link'} or found == {'kind': 'copy', 'files': expected[name]}
+        require(found == previous or (resumed and selected_copy and refreshed),
+                'Host skill files changed since review; preserve modifications and plan again.')
+    return current
+
+
+def host_refresh_complete(selected, entries, expected):
+    return selected['host'] != 'claude-code' or all(
+        entries['.claude/skills/' + name] in ({'kind': 'canonical_link'}, {'kind': 'copy', 'files': expected[name]})
+        for name in SKILLS)
+
+
+def read_skills_lock(path, version):
+    path = Path(path)
+    require(not path.is_symlink(), 'Skills lock must not be a symlink; preserve it for review.')
+    if not path.exists():
+        return None
+    require(path.is_file(), 'Skills lock must be a regular file.')
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        raise ValueError('Cannot read the existing skills lock; preserve it before installation.') from None
+    require(isinstance(data, dict) and type(data.get('version')) is int and data['version'] == version and
+            isinstance(data.get('skills'), dict) and all(isinstance(entry, dict) for entry in data['skills'].values()),
+            'Unrecognized skills lock; preserve it before installation.')
+    return data
+
+
+def project_lock(root):
+    return read_skills_lock(Path(root) / 'skills-lock.json', 1)
+
+
+def lock_changes_are_scoped(before, after, version):
+    original = before or {'version': version, 'skills': {}}
+    current = after or {'version': version, 'skills': {}}
+    if before is None and version == 3 and 'dismissed' in current:
+        # The upstream initial v3 schema adds this empty prompt-state map.
+        original['dismissed'] = {}
+    return ({key: value for key, value in current.items() if key != 'skills'} ==
+            {key: value for key, value in original.items() if key != 'skills'} and
+            {key: value for key, value in current['skills'].items() if key not in SKILLS} ==
+            {key: value for key, value in original['skills'].items() if key not in SKILLS})
+
+
+def verify_project_lock(selected, root, *, allow_product_changes=False):
+    before, after = selected['project_lock'], project_lock(root)
+    if not allow_product_changes:
+        require(after == before, 'Skills lock changed since review; preserve it and plan again.')
+        return after
+    require(lock_changes_are_scoped(before, after, 1),
+            'Skills lock contains unrelated changes; preserve them for review.')
+    return after
+
+
+def verify_global_lock(selected, *, allow_product_changes=False):
+    lock = selected['global_lock']
+    path = Path(lock['path'])
+    base = Path(lock['base'])
+    require(not any(parent.is_symlink() for parent in path.parents if parent == base or base in parent.parents),
+            'Global skills lock parents must not be symlinks.')
+    current = read_skills_lock(path, 3)
+    require(lock_changes_are_scoped(lock['before'], current, 3) if allow_product_changes else current == lock['before'],
+            'Global skills lock changed outside the selected product; preserve it and plan again.')
+
+
+def verify_installer_environment(selected):
+    # Skills 1.7.4 uses cwd/.claude for project installs; CLAUDE_CONFIG_DIR
+    # affects only its global Claude target. Universal hosts use HOME/.agents.
+    if selected['scope'] != 'global':
+        return
+    home = Path.home().resolve()
+    require(home == Path(selected['target']).parent.parent,
+            'The global installation home changed since review; restore the original environment or plan again.')
+    state_base = Path(os.environ['XDG_STATE_HOME']).resolve() if os.environ.get('XDG_STATE_HOME') else home
+    lock_path = state_base / ('skills/.skill-lock.json' if os.environ.get('XDG_STATE_HOME') else '.agents/.skill-lock.json')
+    require(str(lock_path) == selected['global_lock']['path'],
+            'The global skills metadata location changed since review; restore the original environment or plan again.')
+    if selected['host'] == 'claude-code':
+        configured = os.environ.get('CLAUDE_CONFIG_DIR', '').strip()
+        require(Path(configured or home / '.claude').resolve() == home / '.claude',
+                'The global Claude installation location changed since review; preserve that scope and plan again.')
+
+
+def preserve_lock_metadata(selected, root):
+    """The upstream CLI rewrites its schema; retain non-product metadata exactly."""
+    from plane_workflow import atomic_write
+    before, after = selected['project_lock'], project_lock(root)
+    if before is None:
+        verify_project_lock(selected, root, allow_product_changes=True)
+        return
+    merged = dict(before)
+    merged['skills'] = {key: value for key, value in before['skills'].items() if key not in SKILLS}
+    merged['skills'].update({key: value for key, value in (after or {'skills': {}})['skills'].items() if key in SKILLS})
+    if merged != after:
+        atomic_write(Path(root) / 'skills-lock.json', (json.dumps(merged, indent=2) + '\n').encode())
 
 
 def run_installer(args, root):
@@ -90,6 +216,9 @@ def installation(project, scope, host, home=None):
     home = Path(home or Path.home()).resolve()
     base = home if scope == 'global' else Path(project).resolve()
     target = base / '.agents/skills'
+    if scope == 'global' and host == 'claude-code':
+        require(Path(os.environ.get('CLAUDE_CONFIG_DIR', '').strip() or home / '.claude').resolve() == home / '.claude',
+                'A custom Claude configuration location requires an explicit manual installation handoff.')
     require(not any((base / name).is_symlink() for name in ('.agents', '.agents/skills')), 'Installation parents must not be symlinks.')
     # Capture exact existing contents; apply rechecks this snapshot before installation.
     found = {}
@@ -109,13 +238,28 @@ def installation(project, scope, host, home=None):
             require(data.get('generator') == 'plane-devflow/build_skills.py' and data.get('skill') == name,
                     'Existing skill belongs to another source; preserve it.')
             versions[name] = data.get('version')
+    entries = host_entries(base, target)
+    for key, entry in entries.items():
+        if entry is not None:
+            name = key.rsplit('/', 1)[1]
+            require(found[name] is not None and (entry['kind'] == 'canonical_link' or entry['files'] == found[name]),
+                    'Host-specific skill files are customized or unidentified; preserve them for review.')
     tracked = []
     if scope == 'project':
         from plane_workflow import run
         prefixes = ['skills-lock.json', *['.agents/skills/' + name for name in SKILLS],
                     *[folder + '/' + name for folder in ('.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in SKILLS]]
         tracked = run(['git', 'ls-files', '--', *prefixes], project).stdout.splitlines()
-    return {'scope': scope, 'host': host, 'target': str(target), 'versions': versions, 'before': found,
+    global_lock = None
+    if scope == 'global':
+        state_base = Path(os.environ['XDG_STATE_HOME']).resolve() if os.environ.get('XDG_STATE_HOME') else home
+        lock_path = state_base / ('skills/.skill-lock.json' if os.environ.get('XDG_STATE_HOME') else '.agents/.skill-lock.json')
+        require(not any(parent.is_symlink() for parent in lock_path.parents if parent == state_base or state_base in parent.parents),
+                'Global skills lock parents must not be symlinks.')
+        global_lock = {'path': str(lock_path), 'base': str(state_base), 'before': read_skills_lock(lock_path, 3)}
+    return {'scope': scope, 'host': host, 'target': str(target), 'versions': versions, 'before': found, 'host_entries': entries,
+            'project_lock': project_lock(project) if scope == 'project' else None,
+            'global_lock': global_lock,
             'tracked_project_installation': bool(tracked), 'tracked_paths': tracked}
 
 
@@ -129,11 +273,11 @@ def paths(root, plan_id):
     return directory, directory / 'record.json'
 
 
-def plan(root, release, *, scope='project', host='codex', channel='skills', home=None, plugin_root=None, expected_plan_id=None, apply=False):
+def plan(root, release, *, scope='project', host='codex', channel='skills', home=None, plugin_root=None, expected_plan_id=None, apply=False, candidate_source=False):
     from plane_workflow import repo_config, configuration_lock, atomic_write, run
     from github_setup import config_digest, install
     root, config = repo_config(root)
-    target = validate_manifest(release)
+    target = validate_manifest(release, allow_candidate=candidate_source)
     require(channel in ('skills', 'plugin'), 'Unsupported installation channel.')
     if channel == 'skills':
         selected = installation(root, scope, host, home)
@@ -145,11 +289,13 @@ def plan(root, release, *, scope='project', host='codex', channel='skills', home
                     'version': json.loads((plugin_root / 'plugin.json').read_text())['version'], 'manual_handoff': True}
     default = remote_default(root)
     base, base_sha = default['branch'], default['commit']
-    project_plan = install(root, release=target, upgrade=True)
+    project_plan = install(root, release=target, upgrade=True, candidate_source=candidate_source)
     spec = {'schema': 1, 'repository': config['github']['repository'], 'workspace': config['plane']['workspace'],
             'project_id': config['plane']['project_id'], 'config_digest': config_digest(config),
             'base': base, 'base_sha': base_sha, 'target': target, 'installation': selected,
             'channel': channel, 'project_plan': project_plan}
+    if candidate_source:
+        spec['candidate_source'] = True
     plan_id = digest(spec)
     directory, record_path = paths(root, plan_id)
     result = {'plan_id': plan_id, 'status': 'planned', 'plan': spec, 'record_path': str(record_path),
@@ -177,7 +323,7 @@ def read(root, plan_id):
     record = json.loads(record_path.read_text())
     require(record.get('schema') == 1 and digest(record.get('plan')) == plan_id, 'Upgrade plan was modified.')
     require(config_digest(config) == record['plan']['config_digest'], 'Project mapping changed; plan again.')
-    validate_manifest(record['plan']['target'])
+    validate_manifest(record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
     directory, _ = paths(root, plan_id)
     require(record.get('source') in (None, str(directory / 'source')), 'Unexpected staged source location.')
     project = record.get('project')
@@ -185,6 +331,10 @@ def read(root, plan_id):
         require(project.get('path') == str(directory / 'project') and
                 project.get('branch') == 'codex/plane-devflow-upgrade-' + record['plan']['target']['version'] + '-' + plan_id[:8],
                 'Unexpected upgrade checkout identity.')
+    if record.get('rollback_workspace'):
+        require(record['rollback_workspace'] == str(directory / 'rollback') and
+                record.get('rollback', {}).get('branch') == 'codex/plane-devflow-rollback-' + plan_id[:8],
+                'Unexpected rollback checkout identity.')
     return root, record
 
 
@@ -192,6 +342,19 @@ def save(root, plan_id, record):
     from plane_workflow import atomic_write
     _, path = paths(root, plan_id)
     atomic_write(path, (json.dumps(record, sort_keys=True) + '\n').encode())
+
+
+def staged_coordinator(root, plan_id, current_helper, arguments):
+    """Use a fresh process outside the installation that the upgrade replaces."""
+    import sys
+    root, record = read(root, plan_id)
+    if not record['source']:
+        return None
+    verify_source(record['source'], record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
+    helper = Path(record['source']) / 'plugins/plane-devflow/scripts/plane_workflow.py'
+    if helper.resolve() == Path(current_helper).resolve():
+        return None
+    return subprocess.run([sys.executable, str(helper), *arguments], check=False).returncode
 
 
 def stage(root, plan_id, *, source=None, candidate_source=False, apply=False):
@@ -204,40 +367,70 @@ def stage(root, plan_id, *, source=None, candidate_source=False, apply=False):
     target = directory / 'source'
     with configuration_lock(root):
         root, record = read(root, plan_id)
+        require(not record['plan'].get('candidate_source') or candidate_source,
+                'A candidate plan requires explicit candidate-source staging; it cannot become a stable release.')
+        if 'staging_mode' in record:
+            require(record['staging_mode'] == ('candidate' if candidate_source else 'stable'),
+                    'Resume the original source channel; do not relabel a candidate as a stable release.')
         if record['source']:
-            verify_source(record['source'], record['plan']['target'])
+            verify_source(record['source'], record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
             return status(root, plan_id)
         if 'staging_mode' not in record:
             record['staging_mode'] = 'candidate' if candidate_source else 'stable'
             save(root, plan_id, record)
         require(record['staging_mode'] == ('candidate' if candidate_source else 'stable'), 'Resume the original source channel; do not relabel a candidate as a stable release.')
         if target.exists():
-            verify_source(target, record['plan']['target'])
+            verify_source(target, record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
             verify_installation_baseline(Path(source) if source is not None and candidate_source else target, record)
             record.update(source=str(target), candidate_source=candidate_source)
             save(root, plan_id, record)
             return status(root, plan_id)
-        if source is not None:
-            require(candidate_source, 'A local candidate source requires explicit candidate-source mode.')
-            source = Path(source).resolve()
-            require(git(source, 'rev-parse', 'HEAD').decode().strip() == record['plan']['target']['commit'], 'Candidate commit mismatch.')
-            target.mkdir()
-            for name in record['plan']['target']['files']:
-                path = target / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_bytes(git(source, 'show', f'{record["plan"]["target"]["commit"]}:{name}'))
-        else:
-            git(directory, '-c', 'core.hooksPath=/dev/null', 'clone', '--no-checkout', '--filter=blob:none',
-                f'https://github.com/{REPOSITORY}.git', str(target))
-            git(target, '-c', 'core.hooksPath=/dev/null', 'checkout', '--detach', record['plan']['target']['commit'])
-            actual = git(target, 'rev-parse', record['plan']['target']['tag'] + '^{commit}').decode().strip()
-            require(actual == record['plan']['target']['commit'], 'Published tag moved since selection.')
-        verify_source(target, record['plan']['target'])
-        verify_installation_baseline(Path(source) if source is not None else target, record)
+        # Publish the staging directory only after every byte is verified. A failed
+        # clone/copy cannot leave the final source path permanently half populated.
+        with tempfile.TemporaryDirectory(prefix='.source-stage-', dir=directory) as temporary:
+            staged = Path(temporary) / 'source'
+            if source is not None:
+                require(candidate_source, 'A local candidate source requires explicit candidate-source mode.')
+                source = Path(source).resolve()
+                require(git(source, 'rev-parse', 'HEAD').decode().strip() == record['plan']['target']['commit'], 'Candidate commit mismatch.')
+                staged.mkdir()
+                for name in record['plan']['target']['files']:
+                    path = staged / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(git(source, 'show', f'{record["plan"]["target"]["commit"]}:{name}'))
+            else:
+                require(not record['plan'].get('candidate_source'), 'An isolated candidate test requires its explicit local source.')
+                git(directory, '-c', 'core.hooksPath=/dev/null', 'clone', '--no-checkout', '--filter=blob:none',
+                    f'https://github.com/{REPOSITORY}.git', str(staged))
+                git(staged, '-c', 'core.hooksPath=/dev/null', 'checkout', '--detach', record['plan']['target']['commit'])
+                actual = git(staged, 'rev-parse', record['plan']['target']['tag'] + '^{commit}').decode().strip()
+                require(actual == record['plan']['target']['commit'], 'Published tag moved since selection.')
+            verify_source(staged, record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
+            verify_installation_baseline(Path(source) if source is not None else staged, record)
+            staged.rename(target)
         record['source'] = str(target)
         record['candidate_source'] = candidate_source
         save(root, plan_id, record)
     return status(root, plan_id)
+
+
+def ensure_worktree(root, workspace, branch, base):
+    """Reconcile a Git operation whose result may have outlived its caller."""
+    from plane_workflow import run
+    workspace = Path(workspace)
+    require(not workspace.is_symlink(), 'Upgrade checkout must not be a symlink.')
+    if not workspace.exists():
+        existing = run(['git', 'rev-parse', '--verify', 'refs/heads/' + branch], root, check=False)
+        if existing.returncode == 0:
+            require(existing.stdout.strip() == base, 'Interrupted upgrade branch moved; preserve it for review.')
+            run(['git', '-c', 'core.hooksPath=/dev/null', 'worktree', 'add', str(workspace), branch], root)
+        else:
+            run(['git', '-c', 'core.hooksPath=/dev/null', 'worktree', 'add', '-b', branch, str(workspace), base], root)
+    require(Path(run(['git', 'rev-parse', '--show-toplevel'], workspace).stdout.strip()).resolve() == workspace.resolve(),
+            'Unexpected upgrade checkout path.')
+    require(run(['git', 'branch', '--show-current'], workspace).stdout.strip() == branch and
+            run(['git', 'rev-parse', 'HEAD'], workspace).stdout.strip() == base,
+            'Interrupted upgrade checkout moved; preserve it for review.')
 
 
 def prepare_project(root, plan_id, *, apply=False):
@@ -247,7 +440,7 @@ def prepare_project(root, plan_id, *, apply=False):
     if not apply:
         return {'plan_id': plan_id, 'status': 'planned', 'next_step': 'prepare_project', 'writes_performed': False}
     require(record['source'], 'Stage and verify the target release first.')
-    verify_source(record['source'], record['plan']['target'])
+    verify_source(record['source'], record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
     directory, _ = paths(root, plan_id)
     with configuration_lock(root):
         root, record = read(root, plan_id)
@@ -267,20 +460,20 @@ def prepare_project(root, plan_id, *, apply=False):
         branch = 'codex/plane-devflow-upgrade-' + spec['target']['version'] + '-' + plan_id[:8]
         workspace = directory / 'project'
         if record['project'] is None:
-            run(['git', '-c', 'core.hooksPath=/dev/null', 'worktree', 'add', '-b', branch, str(workspace), spec['base_sha']], root)
             record['project'] = {'status': 'workspace_prepared', 'path': str(workspace), 'branch': branch}
             save(root, plan_id, record)
+        ensure_worktree(root, workspace, branch, spec['base_sha'])
         require(run(['git', 'branch', '--show-current'], workspace).stdout.strip() == branch, 'Upgrade checkout changed branches.')
         if spec['project_plan']['provider'] == 'native':
             record['project'].update(status='diff_prepared', provider='native', changes={})
             save(root, plan_id, record)
             return status(root, plan_id)
     # install owns its own lock. The identity and target are checked again there.
-    change = install(workspace, release=spec['target'], upgrade=True)
+    change = install(workspace, release=spec['target'], upgrade=True, candidate_source=spec.get('candidate_source', False))
     require(not change['changes'] or change['expected_files_sha256'] == spec['project_plan']['expected_files_sha256'],
             'The selected checkout differs from the reviewed project plan.')
     change = install(workspace, release=spec['target'], upgrade=True, apply=True,
-                     expected_files_sha256=change['expected_files_sha256'])
+                     expected_files_sha256=change['expected_files_sha256'], candidate_source=spec.get('candidate_source', False))
     with configuration_lock(root):
         root, record = read(root, plan_id)
         record['project'].update(status='diff_prepared', changes=change['changes'], backup=change.get('backup'))
@@ -328,6 +521,8 @@ def project_pr(root, plan_id, *, apply=False):
     from shared_sync import workflow, WORKFLOW
     if spec['project_plan']['provider'] == 'actions':
         require((workspace / WORKFLOW).read_text() == workflow(spec['target']['commit'], spec['target']['version']), 'Upgrade workflow changed after review.')
+    if tracked_install:
+        verify_project_lock(spec['installation'], workspace, allow_product_changes=True)
     marker = f'<!-- plane-devflow:product-upgrade:{plan_id} -->'
     args = ['gh', 'pr', 'list', '--repo', spec['repository'], '--head', project['branch'], '--base', spec['base'],
             '--state', 'all', '--json', 'url,body,state,headRefOid']
@@ -358,6 +553,19 @@ def project_pr(root, plan_id, *, apply=False):
     return status(root, plan_id)
 
 
+def tracked_payload_deployed(root, spec, revision):
+    """A local refresh cannot stand in for tracked files on the activation branch."""
+    from plane_sync import WorkflowError
+    if spec['channel'] != 'skills' or not spec['installation'].get('tracked_project_installation'):
+        return True
+    try:
+        return all(baseline_files(root, spec['target']['version'], '.agents/skills/' + name,
+                                  dict(spec['target'], commit=revision)) == expected_payload(spec['target'], 'skills/' + name)
+                   for name in SKILLS)
+    except (ValueError, subprocess.CalledProcessError, WorkflowError):
+        return False
+
+
 def verify_project(root, plan_id):
     """Explicit live reads, with no connection workflow dispatch or Plane writes."""
     from datetime import datetime, timezone
@@ -372,6 +580,7 @@ def verify_project(root, plan_id):
     target = record['plan']['target']
     matches = native or (bundle.get('installed_version') == target['version'] and bundle.get('source_commit') == target['commit'])
     default_sha = run(['git', 'rev-parse', f'origin/{record["plan"]["base"]}'], root).stdout.strip()
+    matches = matches and tracked_payload_deployed(root, record['plan'], default_sha)
     identity_verified = native or (bundle.get('integrity_verified') is True and bundle.get('compatible') is True and
                                    result.get('evidence', {}).get('default_sha') == default_sha)
     verified = (matches and identity_verified and result.get('configuration_status') == 'complete' and
@@ -410,9 +619,6 @@ def rollback(root, plan_id, *, apply=False):
         return result
     with configuration_lock(root):
         root, record = read(root, plan_id)
-        if record.get('rollback_workspace'):
-            result.update(workspace=record['rollback_workspace'], writes_performed=True)
-            return result
         require(remote_default(root)['branch'] == spec['base'], 'Remote default branch changed; review rollback against its actual activation branch.')
         run(['git', 'fetch', '--', 'origin', spec['base']], root)
         current = run(['git', 'rev-parse', f'origin/{spec["base"]}'], root).stdout.strip()
@@ -426,10 +632,41 @@ def rollback(root, plan_id, *, apply=False):
         directory, _ = paths(root, plan_id)
         workspace = directory / 'rollback'
         branch = 'codex/plane-devflow-rollback-' + plan_id[:8]
-        run(['git', '-c', 'core.hooksPath=/dev/null', 'worktree', 'add', '-b', branch, str(workspace), current], root)
-        record['rollback_workspace'] = str(workspace)
-        save(root, plan_id, record)
-        run(['git', 'restore', '--source', spec['base_sha'], '--worktree', '--', *changed], workspace)
+        if not record.get('rollback_workspace'):
+            record['rollback_workspace'] = str(workspace)
+            record['rollback'] = {'branch': branch, 'base_sha': current, 'status': 'preparing'}
+            save(root, plan_id, record)
+        require(record['rollback']['base_sha'] == current,
+                'Default branch moved during rollback preparation; preserve its diff and review again.')
+        ensure_worktree(root, workspace, branch, current)
+        require(not run(['git', 'diff', '--cached', '--name-only', current], workspace).stdout.strip(),
+                'Rollback checkout has staged changes; preserve them for review.')
+        modified = set(run(['git', 'diff', '--name-only', current], workspace).stdout.splitlines())
+        untracked = set(run(['git', 'ls-files', '--others', '--exclude-standard'], workspace).stdout.splitlines())
+        require(modified | untracked <= set(changed), 'Rollback checkout contains unrelated changes.')
+        def blob(revision, name):
+            entry = git(root, 'ls-tree', revision, '--', name)
+            return None if not entry else (entry.split()[0], git(root, 'show', f'{revision}:{name}'))
+        def contents(path):
+            if path.is_symlink():
+                return b'120000', os.fsencode(os.readlink(path))
+            if path.is_file():
+                return b'file', path.read_bytes()
+            require(not path.exists(), 'Rollback file was replaced by a directory; preserve it for review.')
+            return None
+        def comparable(entry):
+            return (b'120000' if entry[0] == b'120000' else b'file', entry[1]) if entry else None
+        desired = {name: comparable(blob(spec['base_sha'], name)) for name in changed}
+        for name in changed:
+            found = contents(workspace / name)
+            allowed = (desired[name],) if record['rollback']['status'] == 'diff_prepared' else (
+                desired[name], comparable(blob(current, name)))
+            require(found in allowed, 'Rollback files changed after preparation; preserve modifications for review.')
+        if record['rollback']['status'] != 'diff_prepared':
+            run(['git', 'restore', '--source', spec['base_sha'], '--worktree', '--', *changed], workspace)
+            require(all(contents(workspace / name) == desired[name] for name in changed), 'Rollback restoration is incomplete; resume preparation.')
+            record['rollback']['status'] = 'diff_prepared'
+            save(root, plan_id, record)
         result.update(workspace=str(workspace), branch=branch, writes_performed=True,
                       next_step='Review the reverse diff and prepare a separate rollback PR; do not reset the default branch.')
     return result
@@ -462,7 +699,9 @@ def _install_local(root, plan_id, *, apply=False):
     if not apply:
         return {'plan_id': plan_id, 'status': 'planned', 'next_step': 'install_local', 'writes_performed': False}
     require(record['source'] and record['project'], 'Stage the source and prepare the project diff before changing the installation.')
-    verify_source(record['source'], record['plan']['target'])
+    if record['plan']['channel'] == 'skills':
+        verify_installer_environment(record['plan']['installation'])
+    verify_source(record['source'], record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
     if record['plan']['channel'] == 'plugin':
         return {'plan_id': plan_id, 'status': 'local_refresh_pending', 'next_step': 'Update through the original plugin channel, reopen the session, and verify the installed version.'}
     spec = record['plan']
@@ -498,17 +737,26 @@ def _install_local(root, plan_id, *, apply=False):
                         'Project update is merged; synchronize the original checkout without overwriting user work, then resume installation verification.')
                 run(['git', 'merge', '--ff-only', f'origin/{spec["base"]}'], root)
                 install_root, install_target = root, target
+    if selected['scope'] == 'project':
+        verify_project_lock(selected, install_root,
+                            allow_product_changes=record['local'] in ('installing', 'project_installation_staged', 'verified'))
+    else:
+        verify_global_lock(selected, allow_product_changes=record['local'] in ('installing', 'verified'))
     current = {name: inventory(target / name) for name in SKILLS}
     expected = {name: inventory(Path(record['source']) / 'skills' / name) for name in SKILLS}
-    if current == expected:
+    original_hosts = verify_host_entries(selected, target.parent.parent, target, expected,
+                                         resumed=record['local'] in ('installing', 'project_installation_staged', 'verified'))
+    if current == expected and host_refresh_complete(selected, original_hosts, expected):
         with configuration_lock(root):
             root, record = read(root, plan_id)
             record['local'] = 'verified'
             save(root, plan_id, record)
         return status(root, plan_id)
     if tracked:
+        workspace_hosts = verify_host_entries(selected, install_root, install_target, expected,
+                                              resumed=record['local'] in ('installing', 'project_installation_staged', 'verified'))
         current = {name: inventory(install_target / name) for name in SKILLS}
-        if current == expected:
+        if current == expected and host_refresh_complete(selected, workspace_hosts, expected):
             with configuration_lock(root):
                 root, record = read(root, plan_id)
                 record['local'] = 'verified' if install_target == target else 'project_installation_staged'
@@ -531,7 +779,11 @@ def _install_local(root, plan_id, *, apply=False):
         original = selected['before'][name]
         if original is not None and not (backup / name).exists():
             require(current[name] == original, 'Interrupted backup requires review before installation continues.')
-            shutil.copytree(install_target / name, backup / name)
+            with tempfile.TemporaryDirectory(prefix='.backup-stage-', dir=backup) as temporary:
+                staged = Path(temporary) / name
+                shutil.copytree(install_target / name, staged)
+                require(inventory(staged) == original, 'Installation changed while preparing its backup.')
+                staged.rename(backup / name)
         require(inventory(backup / name) == original, 'Installation backup differs from the reviewed original.')
     with configuration_lock(root):
         root, record = read(root, plan_id)
@@ -546,7 +798,14 @@ def _install_local(root, plan_id, *, apply=False):
         args.append('--global')
     result = run_installer(args, install_root)
     require(result.returncode == 0, 'Skills installation failed; inspect installed files and resume from the saved plan.')
+    if selected['scope'] == 'project':
+        preserve_lock_metadata(selected, install_root)
+    else:
+        verify_global_lock(selected, allow_product_changes=True)
     require({name: inventory(install_target / name) for name in SKILLS} == expected, 'Installed payload differs from the selected release.')
+    installed_hosts = verify_host_entries(selected, install_root if tracked or selected['scope'] == 'project' else target.parent.parent,
+                                          install_target, expected, resumed=True)
+    require(host_refresh_complete(selected, installed_hosts, expected), 'Selected host installation differs from the selected release.')
     with configuration_lock(root):
         root, record = read(root, plan_id)
         record['local'] = 'project_installation_staged' if tracked and install_target != target else 'verified'
@@ -555,18 +814,27 @@ def _install_local(root, plan_id, *, apply=False):
     return status(root, plan_id)
 
 
-def confirm_plugin(root, plan_id, *, apply=False):
+def confirm_plugin(root, plan_id, *, plugin_root=None, apply=False):
     from plane_workflow import configuration_lock
     root, record = read(root, plan_id)
     require(record['plan']['channel'] == 'plugin' and record['source'], 'Expected a staged plugin upgrade.')
-    verify_source(record['source'], record['plan']['target'])
+    verify_source(record['source'], record['plan']['target'], allow_candidate=record['plan'].get('candidate_source', False))
     expected = expected_payload(record['plan']['target'], 'plugins/plane-devflow')
-    actual = inventory(record['plan']['installation']['target'])
-    require(actual == expected, 'Original plugin installation does not match the selected product payload.')
+    # Native hosts may activate a new versioned cache directory rather than
+    # overwrite the original source. Explicitly inspect that active path without
+    # changing the original plan or converting installation channels.
+    active = Path(plugin_root or record.get('confirmed_plugin_root') or record['plan']['installation']['target']).resolve()
+    metadata = active / 'plugin.json'
+    require(metadata.is_file() and not metadata.is_symlink() and
+            hashlib.sha256(metadata.read_bytes()).hexdigest() == expected['plugin.json'],
+            'Active plugin installation does not match the selected product payload.')
+    actual = inventory(active)
+    require(actual == expected, 'Active plugin installation does not match the selected product payload.')
     if apply:
         with configuration_lock(root):
             root, record = read(root, plan_id)
             record['local'] = 'verified'
+            record['confirmed_plugin_root'] = str(active)
             save(root, plan_id, record)
     return status(root, plan_id)
 
@@ -582,8 +850,17 @@ def status(root, plan_id):
         selected = spec['installation']
         if not record['source'] or any(inventory(Path(selected['target']) / name) != expected_payload(target, 'skills/' + name) for name in SKILLS):
             local = 'changed_after_verification'
+        if local == 'verified':
+            expected = {name: expected_payload(target, 'skills/' + name) for name in SKILLS}
+            try:
+                entries = verify_host_entries(selected, Path(selected['target']).parent.parent,
+                                              selected['target'], expected, resumed=True)
+                if not host_refresh_complete(selected, entries, expected):
+                    local = 'changed_after_verification'
+            except (ValueError, OSError, WorkflowError):
+                local = 'changed_after_verification'
     elif spec['channel'] == 'plugin' and local == 'verified':
-        if not record['source'] or inventory(spec['installation']['target']) != expected_payload(target, 'plugins/plane-devflow'):
+        if not record['source'] or inventory(record.get('confirmed_plugin_root') or spec['installation']['target']) != expected_payload(target, 'plugins/plane-devflow'):
             local = 'changed_after_verification'
     remote = None
     if record['project'] and spec['project_plan']['provider'] == 'native':
@@ -592,6 +869,7 @@ def status(root, plan_id):
         result = run(['git', 'show', f'origin/{spec["base"]}:.github/workflows/plane-devflow.yml'], root, check=False)
         remote = identity(result.stdout.encode()) if result.returncode == 0 else None
         activated = remote == {'version': target['version'], 'commit': target['commit']}
+    activated = activated and tracked_payload_deployed(root, spec, 'origin/' + spec['base'])
     verification = record.get('verification')
     from github_setup import freshness
     age = freshness(verification.get('observed_at')) if verification else 'unknown'

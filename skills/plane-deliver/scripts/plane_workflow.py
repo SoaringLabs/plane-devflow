@@ -868,6 +868,8 @@ def main(argv=None):
     p.add_argument('--host', choices=['codex', 'claude-code', 'cursor', 'opencode'], default='codex')
     p.add_argument('--channel', choices=['skills', 'plugin'], default='skills')
     p.add_argument('--plugin-root')
+    p.add_argument('--candidate-source', action='store_true', help='Explicit isolated candidate test channel; never reports a stable upgrade.')
+    p.add_argument('--source', help='Local committed candidate source, only with stage --candidate-source.')
     p.add_argument('--apply', action='store_true')
     p = sub.add_parser("credential-guide", help="Guide local credential reuse, Plane PAT creation and GitHub storage.")
     p.add_argument("--repo", default=".")
@@ -993,13 +995,22 @@ def main(argv=None):
             result = resolve(args.target_version)
         elif args.command == 'upgrade':
             import product_upgrade as upgrades
+            require(not args.source or (args.step == 'stage' and args.candidate_source),
+                    'A local source is only allowed for explicit candidate staging.')
+            require(not args.candidate_source or args.step in ('plan', 'stage'),
+                    'Select the candidate channel when planning/staging; later steps use the immutable saved plan.')
             if args.step == 'plan':
                 require(args.release_file, 'Select and inspect a formal release manifest first.')
                 result = upgrades.plan(args.repo, json.loads(Path(args.release_file).read_text()), scope=args.scope,
                                        host=args.host, channel=args.channel, plugin_root=args.plugin_root,
-                                       expected_plan_id=args.expected_plan_id, apply=args.apply)
+                                       expected_plan_id=args.expected_plan_id, apply=args.apply, candidate_source=args.candidate_source)
             else:
                 require(args.plan_id, 'Select the saved upgrade plan ID.')
+                if args.step != 'stage':
+                    delegated = upgrades.staged_coordinator(args.repo, args.plan_id, __file__,
+                                                           list(argv) if argv is not None else sys.argv[1:])
+                    if delegated is not None:
+                        return delegated
                 if args.step == 'status':
                     result = upgrades.status(args.repo, args.plan_id)
                 elif args.step == 'verify':
@@ -1009,7 +1020,12 @@ def main(argv=None):
                     operation = {'stage': upgrades.stage, 'project': upgrades.prepare_project,
                                  'install': upgrades.install_local, 'pr': upgrades.project_pr,
                                  'rollback': upgrades.rollback, 'confirm-plugin': upgrades.confirm_plugin}[args.step]
-                    result = operation(args.repo, args.plan_id, apply=args.apply)
+                    if args.step == 'stage':
+                        result = operation(args.repo, args.plan_id, source=args.source, candidate_source=args.candidate_source, apply=args.apply)
+                    elif args.step == 'confirm-plugin':
+                        result = operation(args.repo, args.plan_id, plugin_root=args.plugin_root, apply=args.apply)
+                    else:
+                        result = operation(args.repo, args.plan_id, apply=args.apply)
         elif args.command == "credential-guide":
             result = credential_guide(args.repo, step=args.step, account=args.account)
         elif args.command == "credential-store":

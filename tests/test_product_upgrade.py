@@ -275,6 +275,70 @@ class UpgradeRecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'payload mismatch'):
             upgrades.stage(self.root, plan_id, source=self.source, candidate_source=True, apply=True)
 
+    def test_plugin_handoff_can_confirm_a_new_active_version_directory(self):
+        import io
+        import tarfile
+        original = self.home / 'cache/0.13.0'
+        with tempfile.TemporaryDirectory() as previous:
+            with tarfile.open(fileobj=io.BytesIO(releases.git(self.source, 'archive', 'v0.13.0', 'plugins/plane-devflow'))) as bundle:
+                bundle.extractall(previous)
+            shutil.copytree(Path(previous) / 'plugins/plane-devflow', original)
+        original_payload = upgrades.inventory(original)
+        preview = upgrades.plan(self.root, self.release, channel='plugin', plugin_root=original)
+        upgrades.plan(self.root, self.release, channel='plugin', plugin_root=original,
+                      expected_plan_id=preview['plan_id'], apply=True)
+        plan_id = preview['plan_id']
+        upgrades.stage(self.root, plan_id, source=self.source, candidate_source=True, apply=True)
+        with self.assertRaisesRegex(plane_sync.WorkflowError, 'Active plugin installation'):
+            upgrades.confirm_plugin(self.root, plan_id, apply=True)
+        with patch.object(upgrades, 'inventory') as scan, self.assertRaisesRegex(plane_sync.WorkflowError, 'Active plugin installation'):
+            upgrades.confirm_plugin(self.root, plan_id, plugin_root=self.home, apply=True)
+        scan.assert_not_called()
+        active = self.home / 'cache/0.14.0'
+        shutil.copytree(self.source / 'plugins/plane-devflow', active)
+        result = upgrades.confirm_plugin(self.root, plan_id, plugin_root=active, apply=True)
+        self.assertEqual(result['local_installation'], 'verified')
+        self.assertEqual(upgrades.inventory(original), original_payload)
+        self.assertEqual(upgrades.status(self.root, plan_id)['local_installation'], 'verified')
+        (active / 'plugin.json').write_text('{}')
+        self.assertEqual(upgrades.status(self.root, plan_id)['local_installation'], 'changed_after_verification')
+
+    def test_interrupted_source_copy_can_be_retried(self):
+        plan_id = self.saved()
+        real_git = upgrades.git
+        count = 0
+        def interrupted(root, *args):
+            nonlocal count
+            if args[0] == 'show':
+                count += 1
+                if count == 3:
+                    raise OSError('injected interrupted copy')
+            return real_git(root, *args)
+        with patch.object(upgrades, 'git', side_effect=interrupted), self.assertRaises(OSError):
+            upgrades.stage(self.root, plan_id, source=self.source, candidate_source=True, apply=True)
+        _, record = upgrades.read(self.root, plan_id)
+        self.assertIsNone(record['source'])
+        result = upgrades.stage(self.root, plan_id, source=self.source, candidate_source=True, apply=True)
+        self.assertEqual(result['status'], 'staged')
+
+    def test_worktree_creation_after_effect_timeout_is_reconciled(self):
+        plan_id = self.staged()
+        self.real_run = plane_workflow.run
+        failed = False
+        def interrupted(args, *pos, **kw):
+            nonlocal failed
+            result = self.no_network(args, *pos, **kw)
+            if 'worktree' in args and 'add' in args and not failed:
+                failed = True
+                raise plane_sync.WorkflowError('injected timeout after worktree creation')
+            return result
+        with patch.object(plane_workflow, 'run', side_effect=interrupted), self.assertRaises(plane_sync.WorkflowError):
+            upgrades.prepare_project(self.root, plan_id, apply=True)
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network):
+            result = upgrades.prepare_project(self.root, plan_id, apply=True)
+        self.assertEqual(result['project']['status'], 'diff_prepared')
+        self.assertFalse((self.root / shared_sync.WORKFLOW).exists())
+
     def test_project_diff_is_isolated_and_retry_does_not_allocate_another_branch(self):
         plan_id = self.staged()
         self.real_run = plane_workflow.run
@@ -298,6 +362,39 @@ class UpgradeRecoveryTests(unittest.TestCase):
         with patch.object(upgrades, 'run_installer') as installer, self.assertRaisesRegex(plane_sync.WorkflowError, 'changed since review'):
             upgrades.install_local(self.root, plan_id, apply=True)
         installer.assert_not_called()
+
+    def test_interrupted_installation_backup_can_be_retried(self):
+        import io
+        import tarfile
+        archive = releases.git(self.source, 'archive', 'v0.13.0', 'skills')
+        with tempfile.TemporaryDirectory() as previous:
+            with tarfile.open(fileobj=io.BytesIO(archive)) as bundle:
+                # This fixture contains regular, committed files from the local test source.
+                bundle.extractall(previous)
+            for name in releases.SKILLS:
+                shutil.copytree(Path(previous) / 'skills' / name, self.root / '.agents/skills' / name)
+        plan_id = self.staged()
+        self.real_run = plane_workflow.run
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network):
+            upgrades.prepare_project(self.root, plan_id, apply=True)
+        real_copytree = shutil.copytree
+        def interrupted(source, destination, *args, **kwargs):
+            if str(destination).startswith(str(upgrades.paths(self.root, plan_id)[0] / 'installation-before')):
+                Path(destination).mkdir(parents=True)
+                (Path(destination) / 'partial').write_text('interrupted backup')
+                raise OSError('injected backup failure')
+            return real_copytree(source, destination, *args, **kwargs)
+        with patch.object(shutil, 'copytree', side_effect=interrupted), patch.object(upgrades, 'run_installer') as installer, self.assertRaises(OSError):
+            upgrades.install_local(self.root, plan_id, apply=True)
+        installer.assert_not_called()
+        def refreshed(args, workspace):
+            for name in releases.SKILLS:
+                shutil.rmtree(self.root / '.agents/skills' / name)
+                real_copytree(self.source / 'skills' / name, self.root / '.agents/skills' / name)
+            return subprocess.CompletedProcess(args, 0, '', '')
+        with patch.object(upgrades, 'run_installer', side_effect=refreshed):
+            result = upgrades.install_local(self.root, plan_id, apply=True)
+        self.assertEqual(result['local_installation'], 'verified')
 
     def test_staged_then_deleted_unrelated_file_cannot_enter_an_upgrade_commit(self):
         plan_id = self.staged()
@@ -373,6 +470,43 @@ class UpgradeRecoveryTests(unittest.TestCase):
         self.test_tracked_project_installation_is_staged_without_dirtying_the_original()
         self.assertFalse((self.root / shared_sync.WORKFLOW).exists())
 
+    def test_native_local_refresh_does_not_activate_old_tracked_remote_payload(self):
+        config = fixtures.config()
+        config['sync'] = {'provider': 'native'}
+        (self.root / plane_sync.CONFIG_NAME).write_text(json.dumps(config))
+        for name in releases.SKILLS:
+            shutil.copytree(self.source / 'skills' / name, self.root / '.agents/skills' / name)
+            path = self.root / '.agents/skills' / name / 'distribution.json'
+            path.write_text(path.read_text().replace('0.14.0', '0.13.0'))
+        command(self.root, 'add', '.')
+        command(self.root, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Old native deployment')
+        command(self.root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
+        # Use an exact previous payload so historical-baseline verification is real.
+        for name in releases.SKILLS:
+            for file in command(self.source, 'ls-tree', '-r', '--name-only', 'v0.13.0', '--', 'skills/' + name).splitlines():
+                target = self.root / '.agents/skills' / name / file[len('skills/' + name) + 1:]
+                target.write_bytes(releases.git(self.source, 'show', 'v0.13.0:' + file))
+        command(self.root, 'add', '.')
+        command(self.root, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Exact old payload')
+        command(self.root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
+        plan_id = self.staged()
+        self.real_run = plane_workflow.run
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network):
+            upgrades.prepare_project(self.root, plan_id, apply=True)
+        for name in releases.SKILLS:
+            shutil.rmtree(self.root / '.agents/skills' / name)
+            shutil.copytree(self.source / 'skills' / name, self.root / '.agents/skills' / name)
+        with patch.object(upgrades, 'run_installer') as installer:
+            result = upgrades.install_local(self.root, plan_id, apply=True)
+        installer.assert_not_called()
+        self.assertFalse(result['project_activated'])
+        report = {'configuration_status': 'complete', 'checks': {'native_mapping_verified': True}}
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network), patch.object(github_setup, 'check', return_value=report):
+            result = upgrades.verify_project(self.root, plan_id)
+        self.assertFalse(result['connection_verified'])
+        self.assertFalse(result['project_activated'])
+        self.assertNotIn(result['status'], ('complete', 'candidate_complete'))
+
     def test_release_source_drift_is_detected_without_installing(self):
         with tempfile.TemporaryDirectory() as temporary:
             copied = Path(temporary) / 'copy'
@@ -401,7 +535,28 @@ class UpgradeRecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unexpected or missing'):
             upgrades.prepare_project(self.root, plan_id, apply=True)
 
-    def test_reverse_diff_restores_legacy_bytes_without_reverting_the_default_branch(self):
+    def test_coordinator_executes_only_verified_staged_helper_in_a_fresh_process(self):
+        plan_id = self.staged()
+        arguments = ['upgrade', '--repo', str(self.root), '--plan-id', plan_id, '--step', 'install', '--apply']
+        _, record = upgrades.read(self.root, plan_id)
+        helper = Path(record['source']) / 'plugins/plane-devflow/scripts/plane_workflow.py'
+        real_run = subprocess.run
+        with patch.object(upgrades.subprocess, 'run', wraps=subprocess.run) as calls:
+            # Replace only the final child dispatch; Git metadata reads stay real.
+            def dispatch(args, *pos, **kw):
+                if args[0] == sys.executable:
+                    self.assertEqual(args[1:], [str(helper), *arguments])
+                    return subprocess.CompletedProcess(args, 7)
+                return real_run(args, *pos, **kw)
+            calls.side_effect = dispatch
+            self.assertEqual(upgrades.staged_coordinator(self.root, plan_id, ROOT / 'plugins/plane-devflow/scripts/plane_workflow.py', arguments), 7)
+        self.assertIsNone(upgrades.staged_coordinator(self.root, plan_id, helper, arguments))
+        helper.write_text('unverified source')
+        with patch.object(upgrades.subprocess, 'run', wraps=subprocess.run) as calls, self.assertRaisesRegex(ValueError, 'payload mismatch'):
+            upgrades.staged_coordinator(self.root, plan_id, ROOT / 'plugins/plane-devflow/scripts/plane_workflow.py', arguments)
+        self.assertFalse(any(call.args[0][0] == sys.executable for call in calls.call_args_list))
+
+    def deployed_legacy_upgrade(self):
         github_setup.legacy_install(self.root, apply=True)
         original = {name: (self.root / name).read_bytes() for name in github_setup.bundled_files()}
         command(self.root, 'add', '.')
@@ -416,12 +571,33 @@ class UpgradeRecoveryTests(unittest.TestCase):
         command(workspace, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Migrated fixture')
         deployed = command(workspace, 'rev-parse', 'HEAD')
         command(self.root, 'update-ref', 'refs/remotes/origin/main', deployed)
+        return plan_id, original, deployed
+
+    def test_reverse_diff_restores_legacy_bytes_without_reverting_the_default_branch(self):
+        plan_id, original, deployed = self.deployed_legacy_upgrade()
         with patch.object(plane_workflow, 'run', side_effect=self.no_network):
             result = upgrades.rollback(self.root, plan_id, apply=True)
         reverse = Path(result['workspace'])
         self.assertEqual({name: (reverse / name).read_bytes() for name in original}, original)
         self.assertEqual(command(self.root, 'rev-parse', 'refs/remotes/origin/main'), deployed)
         self.assertEqual(command(self.root, 'branch', '--show-current'), 'main')
+
+    def test_failed_reverse_restore_is_resumed_before_reporting_prepared(self):
+        plan_id, original, _ = self.deployed_legacy_upgrade()
+        def interrupted(args, *pos, **kw):
+            if args[:2] == ['git', 'restore']:
+                raise plane_sync.WorkflowError('injected restoration failure')
+            return self.no_network(args, *pos, **kw)
+        with patch.object(plane_workflow, 'run', side_effect=interrupted), self.assertRaises(plane_sync.WorkflowError):
+            upgrades.rollback(self.root, plan_id, apply=True)
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network):
+            result = upgrades.rollback(self.root, plan_id, apply=True)
+        reverse = Path(result['workspace'])
+        self.assertEqual({name: (reverse / name).read_bytes() for name in original}, original)
+        (reverse / shared_sync.WORKFLOW).write_text('manual modification after reverse diff')
+        with patch.object(plane_workflow, 'run', side_effect=self.no_network), self.assertRaisesRegex(plane_sync.WorkflowError, 'changed after preparation'):
+            upgrades.rollback(self.root, plan_id, apply=True)
+        self.assertEqual((reverse / shared_sync.WORKFLOW).read_text(), 'manual modification after reverse diff')
 
 
 if __name__ == '__main__':

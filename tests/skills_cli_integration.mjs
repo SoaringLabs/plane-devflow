@@ -127,10 +127,10 @@ git('add', '.')
 git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-m','Isolated mapping')
 git('update-ref','refs/remotes/origin/main','HEAD')
 commit = subprocess.run(['git','rev-parse','HEAD'],cwd=source,check=True,capture_output=True,text=True).stdout.strip()
-release = product_release.manifest(source, commit)
+release = product_release.manifest(source, commit, candidate=True)
 product_upgrade.remote_default = lambda _: {'branch':'main','commit':git('rev-parse','refs/remotes/origin/main')}
-preview = product_upgrade.plan(project, release, scope=sys.argv[4])
-plan = product_upgrade.plan(project, release, scope=sys.argv[4], expected_plan_id=preview['plan_id'], apply=True)
+preview = product_upgrade.plan(project, release, scope=sys.argv[4], candidate_source=True)
+plan = product_upgrade.plan(project, release, scope=sys.argv[4], expected_plan_id=preview['plan_id'], apply=True, candidate_source=True)
 identifier = plan['plan_id']
 product_upgrade.stage(project, identifier, source=source, candidate_source=True, apply=True)
 product_upgrade.prepare_project(project, identifier, apply=True)
