@@ -61,6 +61,12 @@ To test the result, say: **“Run PROJECT-123 from its task workspace so I can t
 
 Each repository runs setup once and keeps its mapping in `.plane-devflow.json`. That mapping must reach the configured base branch before independent task branches are created. Installing skills does not complete account authorization or activate GitHub sync; setup verifies each step and reuses existing connections.
 
+### Branch prefixes and switching agents
+
+New task branches use the active agent's prefix: `codex/`, `claude/` for Claude Code, `cursor/` or `opencode/`. New setups leave `github.branch_prefix` unset, so initializing a project with Codex does not fix later tasks to `codex/`. An explicit `github.branch_prefix` overrides these defaults. Existing projects keep their fixed prefix until you remove that field and merge the configuration change into the base branch.
+
+To continue the same task in another agent, stop the previous session's work and open the recorded worktree. Keep its branch and primary PR: Claude Code continuing a task on `codex/project-123` uses that same branch. On the same machine, an agent with directory access can see uncommitted changes directly. See [agent naming and serial continuation](skills/plane-start/references/parallel-tasks.md#agent-naming-and-serial-continuation) for details.
+
 ## Skills
 
 Use your host’s skill picker or request a skill by name. Invocation, MCP setup and tested limits are covered in the [agent compatibility guide](docs/agent-compatibility.md).
