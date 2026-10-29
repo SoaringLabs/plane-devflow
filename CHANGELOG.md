@@ -2,6 +2,14 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.15.0 — 2026-10-29
+
+- Choose default task branch prefixes from the active host: `codex`, `claude`, `cursor` and `opencode`, with a neutral `agent` fallback. Preserve explicit project prefixes; new mappings omit the fixed-prefix setting.
+- Continue an existing task in its recorded worktree, branch and primary PR when switching agents serially. Preserve the starting baseline, file scope, task evidence and staged, unstaged and untracked work.
+- Record simple local execution IDs with optional session references and explicit reuse. Keep previous executions separate from task evidence without adding liveness detection, takeover or concurrent-writer orchestration.
+- Use saved branch bindings throughout checkout checks, synchronization, diagnostics and delivery. Read the actual checkout configuration after in-place preparation so a prefix-only policy change does not break continuation; other mapping differences remain blocked.
+- Refresh the canonical plugin and all three standalone skills together. Existing project mappings remain compatible. To enable host defaults in an existing project, explicitly remove `github.branch_prefix` in a reviewed project configuration change. The synchronization Action, configuration schemas and existing task bindings do not require migration for this feature. See [0.15.0 validation](docs/validation-0.15.0.md) for executed checks and limits.
+
 ## 0.14.1 — 2026-10-23
 
 - Reuse the existing GitHub CLI login for product Release metadata, with anonymous public reads only when the CLI is unavailable or unconfigured. Keep public manifest downloads unauthenticated and retain tag, commit, source and payload validation.
