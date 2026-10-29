@@ -23,6 +23,7 @@ def legacy():
 def basic():
     value = legacy()
     value.update(version=2, states={}, status_sync={"enabled": False})
+    value["github"].pop("branch_prefix")
     return value
 
 

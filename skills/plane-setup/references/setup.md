@@ -38,6 +38,8 @@ New config is version 2: project/repository association, `states: {}`, `status_s
 
 Resolve the GitHub base branch from configured mapping, remote default ref or GitHub metadata; do not assume `main`. Completion defaults to `manual` for new mapping. Use `--disable-state-sync` only if requested; it explicitly produces basic version 2. Legacy state parameters remain supported for existing deployments, not required for basic setup.
 
+New mappings omit `github.branch_prefix`, allowing task preparation to choose the active host's default. `--branch-prefix PREFIX` explicitly fixes it for the project. Same-project setup preserves an existing fixed prefix. See [agent naming](parallel-tasks.md#agent-naming-and-serial-continuation) for defaults and deliberate migration of an old fixed prefix; installing another host never rewrites it.
+
 ## Safe reconfiguration
 
 Use the same selected-project command with `--replace` to generate a replacement plan. It reports differences, whether the project changed and `expected_config_sha256`. Cancellation leaves the existing file intact. Repeat reviewed arguments with `--replace --apply --expected-config-sha256 HASH_FROM_PLAN` when applying.

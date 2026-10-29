@@ -38,7 +38,7 @@ def validate_checkout(value):
     from task_progress import fields, strings
     fields(value, {"path", "branch", "base_sha", "allowed_paths"}, {"path", "branch", "base_sha", "allowed_paths"})
     require(isinstance(value["path"], str) and Path(value["path"]).is_absolute() and
-            isinstance(value["branch"], str) and SHA.fullmatch(value["base_sha"]) is not None,
+            isinstance(value["branch"], str) and bool(value["branch"]) and SHA.fullmatch(value["base_sha"]) is not None,
             "Invalid checkout directory, branch or base commit.")
     strings(value["allowed_paths"])
     for pattern in value["allowed_paths"]:
@@ -60,7 +60,7 @@ def capture(root, config, task, *, base_sha=None, allowed_paths=None, expected=N
     root = repo_root(root)
     destination = metadata_path(root, config, task, "checkouts")
     previous, before = read_metadata(destination, identity(config, task))
-    branch = branch_name(task, config)
+    branch = branch_name(task, config, root=root)
     require(run(["git", "branch", "--show-current"], root).stdout.strip() == branch,
             "Switch to the selected task branch before recording its checkout.")
     if previous:
@@ -101,7 +101,8 @@ def inspect(root, config, task):
     result = {"ready": False, "blockers": [], "path": str(root), "branch": current_branch, "head": head,
               "context_sha256": stamp, "changed_paths": [], "outside_scope": []}
     blockers = result["blockers"]
-    if current_branch != branch_name(task, config):
+    expected_branch = branch_name(task, config, root=root)
+    if current_branch != expected_branch:
         blockers.append("task_branch_mismatch")
     if not record:
         blockers.append("task_checkout_missing")
@@ -109,7 +110,7 @@ def inspect(root, config, task):
     checkout = record["checkout"]
     validate_checkout(checkout)
     result["checkout"] = checkout
-    if checkout["path"] != str(root) or checkout["branch"] != branch_name(task, config):
+    if checkout["path"] != str(root) or checkout["branch"] != expected_branch:
         blockers.append("task_checkout_mismatch")
     if not checkout["allowed_paths"]:
         blockers.append("task_file_scope_missing")
@@ -212,7 +213,7 @@ def write_context(path, task=None, *, mode, planned_paths=None):
         blockers.append("task_selection_required")
         result["next_action"] = "resolve_task_before_repository_writes"
         return result
-    result["expected_branch"] = branch_name(key, config)
+    result["expected_branch"] = branch_name(key, config, root=root)
     if paths:
         ignored = run(["git", "check-ignore", "--stdin", "-z"], root, check=False,
                       input_text="\0".join(paths) + "\0")
@@ -250,11 +251,11 @@ def worktrees(root):
 
 
 def handoff_target(root, config, task):
-    from plane_workflow import repo_config, branch_name, run
+    from plane_workflow import repo_config, branch_name, run, same_task_mapping
     trees = worktrees(root)
     require(trees and "bare" not in trees[0], "Cannot identify the primary checkout.")
     primary = Path(trees[0]["worktree"]).resolve()
-    require(repo_config(primary)[1] == config, "Primary checkout has a different repository mapping.")
+    require(same_task_mapping(repo_config(primary)[1], config), "Primary checkout has a different repository mapping.")
     base = config["github"]["base_branch"]
     owners = [t for t in trees if t.get("branch") == "refs/heads/" + base]
     require(not owners or Path(owners[0]["worktree"]).resolve() == primary,
@@ -263,7 +264,7 @@ def handoff_target(root, config, task):
         require(not run(["git", "status", "--porcelain"], directory).stdout.strip(),
                 "Checkout has uncommitted changes. Preserve them before the base handoff.")
         branch = run(["git", "branch", "--show-current"], directory).stdout.strip()
-        require(branch in {base, branch_name(task, config)},
+        require(branch in {base, branch_name(task, config, root=root)},
                 "Checkout belongs to another task or detached HEAD. Preserve its branch.")
         for operation in ("MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply", "sequencer"):
             marker = Path(run(["git", "rev-parse", "--path-format=absolute", "--git-path", operation], directory).stdout.strip())

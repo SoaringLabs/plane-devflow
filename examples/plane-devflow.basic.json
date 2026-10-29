@@ -9,8 +9,7 @@
   },
   "github": {
     "repository": "example/demo-project",
-    "base_branch": "main",
-    "branch_prefix": "codex"
+    "base_branch": "main"
   },
   "states": {},
   "status_sync": {"enabled": false},

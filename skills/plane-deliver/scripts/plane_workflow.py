@@ -239,10 +239,12 @@ def configure(args):
     else:
         config = {"version": 2, "states": {}, "status_sync": {"enabled": False}}
     config.update(plane=plane,
-                  github={"repository": actual_repository(root), "base_branch": base,
-                          "branch_prefix": args.branch_prefix or previous_github.get("branch_prefix", "codex")},
+                  github={"repository": actual_repository(root), "base_branch": base},
                   completion={"policy": args.completion or (old["completion"]["policy"] if old else "manual"),
                               "manual_label": old["completion"].get("manual_label", "manual-acceptance") if old else "manual-acceptance"})
+    prefix = args.branch_prefix or previous_github.get("branch_prefix")
+    if prefix is not None:
+        config["github"]["branch_prefix"] = prefix
     if old and "sync" in old and "sync" not in config:
         config["sync"] = copy.deepcopy(old["sync"])
     provider = getattr(args, "sync_provider", None)
@@ -274,8 +276,8 @@ def configure(args):
                 workflow_in_base = True
     if changed and old is not None:
         branch = run(["git", "branch", "--show-current"], root).stdout.strip()
-        old_prefix = old["github"].get("branch_prefix", "codex") + "/" + old["plane"]["project_identifier"].lower() + "-"
-        require(not branch.lower().startswith(old_prefix),
+        old_task = r".+/" + re.escape(old["plane"]["project_identifier"].lower()) + r"-[1-9][0-9]*"
+        require(re.fullmatch(old_task, branch.lower()) is None,
                 "Reconfigure in the setup/base checkout, not an existing task branch; preserve its original association.")
     require(not (changed and (old_bytes is not None or not state_sync_enabled(config)) and
                  (workflow_path.exists() or workflow_in_base)),
@@ -334,27 +336,68 @@ jobs:
 '''
 
 
-def branch_name(task, config):
-    return f'{config["github"].get("branch_prefix", "codex")}/{parse_task(task, config).lower()}'
+def same_task_mapping(first, second):
+    """A naming-policy edit does not change an existing task's association."""
+    def without_prefix(config):
+        return {**config, "github": {key: value for key, value in config["github"].items() if key != "branch_prefix"}}
+    return without_prefix(first) == without_prefix(second)
 
 
-def prepare(path, task, *, worktree=None, in_place=False, apply=False):
+def branch_name(task, config, *, root=None, agent=None):
+    """Use the saved binding before any naming policy or current host."""
+    from task_executions import AGENT_PREFIXES, agent_name
+    host = agent_name(agent)
+    key = parse_task(task, config).lower()
+    prefix = config["github"].get("branch_prefix", AGENT_PREFIXES.get(host, "agent"))
+    if root is not None:
+        from checkout_workflow import metadata_path, read_metadata
+        from task_progress import identity
+        record, _ = read_metadata(metadata_path(root, config, task, "checkouts"), identity(config, task))
+        if record:
+            bound = record["checkout"]["branch"]
+            require(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_-]*/" + re.escape(key), bound) is not None and
+                    bound != config["github"]["base_branch"], "Recorded branch does not belong to this task. Preserve and inspect its binding.")
+            return bound
+        # Recover an unrecorded local branch across hosts instead of duplicating it.
+        candidates = {f"{p}/{key}" for p in {*AGENT_PREFIXES.values(), "agent", prefix}}
+        existing = set(run(["git", "for-each-ref", "--format=%(refname:short)", "refs/heads/"], root).stdout.splitlines()) & candidates
+        require(len(existing) <= 1, "Multiple task branches exist. Inspect and recover the original checkout binding.")
+        if existing:
+            return existing.pop()
+    return f"{prefix}/{key}"
+
+
+def prepare(path, task, *, worktree=None, in_place=False, agent=None, execution_id=None, session_id=None, apply=False):
     require(not (in_place and worktree), "Choose --in-place or --worktree, not both.")
+    from task_executions import execution
+    root, config = repo_config(path)
+    # Validate execution references before any checkout mutation; plan stays read-only.
+    planned_execution = execution(root, config, task, agent=agent, execution_id=execution_id, session_id=session_id)
     if in_place:
         from task_workspaces import workspace_lock
         if apply:
-            with workspace_lock(repo_root(path)):
-                return _prepare_in_place(path, task, apply=True)
-        return _prepare_in_place(path, task)
-    from task_workspaces import prepare_workspace
-    return prepare_workspace(path, task, worktree=worktree, apply=apply)
+            with workspace_lock(root):
+                result = _prepare_in_place(path, task, agent=agent, apply=True)
+        else:
+            result = _prepare_in_place(path, task, agent=agent)
+    else:
+        from task_workspaces import prepare_workspace
+        result = prepare_workspace(path, task, worktree=worktree, agent=agent, apply=apply)
+    result["execution"] = planned_execution
+    if apply:
+        execution_root, execution_config = repo_config(result["execution_path"])
+        require(same_task_mapping(config, execution_config),
+                "Prepared workspace has a different task mapping. Preserve it and inspect.")
+        result["execution"] = execution(execution_root, execution_config, task, agent=agent,
+                                        execution_id=execution_id, session_id=session_id, apply=True)
+    return result
 
 
-def _prepare_in_place(path, task, *, apply=False):
+def _prepare_in_place(path, task, *, agent=None, apply=False):
     root, config = repo_config(path)
     head = run(["git", "rev-parse", "HEAD"], root).stdout.strip()
     branch = run(["git", "branch", "--show-current"], root).stdout.strip()
-    require(branch in {"", config["github"]["base_branch"], branch_name(task, config)},
+    require(branch in {"", config["github"]["base_branch"], branch_name(task, config, root=root, agent=agent)},
             "Caller checkout belongs to another task. Use the default isolated workspace.")
     if apply:
         base = config["github"]["base_branch"]
@@ -366,15 +409,15 @@ def _prepare_in_place(path, task, *, apply=False):
             require(run(["git", "merge-base", "--is-ancestor", head, "refs/remotes/origin/" + base], root,
                         check=False).returncode == 0,
                     "Detached checkout has unique commits. Preserve them before naming or changing its task branch.")
-    result = _prepare_checkout(root, task, apply=apply)
+    result = _prepare_checkout(root, task, agent=agent, apply=apply)
     result.update(execution_path=str(root), caller_path=str(root), base_freshness="fetched" if apply else "unverified")
     return result
 
 
-def _prepare_checkout(path, task, *, worktree=None, apply=False):
+def _prepare_checkout(path, task, *, worktree=None, agent=None, apply=False):
     root, config = repo_config(path)
     key = parse_task(task, config)
-    branch = branch_name(key, config)
+    branch = branch_name(key, config, root=root, agent=agent)
     run(["git", "check-ref-format", "--branch", branch], root)
     current = run(["git", "branch", "--show-current"], root).stdout.strip()
     dirty = bool(run(["git", "status", "--porcelain"], root).stdout.strip())
@@ -395,6 +438,8 @@ def _prepare_checkout(path, task, *, worktree=None, apply=False):
             common = run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], root).stdout.strip()
             require(shared == common and run(["git", "branch", "--show-current"], target).stdout.strip() == branch,
                     "Existing worktree belongs to a different repository or task branch.")
+            require(same_task_mapping(repo_config(target)[1], config),
+                    "Existing worktree has a different project mapping. Preserve it and inspect.")
             operation = "resume"
         else:
             operation = "worktree"
@@ -418,12 +463,13 @@ def _prepare_checkout(path, task, *, worktree=None, apply=False):
         elif operation == "switch":
             run(["git", "switch", branch], root)
         from checkout_workflow import capture, inspect
+        checkout_config = repo_config(target)[1]
         # The immutable starting commit is recorded before any implementation.
-        context = capture(target, config, key, base_sha=base_sha if not exists else None)
-        context = capture(target, config, key, base_sha=base_sha if not exists else None,
+        context = capture(target, checkout_config, key, base_sha=base_sha if not exists else None)
+        context = capture(target, checkout_config, key, base_sha=base_sha if not exists else None,
                           expected=context["expected_context_sha256"], apply=True)
         result["checkout_context"] = context
-        blockers = inspect(target, config, key)["blockers"]
+        blockers = inspect(target, checkout_config, key)["blockers"]
         require(not any(b != "task_file_scope_missing" for b in blockers),
                 "Task checkout or accumulated changes need inspection before resuming. Run task-context.")
     return result
@@ -444,7 +490,7 @@ def delivery(path, task, title, body_file, *, apply=False, draft=False):
     root, config = repo_config(path)
     task = parse_task(task, config)
     branch = run(["git", "branch", "--show-current"], root).stdout.strip()
-    require(branch == branch_name(task, config), "Switch to the task branch before delivering.")
+    require(branch == branch_name(task, config, root=root), "Switch to the task branch before delivering.")
     require(not run(["git", "status", "--porcelain"], root).stdout.strip(),
             "Commit the intended task changes before delivery. Unrelated changes should stay outside this checkout.")
     body = Path(body_file).read_text()
@@ -778,7 +824,7 @@ def main(argv=None):
     for key in ("in-progress", "in-review", "done"):
         p.add_argument("--" + key)
     p.add_argument("--base")
-    p.add_argument("--branch-prefix")
+    p.add_argument("--branch-prefix", help="Explicit fixed prefix; new mappings otherwise use the active agent.")
     p.add_argument("--api-url", default="https://api.plane.so")
     p.add_argument("--app-url", default="https://app.plane.so")
     p.add_argument("--completion", choices=["on_merge", "manual"])
@@ -799,6 +845,9 @@ def main(argv=None):
     p.add_argument("task")
     p.add_argument("--repo", default=".")
     p.add_argument("--worktree")
+    p.add_argument("--agent", help="Active host: codex, claude-code, cursor, opencode; unknown hosts use agent/.")
+    p.add_argument("--execution-id", help="Reuse the current execution ID returned by a previous prepare --apply.")
+    p.add_argument("--session-id", help="Optional native chat/session reference; matching current host/session reuses its ID.")
     p.add_argument("--in-place", action="store_true", help="Explicitly prepare in the caller checkout, e.g. a fresh Codex-managed worktree.")
     p.add_argument("--apply", action="store_true")
     p = sub.add_parser("render-report", help="Create a linked PR body from observed results.")
@@ -945,7 +994,8 @@ def main(argv=None):
         elif args.command == "project-options":
             result = project_options(args.repo, args.projects_file, args.workspace_file)
         elif args.command == "prepare":
-            result = prepare(args.repo, args.task, worktree=args.worktree, in_place=args.in_place, apply=args.apply)
+            result = prepare(args.repo, args.task, worktree=args.worktree, in_place=args.in_place, agent=args.agent,
+                             execution_id=args.execution_id, session_id=args.session_id, apply=args.apply)
         elif args.command == "render-report":
             if args.from_progress:
                 from task_progress import report

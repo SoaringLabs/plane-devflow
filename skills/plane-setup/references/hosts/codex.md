@@ -1,5 +1,7 @@
 # Codex integration
 
+Pass `--agent codex` on task `prepare` calls; preserve its returned execution ID within this chat.
+
 Invoke through the skill picker or `$plane-setup`, `$plane-start`, `$plane-deliver`. The optional `agents/openai.yaml` provides cards and the Plane dependency. Reuse a working native/plugin connection before adding another server.
 
 First check that the `codex` executable is available in the active terminal. Desktop installation alone does not establish CLI availability; if this CLI route is needed, follow the [official CLI installation guide](https://developers.openai.com/codex/cli). Refresh the session only when its tool catalog is stale and provide the first-project continuation text.

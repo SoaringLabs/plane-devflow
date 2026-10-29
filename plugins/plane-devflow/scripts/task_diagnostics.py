@@ -24,7 +24,7 @@ def plane_snapshot(value, config, task, now):
 
 
 def status(path, task, *, refresh=False, workitem=None):
-    from plane_workflow import repo_config, run, doctor
+    from plane_workflow import repo_config, run, doctor, same_task_mapping
     from checkout_workflow import inspect, metadata_path, read_metadata, worktrees, merge_state
     from sync_health import status as sync_status
     from task_progress import check_task
@@ -47,7 +47,7 @@ def status(path, task, *, refresh=False, workitem=None):
         if binding:
             target = Path(binding["checkout"]["path"]).resolve()
             registered = {Path(t["worktree"]).resolve() for t in worktrees(root) if "worktree" in t}
-            require(target in registered and repo_config(target)[1] == config,
+            require(target in registered and same_task_mapping(repo_config(target)[1], config),
                     "Recorded task directory is unavailable or has a different mapping; preserve it and inspect.")
             execution = target
         context = inspect(execution, config, task)
