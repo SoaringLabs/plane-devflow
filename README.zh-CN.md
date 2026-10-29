@@ -61,6 +61,12 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
 
 每个仓库首次执行 setup，通过 `.plane-devflow.json` 保存项目关联。该映射需要先进入配置的基础分支，再创建独立任务分支。安装技能不会直接完成账号授权或激活 GitHub 同步；setup 会逐步验证，并复用已有连接。
 
+### 分支前缀与切换 agent
+
+新任务按当前 agent 使用分支前缀：Codex 使用 `codex/`，Claude Code 使用 `claude/`，Cursor 使用 `cursor/`，OpenCode 使用 `opencode/`。新配置默认不设置 `github.branch_prefix`，因此用 Codex 初始化项目不会将后续任务固定为 `codex/`。显式设置的 `github.branch_prefix` 优先于这些默认值。已有项目会保留固定前缀；需要启用自动选择时，删除该字段，并将配置改动合入基础分支。
+
+同一任务换 agent 继续时，先停止上一会话的工作，再打开已记录的 worktree，沿用原分支和主 PR。例如 Claude Code 接续 `codex/project-123` 上的任务时，仍使用这个分支。在同一台机器上，拥有目录访问权限的 agent 可以直接看到未提交改动。详见 [agent 命名与串行接续](skills/plane-start/references/parallel-tasks.md#agent-naming-and-serial-continuation)。
+
 ## 技能入口
 
 使用当前宿主的技能菜单，或按名称请求使用技能。调用方式、MCP 配置与实测边界见 [agent 兼容说明](docs/agent-compatibility.md)。
