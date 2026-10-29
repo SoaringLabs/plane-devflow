@@ -27,7 +27,7 @@ Reuse the host's working Plane tools and authorization. Check existing servers a
 
 The host guides cover Codex CLI registration/login, Claude Code HTTP MCP registration and `/mcp`, Cursor's JSON/UI connection and OpenCode's remote server/auth commands. The user completes browser consent. Authorization tied to one client or server identity is not copied to another agent. Reopen/refresh the session when needed, inspect actual tool schemas and retrieve the requested workspace before claiming live access. An HTTP 401 challenge alone does not establish access.
 
-The Python/Git workflow keeps the same `.plane-devflow.json`, task receipts, branch-prefix defaults, sync scripts and PR markers across agents. `doctor` may report optional `codex_cli` availability; another host can work with it false. Hosts without managed-worktree APIs use the existing Git preparation path. Local terminal access is required for implementation; a text-only host can discuss the task but cannot execute the helpers.
+The Python/Git workflow shares `.plane-devflow.json`, task receipts, sync scripts and PR markers across agents. New task prefixes follow the active host unless the project fixes a prefix; existing task branches and worktrees are reused across serial host changes. See [agent compatibility](agent-compatibility.md#authorization-and-compatibility). `doctor` may report optional `codex_cli` availability; another host can work with it false. Hosts without managed-worktree APIs use the existing Git preparation path. Local terminal access is required for implementation; a text-only host can discuss the task but cannot execute the helpers.
 
 ## Update or remove standalone skills
 

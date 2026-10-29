@@ -1,5 +1,7 @@
 # Cursor integration
 
+Pass `--agent cursor` on task `prepare` calls; preserve its returned execution ID within this chat.
+
 Select the skill in Agent or use its supported slash/picker entry; natural-language requests can name `plane-setup`, `plane-start` or `plane-deliver`. Skills CLI uses `.agents/skills/` for projects and the shared `~/.agents/skills/` for global installation in the tested Skills CLI version; Cursor also supports its own `~/.cursor/skills/` location. Use Agent mode with file/terminal tools for development operations; a chat without those tools can only discuss the workflow.
 
 Inspect existing MCP servers in Cursor's Tools/MCP settings or `agent mcp list`, and the selected configuration. Global MCP settings live in `~/.cursor/mcp.json`; project settings live in `.cursor/mcp.json`. Merge only the absent Plane entry into the existing `mcpServers` object during explicit setup:

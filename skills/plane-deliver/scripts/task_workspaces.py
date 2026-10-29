@@ -33,14 +33,14 @@ def workspace_lock(root, task_identity=None):
         path.unlink()
 
 
-def selected_workspace(root, config, task, requested=None):
+def selected_workspace(root, config, task, requested=None, *, agent=None):
     from checkout_workflow import metadata_path, read_metadata, worktrees
     from task_progress import identity
-    from plane_workflow import repo_config, run, branch_name
+    from plane_workflow import repo_config, run, branch_name, same_task_mapping
     trees = worktrees(root)
     require(trees and "bare" not in trees[0], "Cannot identify the primary checkout.")
     primary = Path(trees[0]["worktree"]).resolve()
-    branch = branch_name(task, config)
+    branch = branch_name(task, config, root=root, agent=agent)
     record, _ = read_metadata(metadata_path(root, config, task, "checkouts"), identity(config, task))
     owners = [Path(t["worktree"]).resolve() for t in trees if t.get("branch") == "refs/heads/" + branch]
     target = Path(requested).expanduser().resolve() if requested else None
@@ -60,25 +60,25 @@ def selected_workspace(root, config, task, requested=None):
     if target.exists():
         actual_root, actual_config = repo_config(target)
         common = lambda p: run(["git", "rev-parse", "--path-format=absolute", "--git-common-dir"], p).stdout.strip()
-        require(actual_root == target and actual_config == config and common(target) == common(root),
+        require(actual_root == target and same_task_mapping(actual_config, config) and common(target) == common(root),
                 "Selected workspace does not belong to this repository and Plane mapping.")
     return target, primary
 
 
-def prepare_workspace(path, task, *, worktree=None, apply=False):
+def prepare_workspace(path, task, *, worktree=None, agent=None, apply=False):
     from plane_workflow import repo_config, run, _prepare_checkout
     root, config = repo_config(path)
     key = parse_task(task, config)
-    target, primary = selected_workspace(root, config, key, worktree)
+    target, primary = selected_workspace(root, config, key, worktree, agent=agent)
     if apply:
         base = config["github"]["base_branch"]
         with workspace_lock(root):
             run(["git", "fetch", "origin", f"refs/heads/{base}:refs/remotes/origin/{base}"], root)
             require(repo_config(root)[1] == config, "Repository mapping changed during workspace preparation.")
-            target, primary = selected_workspace(root, config, key, worktree)
-            result = _prepare_checkout(root, key, worktree=target, apply=True)
+            target, primary = selected_workspace(root, config, key, worktree, agent=agent)
+            result = _prepare_checkout(root, key, worktree=target, agent=agent, apply=True)
     else:
-        result = _prepare_checkout(root, key, worktree=target)
+        result = _prepare_checkout(root, key, worktree=target, agent=agent)
     result.update(caller_path=str(root), primary_path=str(primary), execution_path=str(target),
                   isolated=target != primary, base_freshness="fetched" if apply else "unverified")
     return result

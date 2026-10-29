@@ -1,5 +1,7 @@
 # Claude Code integration
 
+Pass `--agent claude-code` on task `prepare` calls; preserve its returned execution ID within this chat.
+
 Invoke `/plane-setup`, `/plane-start`, `/plane-deliver`, or request the named skill in natural language. Skills CLI targets `.claude/skills/` in the selected project/user scope; the shared workflow does not require Codex UI metadata.
 
 Inspect `claude mcp list` and `claude mcp get plane`. For an absent connection during explicit setup, select the intended MCP scope independently from skill installation scope. User-scope example:
