@@ -2,6 +2,13 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.15.1 — 2026-10-31
+
+- Require English subjects/titles and complete bodies for development commits, pull requests and final squash or merge commits, while keeping Plane tasks, progress reports and conversation in the user's language.
+- Translate human-readable evidence, remaining acceptance criteria and environment notes copied into generated GitHub reports without changing task IDs, hidden bindings, evidence markers, verification facts or limitations.
+- Explicitly supply final merge messages and read back the resulting commit instead of relying on repository defaults. Add an early development-commit pointer, protect published history from automatic rewrites, and regenerate all three standalone skills.
+- Add two synthetic language scenarios covering Chinese task/report prose and inherited squash defaults. Existing mappings, credentials, synchronization workflows and Action pins require no migration for this local skill-policy change. See [0.15.1 validation](docs/validation-0.15.1.md) for evidence and limits.
+
 ## 0.15.0 — 2026-10-29
 
 - Choose default task branch prefixes from the active host: `codex`, `claude`, `cursor` and `opencode`, with a neutral `agent` fallback. Preserve explicit project prefixes; new mappings omit the fixed-prefix setting.
