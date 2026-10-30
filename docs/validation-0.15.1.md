@@ -18,6 +18,8 @@ Local environment: macOS arm64, Python 3.14.3, Node.js 24.15.0 and Codex CLI 0.1
 - The npm dry-run contained 57 packaged files, including the new writing reference, and excluded development fixtures, caches and private evidence. No npm publication was performed.
 - Two isolated artifact-producing forward checks verified complete English GitHub prose, Chinese Plane reports, explicit squash messages and retained verification limits. Translated report metadata also passed the production evidence and task-binding checks.
 
+The first local release-preparation full run overlapped assembly of this new validation document: 528 tests ran, with 4 failures and 2 errors, all caused by package fixtures copying the changelog before its referenced document existed. The other 522 tests passed. After the complete source was committed, all 21 package-validation tests passed on retry. No runtime change or test waiver was needed; the original failed run is retained. Both Python 3.10/3.14 CI runs passed on that complete preparation commit. Final release-head checks are verified separately before publication.
+
 ## Fresh-session comparison
 
 The same harness, action catalog and fixtures ran DELIVER-13 and DELIVER-14 once each against the published 0.15.0 baseline and the 0.15.1 candidate. Baseline scored 0/2; candidate scored 2/2; neither produced a forbidden decision. Traces read the selected skill and relevant references, including the candidate's writing policy. Baseline decisions did not establish the required complete English-message review.
