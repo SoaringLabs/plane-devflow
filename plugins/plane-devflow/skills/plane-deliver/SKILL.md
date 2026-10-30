@@ -30,6 +30,8 @@ Keep state ownership unchanged: legacy Actions alone may write configured lifecy
 
 ## Deliver or update implementation
 
+Before creating commits or creating/updating a PR, follow [English commit and PR messages](../../references/github-writing.md) for full titles and bodies, generated report translation and readback. Plane reports and conversation retain the user's language.
+
 Follow PR delivery's ordered checks, base synchronization, final-head review gate and writeback. Reuse existing PRs. Incomplete work may be delivered as Draft only within an authorized publication request; a passed gate does not silently promote an existing Draft. If GitHub succeeds and Plane fails, retain the PR and resume only writeback. Report the actual task directory/branch/commit and pending acceptance/environment work.
 
 ## Prepare the result for manual acceptance
@@ -37,5 +39,7 @@ Follow PR delivery's ordered checks, base synchronization, final-head review gat
 Prepare on demand from the task worktree, verify source identity and usability, and hand over the entry point, test steps and retention boundary. Keep the primary checkout and other tasks' resources intact. Record environment/check evidence in the existing fields; starting a service does not establish acceptance. Stop after an environment-only handoff.
 
 ## Record acceptance or finalize
+
+Before an authorized merge, follow [English commit and PR messages](../../references/github-writing.md#final-squash-or-merge-commit) to supply and read back the final commit's English subject and body.
 
 Follow finalization for scoped acceptance, exact-head merge checks, fresh completion snapshots and current reports. Acceptance without merge authorization leaves the PR open. After authorized completion and task readback, plan/apply `finish-task` for the primary checkout; preserve task worktrees. Report task completion and local handoff separately, including directory, branch, commit and clean/ready state. Retry only a failed handoff rather than reversing completed remote work.

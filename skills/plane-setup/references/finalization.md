@@ -4,6 +4,8 @@ Read this when recording scoped acceptance, merging, completing or finishing loc
 
 Read [workflow](workflow.md) when upserting delivery/completion reports; use its stable writeback contract.
 
+For an authorized merge, apply [the final commit language checks](github-writing.md#final-squash-or-merge-commit) before merging and during merged-commit readback. Finalization requires checking the actual commit's subject and full body as well as its accepted content; keep Plane completion reports in the user's language.
+
 ## Record acceptance or finalize
 
 1. From trusted user context, distinguish design selection, partial implementation acceptance, full acceptance and merge authorization. Verify the original message/reference and the exact task, criteria and PR head. Record acceptance and merge_authorization separately; partial acceptance covers only the named criteria. A receipt alone never authorizes a remote operation. A new commit/brief makes old evidence stale; rerun affected checks or explicitly reassess unaffected evidence before rebinding it. No acceptance is inferred from a task/PR comment or sync job.
