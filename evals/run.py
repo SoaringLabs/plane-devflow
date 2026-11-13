@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
-from validate_package import frontmatter
+from validate_package import NAMES, frontmatter
 
 
 def read_cases(path, *, raw=None, actions=None):
@@ -21,11 +21,11 @@ def read_cases(path, *, raw=None, actions=None):
     for case in cases:
         if not isinstance(case, dict) or not isinstance(case.get('id'), str) or not case['id']:
             raise ValueError('Each case needs a string ID')
-        if case.get('expected_skill') not in (None, 'plane-setup', 'plane-start', 'plane-deliver'):
+        if case.get('expected_skill') not in (None, *NAMES):
             raise ValueError(f"Invalid expected skill: {case['id']}")
         routes = case.get('expected_skills_any', [case.get('expected_skill')])
         if (not isinstance(routes, list) or not routes or
-                any(r not in (None, 'plane-setup', 'plane-start', 'plane-deliver') for r in routes) or
+                any(r not in (None, *NAMES) for r in routes) or
                 len(set(routes)) != len(routes) or case.get('expected_skill') not in routes):
             raise ValueError(f"Invalid alternative skill rubric: {case['id']}")
         if case.get('invocation') not in ('explicit', 'implicit') or not isinstance(case.get('fixture'), dict):
@@ -64,7 +64,7 @@ def score(case, decision, *, catalog=None):
     catalog = set(catalog if catalog is not None else json.loads((ROOT / 'evals/actions.json').read_text()))
     if not set(actions) <= catalog or len(actions) != len(set(actions)):
         raise ValueError('Unknown or duplicate decision actions')
-    if decision.get('skill') not in (None, 'plane-setup', 'plane-start', 'plane-deliver'):
+    if decision.get('skill') not in (None, *NAMES):
         raise ValueError('Unknown skill decision')
     if not isinstance(decision.get('rationale'), str) or not decision['rationale'].strip():
         raise ValueError('Missing rationale')

@@ -1,6 +1,6 @@
 # Unified product upgrades
 
-Use this only for an explicit Plane DevFlow installation/project upgrade, migration or rollback request. Ordinary task preparation remains read-only and never updates skills or workflows. Keep the three public skills and use the original installation channel.
+Use this only for an explicit Plane DevFlow installation/project upgrade, migration or rollback request. Ordinary task preparation remains read-only and never updates skills or workflows. Use the original installation channel and the target release’s skill inventory.
 
 ## Select one release and one scope
 
@@ -44,7 +44,7 @@ Staging verifies the complete fixed source before execution. Project preparation
 
 Inspect the resulting diff. The `pr` stage commits only planned files and pushes/creates or reconciles one upgrade PR; run it with `--apply` only within explicit PR authorization. It never merges. An uncertain create response requires reading existing PRs before retrying; the stable plan marker identifies the same upgrade.
 
-The `install` stage with `--apply` refreshes all three Skills CLI payloads from the same fixed product source and verifies installed bytes and the selected host entry. Customized host copies, redirects, changed installation environments and unrelated skill metadata stop installation before overwriting them. Project PRs preserve other skills' lock entries. When project skills or their metadata are tracked in Git, stage their changes in the isolated upgrade workspace before the `pr` stage; the original checkout stays unchanged. After merge, rerun `install` to fast-forward a clean original base checkout and verify its installed bytes. A busy or different branch receives an explicit synchronization handoff. Credentials remain separate. The pinned Skills CLI requires Node.js 22.20+.
+The `install` stage with `--apply` refreshes the target release’s Skills CLI payloads from the same fixed product source and verifies installed bytes and the selected host entry. Customized host copies, redirects, changed installation environments and unrelated skill metadata stop installation before overwriting them. Project PRs preserve other skills' lock entries. When project skills or their metadata are tracked in Git, stage their changes in the isolated upgrade workspace before the `pr` stage; the original checkout stays unchanged. After merge, rerun `install` to fast-forward a clean original base checkout and verify its installed bytes. A busy or different branch receives an explicit synchronization handoff. Credentials remain separate. The pinned Skills CLI requires Node.js 22.20+.
 
 For a plugin installation, `install` returns a manual handoff through its original channel. Reopen the host when required, resolve its actual active plugin directory, then use `--step confirm-plugin --plugin-root /absolute/active/plugin --apply`. Hosts may activate a new versioned cache path; the helper verifies its complete target payload and records that path without replacing the original plan. Later status checks re-read those active files. Never register MCP again just to update files.
 

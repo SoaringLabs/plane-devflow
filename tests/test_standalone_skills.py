@@ -69,7 +69,7 @@ class StandaloneSkillsTests(unittest.TestCase):
         reference = (skill / "references/acceptance-environment.md").read_text()
         self.assertIn("skill-guides/plane-deliver.md#record-acceptance-or-finalize", reference)
         self.assertTrue((skill / "references/skill-guides/plane-deliver.md").is_file())
-        self.assertEqual(validate_package.validate_standalone(self.root), 3)
+        self.assertEqual(validate_package.validate_standalone(self.root), 4)
 
     def test_dependency_and_payload_drift_are_rejected(self):
         ui = self.root / "skills/plane-setup/agents/openai.yaml"
@@ -101,7 +101,10 @@ class StandaloneSkillsTests(unittest.TestCase):
             body = (skill / "SKILL.md").read_text()
             self.assertNotIn("../../scripts", body)
             self.assertNotIn("$plane-devflow:", body)
-            self.assertIn("references/host-runtime.md", body)
+            if name == "plane-check":
+                self.assertIn("references/plane-check-hosts.md", body)
+            else:
+                self.assertIn("references/host-runtime.md", body)
             self.assertNotIn("codex mcp ", (skill / "references/mcp.md").read_text())
 
     def test_runtime_doctor_works_without_codex_or_github_cli(self):

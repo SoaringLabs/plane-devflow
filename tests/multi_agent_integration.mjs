@@ -12,7 +12,7 @@ import { createCredentialIsolation, credentialEnvironment, profileMetadata } fro
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane multi agent ')));
-const names = ['plane-setup', 'plane-start', 'plane-deliver'];
+const names = ['plane-setup', 'plane-start', 'plane-deliver', 'plane-check'];
 const hosts = { codex: '.agents/skills', 'claude-code': '.claude/skills', cursor: '.agents/skills', opencode: '.agents/skills' };
 const endpoint = 'https://mcp.plane.so/http/mcp';
 const realHome = os.homedir();
@@ -80,7 +80,7 @@ try {
     for (const name of names) assert.deepEqual(inventory(fs.realpathSync(path.join(target.project, projectRoot, name))), expected[name]);
     assert.deepEqual(saved.map(digest), initial);
     const result = { globalInstallation: true, projectInstallation: true, repeatedInstallation: true,
-      allThreePayloadsAndHelpers: true, configurationAndSyntheticAuthPreserved: true,
+      allPayloadsAndHelpers: true, configurationAndSyntheticAuthPreserved: true,
       nativeSkillDiscovery: 'not_run', nativeMcpConfiguration: 'not_run', modelExecution: 'unverified', oauth: 'unverified' };
     if (host === 'codex') {
       const loaded = await codexSkills(target); write(path.join(root, 'codex-native-skills.json'), loaded);

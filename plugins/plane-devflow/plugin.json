@@ -22,7 +22,8 @@
         "defaultPrompt": [
           "Set Up Plane",
           "Start Plane Task",
-          "Deliver Plane Task"
+          "Deliver Plane Task",
+          "Check Plane Connection"
         ]
       }
     }

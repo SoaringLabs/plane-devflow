@@ -40,10 +40,10 @@ Run from your target repository’s root and choose your agent:
 
 ```sh
 npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
-  --skill plane-setup plane-start plane-deliver
+  --skill plane-setup plane-start plane-deliver plane-check
 ```
 
-The command installs all three skills in the current project. Add `--global` to make them available across projects. See the [installation guide](docs/installation.md) for prerequisites, host selection, MCP configuration and the Codex plugin distribution.
+The command installs all four skills in the current project. Add `--global` to make them available across projects. See the [installation guide](docs/installation.md) for prerequisites, host selection, MCP configuration and the Codex plugin distribution.
 
 ### Connect → develop → deliver
 
@@ -73,6 +73,7 @@ Use your host’s skill picker or request a skill by name. Invocation, MCP setup
 
 | Skill | Use when |
 | --- | --- |
+| **Check Plane Connection** — `plane-check` | Diagnose tool availability, authentication and workspace or project access in the current agent session |
 | **Set Up Plane** — `plane-setup` | Connect a repository, configure GitHub sync or resume incomplete setup |
 | **Start Plane Task** — `plane-start` | Plan the first tasks, create an approved list, or start/resume an existing task |
 | **Deliver Plane Task** — `plane-deliver` | Deliver or diagnose a task PR, prepare testing, record acceptance or finalize authorized work |
@@ -117,7 +118,7 @@ Add `--global` for your original global installation and open a new agent sessio
 Run from the same repository and select the intended agent:
 
 ```sh
-npx skills remove plane-setup plane-start plane-deliver
+npx skills remove plane-setup plane-start plane-deliver plane-check
 ```
 
 For a global installation, add `--global`. Removal preserves MCP connections, account authorization, project mappings, copied sync files and task workspaces. For Codex plugin removal, see the [installation guide](docs/installation.md#install-the-codex-plugin-locally).

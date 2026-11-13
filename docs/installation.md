@@ -10,7 +10,7 @@ Stable installation requires a formal product release with its manifest and an a
 
 ```sh
 npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
-  --skill plane-setup plane-start plane-deliver
+  --skill plane-setup plane-start plane-deliver plane-check
 ```
 
 Run the command from the target repository root. Choose Codex, Claude Code, Cursor or OpenCode when prompted. Optional `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode` targets a host explicitly. The default installs into the current project. Add `--global` only when you choose user-level installation across projects. The default command remains interactive so existing-file decisions are visible. For one skill, use `--skill plane-setup` (or another entry point). Each generated skill is self-contained; its bundled fallback guides cover related workflows even when a companion skill is absent.
@@ -20,6 +20,8 @@ Requirements: Node.js 22.20+ for Skills CLI, npm, Git and an agent with local sh
 The repository's generated `skills/` directories include instructions, UI/dependency metadata, standard-library Python helpers, references, license and distribution metadata. Their canonical sources remain under `plugins/plane-devflow/` plus standalone MCP guidance under `scripts/standalone-resources/`. Generation rewrites paths and invocation names, and CI rejects drift. Installation does not require this source checkout at runtime.
 
 ## Plane MCP connection
+
+To diagnose a connection after switching agents, run `plane-check` in the affected session and name the expected workspace. The skill can verify the bound workspace even without a repository mapping. It can also read the mapped project when a matching mapping exists.
 
 Open a new session in the business repository and load/request `plane-setup`. Follow only the active host's [integration guide](agent-compatibility.md). Skills CLI installs files, while MCP configuration and account consent use the host's native mechanisms. `agents/openai.yaml` is Codex-specific optional metadata, not a cross-agent MCP installer.
 
@@ -35,7 +37,7 @@ The Python/Git workflow shares `.plane-devflow.json`, task receipts, sync script
 
 Ask `plane-setup` to upgrade the current project to a selected formal Plane DevFlow release. It presents the changelog and a plan, verifies one fixed source commit, prepares an isolated project upgrade PR and refreshes the original installation. PR merge, activation, fresh connection evidence and actual event writeback remain separate results. Multi-project upgrades use an explicit list.
 
-See the [operator workflow](../plugins/plane-devflow/references/product-upgrades.md) for the implemented `resolve-release` and `upgrade` helper stages. The first unified release must exist with its manifest before public-source setup/upgrades can succeed. Earlier installed versions do not contain these helpers: bootstrap the verified target helper from its formal source outside the active installation before changing it, then follow the same scoped plan. No npm publication is required.
+See the [operator workflow](../plugins/plane-devflow/references/product-upgrades.md) for the implemented `resolve-release` and `upgrade` helper stages. The first unified release must exist with its manifest before public-source setup/upgrades can succeed. If the installed helper is missing or rejects a newer release inventory, bootstrap the verified target helper from its formal source outside the active installation before changing it, then follow the same scoped plan. No npm publication is required.
 
 ### Refresh the complete skill collection only
 
@@ -52,7 +54,7 @@ This refreshes all skills provided by the repository and includes any newly adde
 To keep your current skill selection, update only the installed Plane DevFlow skills with GitHub tracking metadata:
 
 ```sh
-npx skills update plane-setup plane-start plane-deliver --project
+npx skills update plane-setup plane-start plane-deliver plane-check --project
 ```
 
 Only matching installed skills are updated; newly added skills are not installed. For a global installation, replace `--project` with `--global`.
@@ -66,7 +68,7 @@ Run the update command from the repository where the skills were installed and r
 Remove project entries from the same repository with:
 
 ```sh
-npx skills remove plane-setup plane-start plane-deliver
+npx skills remove plane-setup plane-start plane-deliver plane-check
 ```
 
 For a global installation, add `--global` when removing. Changing the recommended command does not migrate or remove existing global installations. Removing skills preserves MCP connections and credentials, business `.plane-devflow.json`, copied workflows/scripts, task worktrees and external integration settings. Background synchronization remains controlled by that repository or official integration.
@@ -80,7 +82,7 @@ codex plugin marketplace add /absolute/path/to/plane-devflow
 codex plugin add plane-devflow@plane-devflow
 ```
 
-The plugin bundles its three skills and the Plane MCP connection. Use `$plane-devflow:plane-setup`, `$plane-devflow:plane-start` and `$plane-devflow:plane-deliver`. Keep one active distribution to avoid duplicate skill entries. Account consent is handled by the host.
+The plugin bundles its four skills and the Plane MCP connection. Use `$plane-devflow:plane-setup`, `$plane-devflow:plane-start`, `$plane-devflow:plane-deliver` or `$plane-devflow:plane-check`. Keep one active distribution to avoid duplicate skill entries. Account consent is handled by the host.
 
 The local npm installer can also be run from the checkout after `npm ci`:
 
@@ -115,7 +117,7 @@ Ordinary task preparation still checks synchronization readiness, without queryi
 
 ### Manual plugin version check
 
-For an explicit check of the plugin's public stable version, use the helper bundled with the installed plugin or any of the three standalone skills:
+For an explicit check of the plugin's public stable version, use the helper bundled with the installed plugin or any standalone skill:
 
 ```sh
 python3 /absolute/installed/skill-or-plugin/scripts/plane_workflow.py check-updates

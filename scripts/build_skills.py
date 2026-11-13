@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = ("plane-setup", "plane-start", "plane-deliver")
+NAMES = ("plane-setup", "plane-start", "plane-deliver", "plane-check")
 HOSTS = ("codex", "claude-code", "cursor", "opencode")
 OWNER = "plane-devflow/build_skills.py"
 
@@ -84,7 +84,8 @@ def expected_files(root, name):
                     "connection setup is requested, or authentication fails. Installation alone does not establish account access. "
                     "For another Plane workflow, use its installed skill when available; otherwise read the bundled guide "
                     f"({routes}) and follow only the user's requested scope.")
-    files["SKILL.md"] = (entry[:end] + introduction + entry[end:]).encode()
+    if name != "plane-check":
+        files["SKILL.md"] = (entry[:end] + introduction + entry[end:]).encode()
     ui = (plugin / "skills" / name / "agents/openai.yaml").read_text().replace("$plane-devflow:", "$")
     ui += ('\ndependencies:\n  tools:\n    - type: "mcp"\n      value: "plane"\n'
            '      description: "Plane account and project tools"\n'

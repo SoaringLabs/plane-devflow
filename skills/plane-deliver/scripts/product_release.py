@@ -13,7 +13,8 @@ import release_cache
 from plugin_version import VERSION
 
 REPOSITORY = 'SoaringLabs/plane-devflow'
-SKILLS = ('plane-setup', 'plane-start', 'plane-deliver')
+WORKFLOW_SKILLS = ('plane-setup', 'plane-start', 'plane-deliver')
+SKILLS = (*WORKFLOW_SKILLS, 'plane-check')
 SHA = re.compile(r'[0-9a-f]{40}')
 SEMVER = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)')
 
@@ -35,7 +36,8 @@ def validate_manifest(data, *, allow_candidate=False):
     require(data.get('tag') == 'v' + data['version'], 'Release tag/version mismatch.')
     require(isinstance(data.get('commit'), str) and SHA.fullmatch(data['commit']), 'Expected a full release commit.')
     require(data.get('channel') == 'stable' or (allow_candidate and data.get('channel') == 'candidate'), 'A formal stable release is required.')
-    require(data.get('skills') == list(SKILLS), 'Unexpected public skill inventory.')
+    skills = data.get('skills')
+    require(skills in (list(WORKFLOW_SKILLS), list(SKILLS)), 'Unexpected public skill inventory.')
     require(data.get('config_versions') == [1, 2] and data.get('binding_versions') == [1], 'Unsupported release contracts.')
     files = data.get('files')
     require(isinstance(files, dict) and bool(files), 'Missing release fingerprints.')
@@ -43,10 +45,12 @@ def validate_manifest(data, *, allow_candidate=False):
         require(isinstance(name, str) and name and '\\' not in name and not PurePosixPath(name).is_absolute()
                 and all(part not in ('', '.', '..', '.git') for part in name.split('/')), 'Unsafe release path.')
         require(isinstance(digest, str) and re.fullmatch(r'[0-9a-f]{64}', digest), 'Invalid release fingerprint.')
+    skill_files = {name for name in files if re.fullmatch(r'skills/[^/]+/SKILL\.md', name)}
+    require(skill_files == {f'skills/{name}/SKILL.md' for name in skills}, 'Incomplete release payload or unexpected skill files.')
     required = ['VERSION', 'action.yml', 'plugins/plane-devflow/plugin.json',
                 *[f'plugins/plane-devflow/scripts/{name}.py' for name in
                   ('plugin_version', 'plane_workflow', 'plane_sync', 'action_runner', 'product_release', 'product_upgrade', 'shared_sync')],
-                *[f'skills/{name}/{file}' for name in SKILLS for file in ('distribution.json', 'SKILL.md')]]
+                *[f'skills/{name}/{file}' for name in skills for file in ('distribution.json', 'SKILL.md')]]
     require(all(name in files for name in required), 'Incomplete release payload.')
     return data
 
@@ -63,8 +67,9 @@ def manifest(root, commit, *, candidate=False):
         mode, kind, oid = info.split()
         require(mode in (b'100644', b'100755') and kind == b'blob', 'Release payload contains a symlink or submodule.')
         files[name.decode()] = hashlib.sha256(git(root, 'cat-file', 'blob', oid.decode())).hexdigest()
+    skills = [name for name in SKILLS if f'skills/{name}/SKILL.md' in files]
     return validate_manifest({'schema': 1, 'repository': REPOSITORY, 'version': version, 'tag': 'v' + version,
-                             'commit': commit, 'channel': 'candidate' if candidate else 'stable', 'skills': list(SKILLS),
+                             'commit': commit, 'channel': 'candidate' if candidate else 'stable', 'skills': skills,
                              'config_versions': [1, 2], 'binding_versions': [1], 'files': files}, allow_candidate=candidate)
 
 
@@ -88,7 +93,7 @@ def verify_source(root, release, *, allow_candidate=False):
     require((root / 'VERSION').read_text().strip() == release['version'], 'Product version mismatch.')
     plugin = json.loads((root / 'plugins/plane-devflow/plugin.json').read_text())
     require(plugin['version'] == release['version'], 'Plugin version mismatch.')
-    for name in SKILLS:
+    for name in release['skills']:
         require(json.loads((root / f'skills/{name}/distribution.json').read_text())['version'] == release['version'],
                 'Standalone version mismatch.')
     return release

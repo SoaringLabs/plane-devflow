@@ -2,7 +2,7 @@
 
 Pass `--agent opencode` on task `prepare` calls; preserve its returned execution ID within this chat.
 
-Ask OpenCode to load the named `plane-setup`, `plane-start` or `plane-deliver` skill through its native skill tool. Do not assume Codex's `$` syntax creates an OpenCode command. Skills CLI uses `.agents/skills/` for projects and `~/.agents/skills/` globally in the tested Skills CLI 1.7.4. OpenCode also supports its native `~/.config/opencode/skills/` location. Keep native tool permission rules; OpenAI UI metadata is optional.
+Ask OpenCode to load the named `plane-setup`, `plane-start`, `plane-deliver` or `plane-check` skill through its native skill tool. Do not assume Codex's `$` syntax creates an OpenCode command. Skills CLI uses `.agents/skills/` for projects and `~/.agents/skills/` globally in the tested Skills CLI 1.7.4. OpenCode also supports its native `~/.config/opencode/skills/` location. Keep native tool permission rules; OpenAI UI metadata is optional.
 
 Inspect `opencode mcp list` and the active OpenCode configuration. Use the intended project `opencode.json` or global `~/.config/opencode/opencode.json`, merging only the missing server during explicit setup:
 

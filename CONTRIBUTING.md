@@ -6,7 +6,7 @@ Keep changes scoped to the problem and preserve existing features, authorization
 
 - `skills/`: generated, self-contained Skills CLI distribution; regenerate and commit it after canonical-source changes. Do not edit generated files by hand.
 - `scripts/build_skills.py` and `scripts/standalone-resources/`: generation and standalone-only MCP guidance.
-- `plugins/plane-devflow/skills/`: the three public agent entrypoints and their Codex UI metadata. Keep purpose, routing and essential boundaries in SKILL.md; link conditional procedures when the requested mode needs them.
+- `plugins/plane-devflow/skills/`: the public agent entrypoints and their Codex UI metadata. Keep purpose, routing and essential boundaries in SKILL.md; link conditional procedures when the requested mode needs them.
 - `plugins/plane-devflow/references/`: canonical workflows, contracts and recovery. Keep each detailed rule in one place rather than copying it into every entrypoint.
 - `plugins/plane-devflow/scripts/`: standard-library runtime helpers. Preserve read/plan versus apply behavior, structured output, idempotency and protection of unrelated work.
 - `bin/` and `lib/`: the npm installer and its persistent-source/native verification boundary. Keep it separate from account authorization and business-repository mutation.
@@ -14,7 +14,7 @@ Keep changes scoped to the problem and preserve existing features, authorization
 - `evals/`: prompts, fixtures, decision rubrics and the opt-in model evaluation runner. Raw transcripts stay outside tracked files.
 - `README.md` / `README.zh-CN.md`: matching English and Chinese public entrypoints, installation and first successful use. Contributor/release detail belongs here or in PUBLISHING.
 
-Do not add skill directories or metadata only to match a template. The public inventory is deliberately three skills; an intentional inventory change must update the package contract and its tests. The plugin keeps shared scripts/references. Generated standalone skills each contain their runtime, references and fallback workflow guides; CI checks that these copies match canonical sources.
+Do not add skill directories or metadata only to match a template. An intentional change to the public skill inventory must update the package contract and its tests. The plugin keeps shared scripts/references. Generated standalone skills each contain their runtime, references and fallback workflow guides; CI checks that these copies match canonical sources.
 
 ## Local checks
 
