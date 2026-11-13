@@ -2,6 +2,13 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.16.0 — 2026-11-13
+
+- Add `plane-check` to the Codex plugin and standalone Skills CLI distribution. Run it in the affected session to check Plane MCP tool availability, authentication, the bound workspace and access to a target project. Workspace verification works without a repository mapping.
+- Keep diagnostics read-only. Report the observed failure and the next step without changing credentials, configuration or Plane data.
+- Include the fourth skill in installation and upgrade verification. The new installer can verify existing three-skill plugin installations, and product upgrades use the target release’s skill inventory.
+- Document global installation and how to check Plane after switching agents in both READMEs. Existing project mappings and pinned GitHub workflows require no migration to use the new skill.
+
 ## 0.15.1 — 2026-10-31
 
 - Require English subjects/titles and complete bodies for development commits, pull requests and final squash or merge commits, while keeping Plane tasks, progress reports and conversation in the user's language.

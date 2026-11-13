@@ -34,7 +34,7 @@
 
 ### 安装
 
-下面的 stable 渠道命令需要已有正式产品版本，并已激活 `stable` 分支。两者就绪前，请使用[安装说明](docs/installation.md)中的候选版本测试方式。
+`stable` 渠道已包含 `plane-check`。已有 Codex 插件的用户可以通过原来的插件来源更新，一次获得四个技能。独立安装使用下面的 Skills CLI 命令。
 
 在目标代码仓库根目录执行，并选择你的 agent：
 
@@ -43,7 +43,9 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
   --skill plane-setup plane-start plane-deliver plane-check
 ```
 
-该命令将四个技能安装到当前项目。添加 `--global` 可跨项目使用。环境要求、指定宿主、MCP 配置及 Codex 插件分发方式见 [安装说明](docs/installation.md)。
+该命令将四个技能安装到当前项目。添加 `--global` 后，所选 agent 可在多个项目里使用这四个技能。每个 agent 分别管理自己的 Plane MCP 连接和 OAuth 授权。环境要求、指定宿主、MCP 配置及 Codex 插件分发方式见 [安装说明](docs/installation.md)。
+
+换 agent 后，可以在遇到问题的会话里说：**“用 plane-check 检查当前会话的 Plane 连接，预期工作区是 WORKSPACE。”** 把 `WORKSPACE` 换成工作区标识。检查只读，仓库尚未关联时也可以验证工作区访问。Codex 插件用 `$plane-devflow:plane-check`，独立技能用 `$plane-check`。
 
 ### 关联 → 开发 → 交付
 
