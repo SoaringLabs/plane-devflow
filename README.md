@@ -34,7 +34,7 @@ New setups record PR activity **without automatically changing task states**. Se
 
 ### Install
 
-The stable-channel command below requires a published product release and an activated `stable` branch. Until both are available, use the candidate-testing instructions in the [installation guide](docs/installation.md).
+The `stable` channel includes `plane-check`. If you already use the Codex plugin, update it through your existing marketplace to get all four skills. Use Skills CLI for a standalone installation.
 
 Run from your target repository’s root and choose your agent:
 
@@ -43,7 +43,9 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
   --skill plane-setup plane-start plane-deliver plane-check
 ```
 
-The command installs all four skills in the current project. Add `--global` to make them available across projects. See the [installation guide](docs/installation.md) for prerequisites, host selection, MCP configuration and the Codex plugin distribution.
+The command installs all four skills in the current project. Add `--global` to use all four across projects in the selected agent. Each agent manages its own Plane MCP connection and OAuth authorization. See the [installation guide](docs/installation.md) for prerequisites, host selection, MCP configuration and the Codex plugin distribution.
+
+After switching agents, ask in the affected session: **“Use plane-check to check my Plane connection. The expected workspace is WORKSPACE.”** Replace `WORKSPACE` with your workspace slug. The check is read-only and can verify workspace access before repository setup. In Codex, use `$plane-devflow:plane-check` with the plugin or `$plane-check` with the standalone skill.
 
 ### Connect → develop → deliver
 
