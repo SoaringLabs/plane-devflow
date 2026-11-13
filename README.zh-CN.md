@@ -40,10 +40,10 @@
 
 ```sh
 npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
-  --skill plane-setup plane-start plane-deliver
+  --skill plane-setup plane-start plane-deliver plane-check
 ```
 
-该命令将三个技能安装到当前项目。添加 `--global` 可跨项目使用。环境要求、指定宿主、MCP 配置及 Codex 插件分发方式见 [安装说明](docs/installation.md)。
+该命令将四个技能安装到当前项目。添加 `--global` 可跨项目使用。环境要求、指定宿主、MCP 配置及 Codex 插件分发方式见 [安装说明](docs/installation.md)。
 
 ### 关联 → 开发 → 交付
 
@@ -73,6 +73,7 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
 
 | 技能 | 什么时候用 |
 | --- | --- |
+| **Check Plane Connection** — `plane-check` | 换 agent 或连不上 Plane 时，只读检查当前会话的工具、认证、工作区和项目访问 |
 | **Set Up Plane** — `plane-setup` | 关联仓库、配置 GitHub 同步，或继续未完成的初始化 |
 | **Start Plane Task** — `plane-start` | 规划首批任务、创建已确认的清单，或开始、恢复已有任务 |
 | **Deliver Plane Task** — `plane-deliver` | 交付或诊断任务 PR、准备试用、记录验收，或按授权收尾 |
@@ -117,7 +118,7 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable --skill 
 在原安装仓库中执行，并选择目标 agent：
 
 ```sh
-npx skills remove plane-setup plane-start plane-deliver
+npx skills remove plane-setup plane-start plane-deliver plane-check
 ```
 
 全局安装添加 `--global`。移除技能会保留 MCP 连接、账号授权、项目映射、已复制的同步文件和任务工作区。Codex 插件的移除方式见[安装说明](docs/installation.md#install-the-codex-plugin-locally)。

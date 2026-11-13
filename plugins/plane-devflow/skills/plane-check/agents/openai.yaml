@@ -1,0 +1,4 @@
+interface:
+  display_name: "Check Plane Connection"
+  short_description: "Diagnose Plane access in the affected agent session"
+  default_prompt: "Use $plane-devflow:plane-check to diagnose Plane access in this session."

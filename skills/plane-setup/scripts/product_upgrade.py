@@ -14,7 +14,7 @@ HOSTS = ('codex', 'claude-code', 'cursor', 'opencode')
 HOST_SKILL_FOLDERS = ('.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills')
 
 
-def host_entries(base, canonical):
+def host_entries(base, canonical, skills):
     """Snapshot host entries without following redirects outside the chosen scope."""
     base, canonical = Path(base), Path(canonical)
     entries = {}
@@ -22,7 +22,7 @@ def host_entries(base, canonical):
         parent = base / folder
         require(not any(path.is_symlink() for path in (parent, *parent.parents) if path == base or base in path.parents),
                 'Host installation parents must not be symlinks; preserve them for review.')
-        for name in SKILLS:
+        for name in skills:
             path = parent / name
             if path.is_symlink():
                 require(path.resolve() == canonical / name and path.exists(),
@@ -36,7 +36,7 @@ def host_entries(base, canonical):
 
 
 def verify_host_entries(selected, base, canonical, expected, *, resumed=False):
-    current = host_entries(base, canonical)
+    current = host_entries(base, canonical, selected['before'])
     for key, previous in selected['host_entries'].items():
         found = current[key]
         # Skills 1.7.4 uses the universal .agents location for the other hosts.
@@ -51,7 +51,7 @@ def verify_host_entries(selected, base, canonical, expected, *, resumed=False):
 def host_refresh_complete(selected, entries, expected):
     return selected['host'] != 'claude-code' or all(
         entries['.claude/skills/' + name] in ({'kind': 'canonical_link'}, {'kind': 'copy', 'files': expected[name]})
-        for name in SKILLS)
+        for name in expected)
 
 
 def read_skills_lock(path, version):
@@ -74,7 +74,7 @@ def project_lock(root):
     return read_skills_lock(Path(root) / 'skills-lock.json', 1)
 
 
-def lock_changes_are_scoped(before, after, version):
+def lock_changes_are_scoped(before, after, version, skills=SKILLS):
     original = before or {'version': version, 'skills': {}}
     current = after or {'version': version, 'skills': {}}
     if before is None and version == 3 and 'dismissed' in current:
@@ -82,8 +82,8 @@ def lock_changes_are_scoped(before, after, version):
         original['dismissed'] = {}
     return ({key: value for key, value in current.items() if key != 'skills'} ==
             {key: value for key, value in original.items() if key != 'skills'} and
-            {key: value for key, value in current['skills'].items() if key not in SKILLS} ==
-            {key: value for key, value in original['skills'].items() if key not in SKILLS})
+            {key: value for key, value in current['skills'].items() if key not in skills} ==
+            {key: value for key, value in original['skills'].items() if key not in skills})
 
 
 def verify_project_lock(selected, root, *, allow_product_changes=False):
@@ -91,7 +91,7 @@ def verify_project_lock(selected, root, *, allow_product_changes=False):
     if not allow_product_changes:
         require(after == before, 'Skills lock changed since review; preserve it and plan again.')
         return after
-    require(lock_changes_are_scoped(before, after, 1),
+    require(lock_changes_are_scoped(before, after, 1, selected['before']),
             'Skills lock contains unrelated changes; preserve them for review.')
     return after
 
@@ -103,7 +103,7 @@ def verify_global_lock(selected, *, allow_product_changes=False):
     require(not any(parent.is_symlink() for parent in path.parents if parent == base or base in parent.parents),
             'Global skills lock parents must not be symlinks.')
     current = read_skills_lock(path, 3)
-    require(lock_changes_are_scoped(lock['before'], current, 3) if allow_product_changes else current == lock['before'],
+    require(lock_changes_are_scoped(lock['before'], current, 3, selected['before']) if allow_product_changes else current == lock['before'],
             'Global skills lock changed outside the selected product; preserve it and plan again.')
 
 
@@ -132,9 +132,10 @@ def preserve_lock_metadata(selected, root):
     if before is None:
         verify_project_lock(selected, root, allow_product_changes=True)
         return
+    skills = selected['before']
     merged = dict(before)
-    merged['skills'] = {key: value for key, value in before['skills'].items() if key not in SKILLS}
-    merged['skills'].update({key: value for key, value in (after or {'skills': {}})['skills'].items() if key in SKILLS})
+    merged['skills'] = {key: value for key, value in before['skills'].items() if key not in skills}
+    merged['skills'].update({key: value for key, value in (after or {'skills': {}})['skills'].items() if key in skills})
     if merged != after:
         atomic_write(Path(root) / 'skills-lock.json', (json.dumps(merged, indent=2) + '\n').encode())
 
@@ -211,7 +212,7 @@ def remote_default(root):
     return {'branch': branch.group(1), 'commit': commit.group(1)}
 
 
-def installation(project, scope, host, home=None):
+def installation(project, scope, host, home=None, *, skills=SKILLS):
     require(scope in ('project', 'global') and host in HOSTS, 'Choose the original scope and a supported agent.')
     home = Path(home or Path.home()).resolve()
     base = home if scope == 'global' else Path(project).resolve()
@@ -223,7 +224,7 @@ def installation(project, scope, host, home=None):
     # Capture exact existing contents; apply rechecks this snapshot before installation.
     found = {}
     versions = {}
-    for name in SKILLS:
+    for name in skills:
         path = target / name
         found[name] = inventory(path)
         if found[name] is None:
@@ -238,7 +239,7 @@ def installation(project, scope, host, home=None):
             require(data.get('generator') == 'plane-devflow/build_skills.py' and data.get('skill') == name,
                     'Existing skill belongs to another source; preserve it.')
             versions[name] = data.get('version')
-    entries = host_entries(base, target)
+    entries = host_entries(base, target, skills)
     for key, entry in entries.items():
         if entry is not None:
             name = key.rsplit('/', 1)[1]
@@ -247,8 +248,8 @@ def installation(project, scope, host, home=None):
     tracked = []
     if scope == 'project':
         from plane_workflow import run
-        prefixes = ['skills-lock.json', *['.agents/skills/' + name for name in SKILLS],
-                    *[folder + '/' + name for folder in ('.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in SKILLS]]
+        prefixes = ['skills-lock.json', *['.agents/skills/' + name for name in skills],
+                    *[folder + '/' + name for folder in ('.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in skills]]
         tracked = run(['git', 'ls-files', '--', *prefixes], project).stdout.splitlines()
     global_lock = None
     if scope == 'global':
@@ -280,7 +281,7 @@ def plan(root, release, *, scope='project', host='codex', channel='skills', home
     target = validate_manifest(release, allow_candidate=candidate_source)
     require(channel in ('skills', 'plugin'), 'Unsupported installation channel.')
     if channel == 'skills':
-        selected = installation(root, scope, host, home)
+        selected = installation(root, scope, host, home, skills=target['skills'])
     else:
         require(plugin_root is not None, 'Resolve the original plugin installation before planning its update.')
         plugin_root = Path(plugin_root).resolve()
@@ -488,6 +489,7 @@ def project_pr(root, plan_id, *, apply=False):
         return {'plan_id': plan_id, 'status': 'planned', 'next_step': 'project_pr', 'writes_performed': False}
     require(record.get('project') and record['project']['status'] == 'diff_prepared', 'Prepare the isolated project diff first.')
     project, spec = record['project'], record['plan']
+    skills = spec['target']['skills']
     tracked_install = spec['channel'] == 'skills' and spec['installation'].get('tracked_project_installation')
     if not spec['project_plan']['changes'] and not tracked_install:
         return status(root, plan_id)
@@ -507,7 +509,7 @@ def project_pr(root, plan_id, *, apply=False):
         if path == 'skills-lock.json':
             return True
         return any(path == folder + '/' + name or path.startswith(folder + '/' + name + '/')
-                   for folder in ('.agents/skills', '.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in SKILLS)
+                   for folder in ('.agents/skills', '.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in skills)
     require(all(owned(path) for path in changed | staged | set(untracked)), 'Upgrade workspace contains unrelated changes.')
     for name, change in spec['project_plan']['changes'].items():
         path = workspace / name
@@ -516,7 +518,7 @@ def project_pr(root, plan_id, *, apply=False):
         require(matches, 'Planned project files changed after preparation; preserve modifications and review again.')
     if tracked_install:
         require(all(inventory(workspace / '.agents/skills' / name) == expected_payload(spec['target'], 'skills/' + name)
-                    for name in SKILLS), 'Tracked skill payload changed after preparation; preserve it and review again.')
+                    for name in skills), 'Tracked skill payload changed after preparation; preserve it and review again.')
     planned |= changed | staged | set(untracked)
     from shared_sync import workflow, WORKFLOW
     if spec['project_plan']['provider'] == 'actions':
@@ -558,10 +560,11 @@ def tracked_payload_deployed(root, spec, revision):
     from plane_sync import WorkflowError
     if spec['channel'] != 'skills' or not spec['installation'].get('tracked_project_installation'):
         return True
+    skills = spec['target']['skills']
     try:
         return all(baseline_files(root, spec['target']['version'], '.agents/skills/' + name,
                                   dict(spec['target'], commit=revision)) == expected_payload(spec['target'], 'skills/' + name)
-                   for name in SKILLS)
+                   for name in skills)
     except (ValueError, subprocess.CalledProcessError, WorkflowError):
         return False
 
@@ -608,6 +611,7 @@ def rollback(root, plan_id, *, apply=False):
     from plane_workflow import run, configuration_lock
     root, record = read(root, plan_id)
     project, spec = record.get('project'), record['plan']
+    skills = spec['target']['skills']
     require(project and project.get('branch'), 'No isolated project upgrade is available for rollback.')
     commit = project.get('commit') or run(['git', 'rev-parse', project['branch']], root).stdout.strip()
     changed = run(['git', 'diff', '--name-only', spec['base_sha'], commit], root).stdout.splitlines()
@@ -616,7 +620,7 @@ def rollback(root, plan_id, *, apply=False):
     def owned(path):
         return path in spec['project_plan']['changes'] or (tracked and (path == 'skills-lock.json' or any(
             path == folder + '/' + name or path.startswith(folder + '/' + name + '/')
-            for folder in ('.agents/skills', '.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in SKILLS)))
+            for folder in ('.agents/skills', '.codex/skills', '.claude/skills', '.cursor/skills', '.config/opencode/skills') for name in skills)))
     require(all(owned(path) for path in changed), 'Upgrade history includes unrelated changes; review rollback manually.')
     result = {'plan_id': plan_id, 'status': 'rollback_planned', 'files': changed,
               'local_downgrade': 'Use the original channel after the project rollback is active; never downgrade alone.',
@@ -711,6 +715,7 @@ def _install_local(root, plan_id, *, apply=False):
     if record['plan']['channel'] == 'plugin':
         return {'plan_id': plan_id, 'status': 'local_refresh_pending', 'next_step': 'Update through the original plugin channel, reopen the session, and verify the installed version.'}
     spec = record['plan']
+    skills = spec['target']['skills']
     selected = spec['installation']
     target = Path(selected['target'])
     tracked = selected.get('tracked_project_installation')
@@ -734,7 +739,7 @@ def _install_local(root, plan_id, *, apply=False):
                     native_ready = all(
                         baseline_files(root, spec['target']['version'], '.agents/skills/' + name,
                                        dict(spec['target'], commit=run(['git', 'rev-parse', f'origin/{spec["base"]}'], root).stdout.strip()))
-                        == expected_payload(spec['target'], 'skills/' + name) for name in SKILLS)
+                        == expected_payload(spec['target'], 'skills/' + name) for name in skills)
                 except (ValueError, subprocess.CalledProcessError):
                     native_ready = False
             if native_ready or found == {'version': spec['target']['version'], 'commit': spec['target']['commit']}:
@@ -748,8 +753,8 @@ def _install_local(root, plan_id, *, apply=False):
                             allow_product_changes=record['local'] in ('installing', 'project_installation_staged', 'verified'))
     else:
         verify_global_lock(selected, allow_product_changes=record['local'] in ('installing', 'verified'))
-    current = {name: inventory(target / name) for name in SKILLS}
-    expected = {name: inventory(Path(record['source']) / 'skills' / name) for name in SKILLS}
+    current = {name: inventory(target / name) for name in skills}
+    expected = {name: inventory(Path(record['source']) / 'skills' / name) for name in skills}
     original_hosts = verify_host_entries(selected, target.parent.parent, target, expected,
                                          resumed=record['local'] in ('installing', 'project_installation_staged', 'verified'))
     if current == expected and host_refresh_complete(selected, original_hosts, expected):
@@ -761,7 +766,7 @@ def _install_local(root, plan_id, *, apply=False):
     if tracked:
         workspace_hosts = verify_host_entries(selected, install_root, install_target, expected,
                                               resumed=record['local'] in ('installing', 'project_installation_staged', 'verified'))
-        current = {name: inventory(install_target / name) for name in SKILLS}
+        current = {name: inventory(install_target / name) for name in skills}
         if current == expected and host_refresh_complete(selected, workspace_hosts, expected):
             with configuration_lock(root):
                 root, record = read(root, plan_id)
@@ -770,7 +775,7 @@ def _install_local(root, plan_id, *, apply=False):
             return status(root, plan_id)
     interrupted = record['local'] == 'installing'
     if interrupted:
-        for name in SKILLS:
+        for name in skills:
             before, after, found = selected['before'][name] or {}, expected[name], current[name] or {}
             require(all(value in (before.get(path), after.get(path)) for path, value in found.items()) and
                     set(found) <= set(before) | set(after), 'Partial installation contains unknown changes; preserve them for review.')
@@ -781,7 +786,7 @@ def _install_local(root, plan_id, *, apply=False):
     backup = directory / 'installation-before'
     if not backup.exists():
         backup.mkdir()
-    for name in SKILLS:
+    for name in skills:
         original = selected['before'][name]
         if original is not None and not (backup / name).exists():
             require(current[name] == original, 'Interrupted backup requires review before installation continues.')
@@ -798,7 +803,7 @@ def _install_local(root, plan_id, *, apply=False):
     source = f'https://github.com/{REPOSITORY}/tree/{spec["target"]["commit"]}'
     if record.get('candidate_source'):
         source = record['source']
-    args = ['npx', '--yes', 'skills@1.7.4', 'add', source, '--skill', *SKILLS,
+    args = ['npx', '--yes', 'skills@1.7.4', 'add', source, '--skill', *skills,
             '--agent', selected['host'], '--yes']
     if selected['scope'] == 'global':
         args.append('--global')
@@ -808,7 +813,7 @@ def _install_local(root, plan_id, *, apply=False):
         preserve_lock_metadata(selected, install_root)
     else:
         verify_global_lock(selected, allow_product_changes=True)
-    require({name: inventory(install_target / name) for name in SKILLS} == expected, 'Installed payload differs from the selected release.')
+    require({name: inventory(install_target / name) for name in skills} == expected, 'Installed payload differs from the selected release.')
     installed_hosts = verify_host_entries(selected, install_root if tracked or selected['scope'] == 'project' else target.parent.parent,
                                           install_target, expected, resumed=True)
     require(host_refresh_complete(selected, installed_hosts, expected), 'Selected host installation differs from the selected release.')
@@ -851,13 +856,14 @@ def status(root, plan_id):
     root, record = read(root, plan_id)
     spec = record['plan']
     target = spec['target']
+    skills = target['skills']
     local = record['local']
     if spec['channel'] == 'skills' and local == 'verified':
         selected = spec['installation']
-        if not record['source'] or any(inventory(Path(selected['target']) / name) != expected_payload(target, 'skills/' + name) for name in SKILLS):
+        if not record['source'] or any(inventory(Path(selected['target']) / name) != expected_payload(target, 'skills/' + name) for name in skills):
             local = 'changed_after_verification'
         if local == 'verified':
-            expected = {name: expected_payload(target, 'skills/' + name) for name in SKILLS}
+            expected = {name: expected_payload(target, 'skills/' + name) for name in skills}
             try:
                 entries = verify_host_entries(selected, Path(selected['target']).parent.parent,
                                               selected['target'], expected, resumed=True)

@@ -1,0 +1,10 @@
+# Plane MCP access
+
+Read this when Plane tools are unavailable, connection setup is requested, or authentication fails. Read [the active host guide](host-runtime.md) to choose native configuration/login syntax. An installed skill, parsed dependency, registered endpoint and authenticated account are separate facts.
+
+1. Reuse available Plane tools and working authorization. Inspect the active host's existing connections before adding another endpoint. Preserve server identity, unrelated settings and repository mappings. A name such as `plane` already pointing elsewhere requires resolving the intended source before edits. Check-only requests report gaps without changing configuration.
+2. During explicit connection setup, follow only that host's guide. MCP configuration scope is independent from skill installation scope. Merge the necessary entry into existing configuration; project files also require the shared repository-write preflight. Do not create configuration for other agents simply because their executables are installed.
+3. Let the user complete browser login/consent only when authorization is absent or expired. Keep tokens outside chat, logs, copied test profiles and clipboard observations. Preserve working credentials; do not reset/logout to repair an installation. OAuth may be bound to a specific host, server identity or client, so another host may require separate consent.
+4. Refresh/reopen the session when configuration is absent from its tool catalog. Inspect actual tool schemas, then retrieve the requested workspace/project before claiming live access. Distinguish missing/expired login, wrong workspace and project permissions.
+
+`agents/openai.yaml` describes the expected streamable HTTP dependency for Codex; it is not a cross-agent MCP installer. Skills CLI installs skill resources and does not itself complete MCP registration or OAuth. A 401 transport challenge is not authenticated access. Installing skills grants no task creation, business writeback, automatic PR merge or completion authority.

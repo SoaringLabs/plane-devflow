@@ -10,7 +10,7 @@ import { install, inventory } from '../lib/installer.mjs';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NAME = 'plane-devflow';
 const ID = `${NAME}@${NAME}`;
-const SKILLS = ['plane-setup', 'plane-start', 'plane-deliver'];
+const SKILLS = ['plane-setup', 'plane-start', 'plane-deliver', 'plane-check'];
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'plane installer $ & ('));
@@ -60,7 +60,7 @@ function fixture(t) {
   };
   const discover = async () => {
     const cache = state.installed.cache;
-    const skills = SKILLS.map(name => ({ name: `${NAME}:${name}`, pluginId: ID, enabled: true,
+    const skills = SKILLS.filter(name => fs.existsSync(path.join(cache, 'skills', name))).map(name => ({ name: `${NAME}:${name}`, pluginId: ID, enabled: true,
       path: path.join(cache, 'skills', name, 'SKILL.md'), interface: { displayName: name } }));
     if (state.failDiscovery) skills.pop();
     return { data: [{ skills, errors: [] }] };
@@ -77,7 +77,7 @@ test('fresh install retains a complete persistent source after npx cache removal
   const result = await install(f.options);
   assert.equal(result.payloadFiles, Object.keys(expected).length);
   assert.equal(result.payloadHashesMatch, true);
-  assert.equal(result.skills.length, 3);
+  assert.equal(result.skills.length, 4);
   assert.equal(result.source, 'npm');
   assert.equal(nativeWrites(f.state).length, 2);
   assert.deepEqual(f.state.calls.find(args => args[2] === 'add'), ['plugin', 'marketplace', 'add', fs.realpathSync(f.managed), '--json']);
@@ -141,14 +141,24 @@ test('check mode verifies without registration or installation writes', async t 
 });
 
 test('newer installer can check an older managed installation without upgrading it', async t => {
-  const f = fixture(t); const installed = await install(f.options);
-  for (const file of ['package.json', `plugins/${NAME}/plugin.json`]) {
-    const target = path.join(f.packageRoot, file);
-    const data = JSON.parse(fs.readFileSync(target)); data.version = '0.8.2'; fs.writeFileSync(target, JSON.stringify(data));
+  const f = fixture(t);
+  await install(f.options);
+  const installed = f.state.installed;
+  for (const root of [installed.source.path, installed.cache]) {
+    fs.rmSync(path.join(root, 'skills/plane-check'), { recursive: true });
+    fs.rmSync(path.join(root, 'references/plane-check-hosts.md'));
+    const manifest = path.join(root, 'plugin.json');
+    const data = JSON.parse(fs.readFileSync(manifest));
+    data.version = '0.15.0';
+    fs.writeFileSync(manifest, JSON.stringify(data));
   }
+  fs.renameSync(installed.cache, path.join(path.dirname(installed.cache), '0.15.0'));
+  installed.cache = path.join(path.dirname(installed.cache), '0.15.0');
+  installed.version = '0.15.0';
   f.state.calls = [];
   const result = await install({ ...f.options, checkOnly: true });
-  assert.equal(result.version, installed.version); assert.equal(result.installerVersion, '0.8.2');
+  assert.equal(result.version, '0.15.0');
+  assert.equal(result.skills.length, 3);
   assert.equal(nativeWrites(f.state).length, 0);
 });
 
@@ -174,10 +184,10 @@ test('missing native skill fails verification rather than reporting success', as
   const f = fixture(t); f.state.failDiscovery = true;
   await assert.rejects(install(f.options), /did not all load/);
   f.state.failDiscovery = false;
-  assert.equal((await install({ ...f.options, checkOnly: true })).skills.length, 3);
+  assert.equal((await install({ ...f.options, checkOnly: true })).skills.length, 4);
 });
 
-test('missing installed reference is detected even when all three skills load', async t => {
+test('missing installed reference is detected even when all skills load', async t => {
   const f = fixture(t); f.state.corruptCache = true;
   await assert.rejects(install(f.options), /payload differs/);
 });

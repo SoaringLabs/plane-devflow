@@ -44,7 +44,7 @@ try {
   const command = ['--yes', '--package', path.join(root, packed.filename), 'plane-devflow', '--json'];
   const first = run('fresh', 'npx', command);
   assert.equal(first.version, version); assert.equal(first.source, 'npm'); assert.equal(first.payloadFiles, Object.keys(expected).length);
-  assert.deepEqual(first.skills.map(skill => skill.displayName).sort(), ['Set Up Plane', 'Start Plane Task', 'Deliver Plane Task'].sort());
+  assert.deepEqual(first.skills.map(skill => skill.displayName).sort(), ['Set Up Plane', 'Start Plane Task', 'Deliver Plane Task', 'Check Plane Connection'].sort());
   assert.ok(fs.readFileSync(path.join(state, 'config.toml'), 'utf8').startsWith(original));
   const config = digest(path.join(state, 'config.toml'));
   const persistent = path.join(state, 'marketplaces/plane-devflow-npm/versions', version, 'plugin');

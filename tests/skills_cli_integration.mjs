@@ -12,7 +12,7 @@ import { createCredentialIsolation, credentialEnvironment, profileMetadata } fro
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'plane skills add ')));
-const names = ['plane-setup', 'plane-start', 'plane-deliver'];
+const names = ['plane-setup', 'plane-start', 'plane-deliver', 'plane-check'];
 const endpoint = 'https://mcp.plane.so/http/mcp';
 const digest = file => fs.existsSync(file) ? crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex') : null;
 const realHome = os.homedir();
@@ -50,7 +50,7 @@ async function loaded(label, target, expected) {
   const skills = result.data.flatMap(item => item.skills).filter(skill => names.includes(skill.name));
   assert.deepEqual(skills.map(skill => skill.name).sort(), [...expected].sort());
   assert.ok(skills.every(skill => skill.enabled && !skill.pluginId));
-  const displayNames = { 'plane-setup': 'Set Up Plane', 'plane-start': 'Start Plane Task', 'plane-deliver': 'Deliver Plane Task' };
+  const displayNames = { 'plane-setup': 'Set Up Plane', 'plane-start': 'Start Plane Task', 'plane-deliver': 'Deliver Plane Task', 'plane-check': 'Check Plane Connection' };
   assert.ok(result.data.every(item => !item.errors?.length));
   for (const skill of skills) {
     assert.equal(skill.interface.displayName, displayNames[skill.name]);

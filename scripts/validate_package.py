@@ -20,7 +20,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "plugins/plane-devflow/scripts"))
 from plane_sync import validate_config
 
-SKILLS = {"plane-setup", "plane-start", "plane-deliver"}
+from build_skills import NAMES
+
+SKILLS = set(NAMES)
 FIELDS = {"name", "description", "license", "compatibility", "metadata", "allowed-tools"}
 
 
@@ -295,7 +297,7 @@ def validate(root=ROOT, *, payload_only=False):
             text = path.read_text()
             steps = installation_steps(text)
             require(steps == [["npx", "skills", "add", "https://github.com/SoaringLabs/plane-devflow/tree/stable", "--skill",
-                    "plane-setup", "plane-start", "plane-deliver"]],
+                    *NAMES]],
                     f"{path.name}: README Skills CLI installer mismatch")
             for name in SKILLS:
                 require(f"`{name}`" in text, f"{path.name}: missing skill identifier: {name}")

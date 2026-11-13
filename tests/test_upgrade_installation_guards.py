@@ -71,7 +71,7 @@ class InstallationGuardsTests(unittest.TestCase):
         sentinel.write_text('New work')
         source = Path(self.temporary.name) / 'staged-source'
         shutil.copytree(self.canonical, source / 'skills')
-        record = {'plan': {'installation': selected, 'channel': 'skills', 'target': {}},
+        record = {'plan': {'installation': selected, 'channel': 'skills', 'target': {'skills': list(upgrades.SKILLS)}},
                   'source': str(source), 'project': {'status': 'diff_prepared'}, 'local': 'pending'}
         with patch.object(upgrades, 'read', return_value=(self.root, record)), \
                 patch.object(upgrades, 'verify_source'), patch.object(upgrades, 'run_installer') as installer:
@@ -121,7 +121,7 @@ class InstallationGuardsTests(unittest.TestCase):
         base = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=self.root, check=True,
                               capture_output=True, text=True).stdout.strip()
         selected = self.selected()
-        target = {'version': '0.14.0', 'commit': 'a' * 40, 'files': {
+        target = {'version': '0.14.0', 'commit': 'a' * 40, 'skills': list(upgrades.SKILLS), 'files': {
             'skills/' + name + '/' + file: value
             for name in upgrades.SKILLS for file, value in upgrades.inventory(self.canonical / name).items()}}
         record = {'plan': {'installation': selected, 'channel': 'skills', 'target': target, 'base_sha': base,
@@ -210,7 +210,7 @@ class InstallationGuardsTests(unittest.TestCase):
                         'XDG_STATE_HOME': str(home / '.local/state'), 'CLAUDE_CONFIG_DIR': str(home / '.claude')}
         with patch.dict(os.environ, original_env):
             selected = upgrades.installation(self.root, 'global', 'claude-code')
-        record = {'plan': {'installation': selected, 'channel': 'skills', 'target': {}},
+        record = {'plan': {'installation': selected, 'channel': 'skills', 'target': {'skills': list(upgrades.SKILLS)}},
                   'source': '/unused-staged-source', 'project': {'status': 'native'}, 'local': 'pending'}
         for changes in ({'HOME': str(alternate), 'USERPROFILE': str(alternate)},
                         {'XDG_STATE_HOME': str(alternate / 'state')},
@@ -237,7 +237,7 @@ class InstallationGuardsTests(unittest.TestCase):
             shutil.copytree(self.canonical / name, self.root / '.claude/skills' / name)
         selected = self.selected()
         (self.host / 'SKILL.md').write_text('Tampered after verification')
-        target = {'version': '0.14.0', 'commit': 'a' * 40, 'files': {
+        target = {'version': '0.14.0', 'commit': 'a' * 40, 'skills': list(upgrades.SKILLS), 'files': {
             'skills/' + name + '/' + file: value
             for name in upgrades.SKILLS for file, value in upgrades.inventory(self.canonical / name).items()}}
         record = {'plan': {'installation': selected, 'channel': 'skills', 'target': target,

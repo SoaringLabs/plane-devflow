@@ -4,7 +4,7 @@ Plane DevFlow provides shared Agent Skills for Codex, Claude Code, Cursor and Op
 
 ```sh
 npx skills add SoaringLabs/plane-devflow \
-  --skill plane-setup plane-start plane-deliver
+  --skill plane-setup plane-start plane-deliver plane-check
 ```
 
 Run from the target repository root and choose the intended host interactively. For an explicit target, append `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Installation defaults to the current project; optionally add `--global` for user-level reuse across projects. Each host receives the same self-contained workflow; native UI metadata is optional. Pre-release verification used an isolated source snapshot. Public-source and CI status are tracked separately in the [0.9.0 release record](validation-0.9.0.md).

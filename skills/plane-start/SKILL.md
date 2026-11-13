@@ -5,7 +5,7 @@ description: Draft a Plane project's first task list, create its approved tasks,
 
 # Start or resume a Plane task
 
-Before the first local operation or Plane call, read [agent host capabilities](references/host-runtime.md) and the active host's guide. Before live Plane calls, read [MCP access](references/mcp.md) when tools are missing, connection setup is requested, or authentication fails. Installation alone does not establish account access. For another Plane workflow, use its installed skill when available; otherwise read the bundled guide ([plane-setup](references/skill-guides/plane-setup.md), [plane-deliver](references/skill-guides/plane-deliver.md)) and follow only the user's requested scope.
+Before the first local operation or Plane call, read [agent host capabilities](references/host-runtime.md) and the active host's guide. Before live Plane calls, read [MCP access](references/mcp.md) when tools are missing, connection setup is requested, or authentication fails. Installation alone does not establish account access. For another Plane workflow, use its installed skill when available; otherwise read the bundled guide ([plane-setup](references/skill-guides/plane-setup.md), [plane-deliver](references/skill-guides/plane-deliver.md), [plane-check](references/skill-guides/plane-check.md)) and follow only the user's requested scope.
 
 Resolve `scripts/plane_workflow.py` from this installed file and invoke its absolute path. Read any task/source named by the user. User intent decides whether this is discussion, document work or implementation; selecting a branch is not selecting a task.
 

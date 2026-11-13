@@ -222,10 +222,12 @@ class UpgradeRecoveryTests(unittest.TestCase):
         for path, content in originals.items():
             if path.name in ('VERSION', 'distribution.json', 'plugin.json', 'plugin_version.py'):
                 path.write_bytes(content.replace(releases.VERSION.encode(), b'0.13.0'))
+        shutil.rmtree(cls.source / 'skills/plane-check')
         command(cls.source, 'add', '.')
         command(cls.source, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Previous fixture')
         command(cls.source, 'tag', 'v0.13.0')
         for path, content in originals.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(content)
         command(cls.source, 'add', '.')
         command(cls.source, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Candidate fixture')
@@ -393,8 +395,13 @@ class UpgradeRecoveryTests(unittest.TestCase):
             with tarfile.open(fileobj=io.BytesIO(archive)) as bundle:
                 # This fixture contains regular, committed files from the local test source.
                 bundle.extractall(previous)
-            for name in releases.SKILLS:
+            for name in releases.WORKFLOW_SKILLS:
                 shutil.copytree(Path(previous) / 'skills' / name, self.root / '.agents/skills' / name)
+        old_commit = command(self.source, 'rev-parse', 'v0.13.0')
+        old_release = releases.manifest(self.source, old_commit)
+        self.assertEqual(old_release['skills'], list(releases.WORKFLOW_SKILLS))
+        preview = upgrades.plan(self.root, old_release, home=self.home)
+        self.assertNotIn('plane-check', preview['plan']['installation']['before'])
         plan_id = self.staged()
         self.real_run = plane_workflow.run
         with patch.object(plane_workflow, 'run', side_effect=self.no_network):
@@ -410,13 +417,17 @@ class UpgradeRecoveryTests(unittest.TestCase):
             upgrades.install_local(self.root, plan_id, apply=True)
         installer.assert_not_called()
         def refreshed(args, workspace):
+            self.assertEqual(args[args.index('--skill') + 1:args.index('--agent')], list(releases.SKILLS))
             for name in releases.SKILLS:
-                shutil.rmtree(self.root / '.agents/skills' / name)
-                real_copytree(self.source / 'skills' / name, self.root / '.agents/skills' / name)
+                target = self.root / '.agents/skills' / name
+                if target.exists():
+                    shutil.rmtree(target)
+                real_copytree(self.source / 'skills' / name, target)
             return subprocess.CompletedProcess(args, 0, '', '')
         with patch.object(upgrades, 'run_installer', side_effect=refreshed):
             result = upgrades.install_local(self.root, plan_id, apply=True)
         self.assertEqual(result['local_installation'], 'verified')
+        self.assertTrue((self.root / '.agents/skills/plane-check/SKILL.md').is_file())
 
     def test_staged_then_deleted_unrelated_file_cannot_enter_an_upgrade_commit(self):
         plan_id = self.staged()
@@ -464,8 +475,10 @@ class UpgradeRecoveryTests(unittest.TestCase):
         def install_fixture(args, workspace):
             self.assertNotEqual(Path(workspace), self.root)
             for name in releases.SKILLS:
-                shutil.rmtree(Path(workspace) / '.agents/skills' / name)
-                shutil.copytree(self.source / 'skills' / name, Path(workspace) / '.agents/skills' / name)
+                target = Path(workspace) / '.agents/skills' / name
+                if target.exists():
+                    shutil.rmtree(target)
+                shutil.copytree(self.source / 'skills' / name, target)
             return subprocess.CompletedProcess(args, 0, '', '')
         with patch.object(upgrades, 'run_installer', side_effect=install_fixture):
             result = upgrades.install_local(self.root, plan_id, apply=True)
@@ -504,7 +517,8 @@ class UpgradeRecoveryTests(unittest.TestCase):
         command(self.root, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Old native deployment')
         command(self.root, 'update-ref', 'refs/remotes/origin/main', 'HEAD')
         # Use an exact previous payload so historical-baseline verification is real.
-        for name in releases.SKILLS:
+        shutil.rmtree(self.root / '.agents/skills/plane-check')
+        for name in releases.WORKFLOW_SKILLS:
             for file in command(self.source, 'ls-tree', '-r', '--name-only', 'v0.13.0', '--', 'skills/' + name).splitlines():
                 target = self.root / '.agents/skills' / name / file[len('skills/' + name) + 1:]
                 target.write_bytes(releases.git(self.source, 'show', 'v0.13.0:' + file))
@@ -516,8 +530,10 @@ class UpgradeRecoveryTests(unittest.TestCase):
         with patch.object(plane_workflow, 'run', side_effect=self.no_network):
             upgrades.prepare_project(self.root, plan_id, apply=True)
         for name in releases.SKILLS:
-            shutil.rmtree(self.root / '.agents/skills' / name)
-            shutil.copytree(self.source / 'skills' / name, self.root / '.agents/skills' / name)
+            target = self.root / '.agents/skills' / name
+            if target.exists():
+                shutil.rmtree(target)
+            shutil.copytree(self.source / 'skills' / name, target)
         with patch.object(upgrades, 'run_installer') as installer:
             result = upgrades.install_local(self.root, plan_id, apply=True)
         installer.assert_not_called()

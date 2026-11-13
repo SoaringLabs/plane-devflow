@@ -33,11 +33,11 @@ class PackageValidationTests(unittest.TestCase):
             package.validate(self.root)
 
     def test_source_and_extracted_payload_have_no_checkout_dependency(self):
-        self.assertEqual(package.validate(self.root)["skills"], 3)
+        self.assertEqual(package.validate(self.root)["skills"], 4)
         payload = Path(self.temp.name) / "install"
         shutil.copytree(self.plugin, payload)
         shutil.rmtree(self.root)
-        self.assertEqual(package.validate(payload, payload_only=True)["skills"], 3)
+        self.assertEqual(package.validate(payload, payload_only=True)["skills"], 4)
         result = subprocess.run([sys.executable, str(payload / "scripts/plane_workflow.py"), "--help"],
                                 cwd=payload.parent, capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -143,7 +143,7 @@ class PackageValidationTests(unittest.TestCase):
         data["version"] = next_version
         manifest.write_text(json.dumps(data))
         self.replace(self.plugin / "scripts/plugin_version.py", f'VERSION = "{current_version}"', f'VERSION = "{next_version}"')
-        self.assertEqual(package.validate_payload(self.plugin)["skills"], 3)
+        self.assertEqual(package.validate_payload(self.plugin)["skills"], 4)
         result = subprocess.run([sys.executable, str(self.plugin / "scripts/plane_workflow.py"), "--version"],
                                 capture_output=True, text=True, check=True)
         self.assertEqual(result.stdout.strip(), next_version)
