@@ -2,6 +2,12 @@
 
 Implemented changes by product version. See each version's validation record for verification scope and known limits; an entry here does not imply that a GitHub Release or version tag was created.
 
+## 0.17.0 — 2026-11-26
+
+- Install the Plane DevFlow plugin in Antigravity directly from GitHub. It bundles all four skills and the Plane MCP server for OAuth sign-in.
+- Add Antigravity setup and troubleshooting guides for the native plugin and standalone skills. Use `/plane-check` to verify workspace access after signing in.
+- Use `antigravity/` as the default branch prefix for new tasks in Antigravity. Explicit project prefixes and saved task worktrees take precedence.
+
 ## 0.16.0 — 2026-11-13
 
 - Add `plane-check` to the Codex plugin and standalone Skills CLI distribution. Run it in the affected session to check Plane MCP tool availability, authentication, the bound workspace and access to a target project. Workspace verification works without a repository mapping.

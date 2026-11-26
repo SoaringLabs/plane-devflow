@@ -6,7 +6,7 @@ No prepared repository or account connections yet? Use the [first-project guide]
 
 ## Install the Antigravity plugin from GitHub
 
-With Antigravity CLI (`agy`) installed, use the same stable GitHub channel as the other distributions. It gains Antigravity support when a release containing the plugin is promoted to `stable`.
+Install Plane DevFlow v0.17.0 or later from the GitHub `stable` branch with the Antigravity CLI (`agy`).
 
 ```sh
 agy plugin install https://github.com/SoaringLabs/plane-devflow/tree/stable

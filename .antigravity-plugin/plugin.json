@@ -2,7 +2,7 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "plane-devflow",
   "displayName": "Plane DevFlow",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Connect Plane and GitHub, develop work items in isolated Git worktrees, and deliver linked pull requests from Antigravity.",
   "logo": "plugins/plane-devflow/assets/icon.png",
   "suggestedPrompts": [
