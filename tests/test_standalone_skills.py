@@ -92,7 +92,7 @@ class StandaloneSkillsTests(unittest.TestCase):
             self.assertEqual(list((self.root / "skills" / name).rglob("SKILL.md")),
                              [self.root / "skills" / name / "SKILL.md"])
 
-    def test_each_skill_contains_four_host_guides_and_neutral_entrypoint(self):
+    def test_each_skill_contains_all_host_guides_and_neutral_entrypoint(self):
         for name in build_skills.NAMES:
             skill = self.root / "skills" / name
             metadata = json.loads((skill / "distribution.json").read_text())

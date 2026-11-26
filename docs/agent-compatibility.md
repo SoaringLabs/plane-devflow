@@ -1,13 +1,13 @@
 # Agent compatibility
 
-Plane DevFlow provides shared Agent Skills for Codex, Claude Code, Cursor and OpenCode, plus native plugins for Codex and Antigravity. Repository mappings use `.plane-devflow.json`. Installing skills for another host does not configure its accounts or change business mappings.
+Plane DevFlow provides shared Agent Skills for Codex, Claude Code, Cursor, OpenCode and Antigravity, plus native plugins for Codex and Antigravity. Repository mappings use `.plane-devflow.json`. Installing skills for another host does not configure its accounts or change business mappings.
 
 ```sh
 npx skills add SoaringLabs/plane-devflow \
   --skill plane-setup plane-start plane-deliver plane-check
 ```
 
-Run from the target repository root and choose the intended host interactively. For an explicit target, append `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode`. Installation defaults to the current project; optionally add `--global` for user-level reuse across projects. Each host receives the same self-contained workflow; native UI metadata is optional. Pre-release verification used an isolated source snapshot. Public-source and CI status are tracked separately in the [0.9.0 release record](validation-0.9.0.md).
+Run from the target repository root and choose the intended host interactively. For an explicit target, append `--agent codex`, `--agent claude-code`, `--agent cursor`, `--agent opencode` or `--agent antigravity`. Installation defaults to the current project. Add `--global` for user-level reuse across projects. Each host receives the same self-contained workflow. Pre-release verification for the original four hosts used an isolated source snapshot. Public-source and CI status for those checks are tracked in the [0.9.0 release record](validation-0.9.0.md).
 
 ## Integration guides
 
@@ -17,7 +17,7 @@ Run from the target repository root and choose the intended host interactively. 
 | Claude Code | [Claude Code](../skills/plane-setup/references/hosts/claude-code.md) | `~/.claude/skills/` |
 | Cursor | [Cursor](../skills/plane-setup/references/hosts/cursor.md) | `~/.agents/skills/` (tested CLI), also `~/.cursor/skills/` |
 | OpenCode | [OpenCode](../skills/plane-setup/references/hosts/opencode.md) | `~/.agents/skills/` (tested CLI), also `~/.config/opencode/skills/` |
-| Antigravity | [Antigravity](../skills/plane-setup/references/hosts/antigravity.md) | [Managed plugin from GitHub](installation.md#install-the-antigravity-plugin-from-github) |
+| Antigravity | [Antigravity](../skills/plane-setup/references/hosts/antigravity.md) | `~/.gemini/config/skills/` for standalone skills, or [managed plugin from GitHub](installation.md#install-the-antigravity-plugin-from-github) |
 
 See [host capabilities](../skills/plane-setup/references/host-runtime.md) for terminal/tool discovery, optional managed worktrees and plain workflow names. Use each host's native tool schema; MCP prefixes can differ. Shared Git/Python helpers run without Codex installed. PR operations require GitHub CLI access; local implementation requires terminal tools and Git/Python. Missing capabilities produce a scoped pending result.
 
