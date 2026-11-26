@@ -845,7 +845,7 @@ def main(argv=None):
     p.add_argument("task")
     p.add_argument("--repo", default=".")
     p.add_argument("--worktree")
-    p.add_argument("--agent", help="Active host: codex, claude-code, cursor, opencode; unknown hosts use agent/.")
+    p.add_argument("--agent", help="Active host: codex, claude-code, cursor, opencode, antigravity; unknown hosts use agent/.")
     p.add_argument("--execution-id", help="Reuse the current execution ID returned by a previous prepare --apply.")
     p.add_argument("--session-id", help="Optional native chat/session reference; matching current host/session reuses its ID.")
     p.add_argument("--in-place", action="store_true", help="Explicitly prepare in the caller checkout, e.g. a fresh Codex-managed worktree.")

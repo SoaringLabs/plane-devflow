@@ -23,6 +23,7 @@ Pass the actual session's host as `HOST`, independently of installed CLIs or the
 | Claude Code | `claude-code` | `claude` |
 | Cursor | `cursor` | `cursor` |
 | OpenCode | `opencode` | `opencode` |
+| Antigravity | `antigravity` | `antigravity` |
 
 An omitted or other host uses the neutral `agent` prefix. An explicit `github.branch_prefix` overrides new-task defaults. New mappings omit that field; existing fixed prefixes, including `codex`, stay unchanged. To adopt host defaults in an existing project, explicitly remove only `github.branch_prefix` in a reviewed configuration change and merge it into the base before new tasks. Existing task bindings retain their recorded branch regardless of the naming policy. Unrecorded local branches using a supported prefix can be recovered; multiple candidates require inspection.
 

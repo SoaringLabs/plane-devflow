@@ -14,7 +14,7 @@
 <p align="center"><a href="#功能">功能</a> · <a href="#快速开始">快速开始</a> · <a href="#技能入口">技能入口</a> · <a href="#文档">文档</a> · <a href="CHANGELOG.md">更新记录</a></p>
 <p align="center"><img src="docs/assets/workflow.zh-CN.svg" alt="流程示例：Plane 任务 DEMO-123 → AI 编程助手在独立工作区开发 → 关联的 GitHub PR；GitHub Actions 将 PR 活动回写到 Plane。" width="100%"></p>
 
-适用于 **Codex、Claude Code、Cursor、OpenCode** 的开源 Agent Skills，并提供对应接入指引。从 Plane 任务开始开发，交付关联 PR，再通过 GitHub Actions 将 PR 活动回写到 Plane。无需部署额外服务。
+适用于 **Codex、Claude Code、Cursor、OpenCode 和 Antigravity** 的开源 Agent Skills，并提供对应接入指引。从 Plane 任务开始开发，交付关联 PR，再通过 GitHub Actions 将 PR 活动回写到 Plane。无需部署额外服务。
 
 ## 功能
 
@@ -33,6 +33,8 @@
 ## 快速开始
 
 ### 安装
+
+**Antigravity** 用户可以[用 `agy` 从 GitHub 安装插件](docs/installation.md#install-the-antigravity-plugin-from-github)。插件包含全部四项技能和 Plane MCP 连接配置。首次连接时完成 Plane OAuth，再用 `/plane-check` 检查当前工作区。
 
 `stable` 渠道已包含 `plane-check`。已有 Codex 插件的用户可以通过原来的插件来源更新，一次获得四个技能。独立安装使用下面的 Skills CLI 命令。
 
@@ -65,7 +67,7 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
 
 ### 分支前缀与切换 agent
 
-新任务按当前 agent 使用分支前缀：Codex 使用 `codex/`，Claude Code 使用 `claude/`，Cursor 使用 `cursor/`，OpenCode 使用 `opencode/`。新配置默认不设置 `github.branch_prefix`，因此用 Codex 初始化项目不会将后续任务固定为 `codex/`。显式设置的 `github.branch_prefix` 优先于这些默认值。已有项目会保留固定前缀；需要启用自动选择时，删除该字段，并将配置改动合入基础分支。
+新任务按当前 agent 使用分支前缀：Codex 使用 `codex/`，Claude Code 使用 `claude/`，Cursor 使用 `cursor/`，OpenCode 使用 `opencode/`，Antigravity 使用 `antigravity/`。新配置默认不设置 `github.branch_prefix`，因此用 Codex 初始化项目不会将后续任务固定为 `codex/`。显式设置的 `github.branch_prefix` 优先于这些默认值。已有项目会保留固定前缀。需要启用自动选择时，删除该字段，并将配置改动合入基础分支。
 
 同一任务换 agent 继续时，先停止上一会话的工作，再打开已记录的 worktree，沿用原分支和主 PR。例如 Claude Code 接续 `codex/project-123` 上的任务时，仍使用这个分支。在同一台机器上，拥有目录访问权限的 agent 可以直接看到未提交改动。详见 [agent 命名与串行接续](skills/plane-start/references/parallel-tasks.md#agent-naming-and-serial-continuation)。
 
@@ -80,7 +82,7 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
 | **Start Plane Task** — `plane-start` | 规划首批任务、创建已确认的清单，或开始、恢复已有任务 |
 | **Deliver Plane Task** — `plane-deliver` | 交付或诊断任务 PR、准备试用、记录验收，或按授权收尾 |
 
-Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:plane-setup`；Claude Code 使用 `/plane-setup`；OpenCode 通过原生工具加载技能。选择一种分发方式，避免重复入口。每个技能均自带运行脚本与参考文件，也可单独安装。
+Codex 独立技能使用 `$plane-setup`，Codex 插件使用 `$plane-devflow:plane-setup`。Claude Code 和 Antigravity 使用 `/plane-setup`。OpenCode 通过原生工具加载技能。选择一种分发方式，避免重复入口。每个技能均自带运行脚本与参考文件，也可单独安装。
 
 ## GitHub 同步
 
@@ -130,7 +132,7 @@ npx skills remove plane-setup plane-start plane-deliver plane-check
 | 想了解什么 | 文档 |
 | --- | --- |
 | 第一个项目 | [新电脑准备、恢复交接与首批任务](docs/first-project.zh-CN.md) |
-| Agent 兼容 | [Codex、Claude Code、Cursor、OpenCode](docs/agent-compatibility.md) |
+| Agent 兼容 | [Codex、Claude Code、Cursor、OpenCode、Antigravity](docs/agent-compatibility.md) |
 | 安装、更新与移除 | [安装、更新及移除](docs/installation.md) |
 | 初始化与恢复 | [项目关联与同步](skills/plane-setup/references/setup.md) · [中断后继续](skills/plane-setup/references/recovery.md) |
 | 任务诊断 | [只读任务状态与部分完成情况](skills/plane-deliver/references/task-diagnostics.md) |

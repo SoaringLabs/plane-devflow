@@ -284,6 +284,13 @@ def validate(root=ROOT, *, payload_only=False):
         require((root / "action.yml").is_file() and (root / "LICENSE").is_file(), "Missing Action or license")
         npm = json.loads((root / "package.json").read_text())
         manifest = json.loads((plugin / "plugin.json").read_text())
+        antigravity = json.loads(resource(root, ".antigravity-plugin/plugin.json", root).read_text())
+        require(antigravity.get("name") == manifest["name"], "Unexpected Antigravity plugin name")
+        resource(root, antigravity["logo"], root)
+        antigravity_mcp = json.loads(resource(root, "mcp_config.json", root).read_text())
+        plane_url = json.loads((plugin / "mcp.json").read_text())["mcpServers"]["plane"]["url"]
+        require(antigravity_mcp == {"mcpServers": {"plane": {"serverUrl": plane_url}}},
+                "Antigravity must bundle the shared Plane MCP endpoint")
         require(npm.get("name") == "plane-devflow", "Unexpected npm package name")
         require(npm.get("version") == manifest.get("version"), "npm/plugin version mismatch")
         require(npm.get("bin") == {"plane-devflow": "bin/plane-devflow.mjs"}, "Unexpected npm executable")

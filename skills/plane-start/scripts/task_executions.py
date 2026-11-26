@@ -7,7 +7,13 @@ from uuid import uuid4
 from plane_sync import require
 from task_progress import fields, identity
 
-AGENT_PREFIXES = {"codex": "codex", "claude-code": "claude", "cursor": "cursor", "opencode": "opencode"}
+AGENT_PREFIXES = {
+    "codex": "codex",
+    "claude-code": "claude",
+    "cursor": "cursor",
+    "opencode": "opencode",
+    "antigravity": "antigravity",
+}
 
 
 def agent_name(agent):

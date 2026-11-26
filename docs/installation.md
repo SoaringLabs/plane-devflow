@@ -4,6 +4,21 @@
 
 No prepared repository or account connections yet? Use the [first-project guide](first-project.md) before installing. After installation, continue the same preparation rather than restarting it.
 
+## Install the Antigravity plugin from GitHub
+
+With Antigravity CLI (`agy`) installed, use the same stable GitHub channel as the other distributions. It gains Antigravity support when a release containing the plugin is promoted to `stable`.
+
+```sh
+agy plugin install https://github.com/SoaringLabs/plane-devflow/tree/stable
+agy plugin list
+```
+
+The plugin bundles `plane-setup`, `plane-start`, `plane-deliver`, `plane-check` and the Plane MCP server. Open the target repository in Antigravity. In the CLI, open `/plugin`, expand Plane DevFlow under Installed and choose **Sign in**. In the app, use the installed plugin's MCP settings. After OAuth, run `/plane-check` in a new session and give the expected workspace before running `/plane-setup`. The local workflow also needs Git and Python 3.10+. Pull request operations use an authenticated GitHub CLI.
+
+Refresh the plugin by installing again from the same GitHub source and reopening the session. Remove it with `agy plugin uninstall plane-devflow`. Use one Plane DevFlow distribution per session so the skill entries are unambiguous. See the [Antigravity host guide](../skills/plane-setup/references/hosts/antigravity.md).
+
+To test a candidate, run `agy plugin validate /path/to/plane-devflow` and `agy plugin install /path/to/plane-devflow` against a clean local snapshot in a disposable Antigravity profile. Check `agy plugin list --json` for four skills and one Plane MCP server.
+
 ## Install with Skills CLI
 
 Stable installation requires a formal product release with its manifest and an activated `stable` branch pointing to that release. Until both are available, use the [candidate validation procedure](#validation-scope). Candidate checks install isolated local snapshots and do not change real user installations.

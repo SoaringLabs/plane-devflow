@@ -6,6 +6,8 @@ Use this only for an explicit Plane DevFlow installation/project upgrade, migrat
 
 Resolve the installed helper's absolute path. Inspect the current repository mapping, selected agent, project/global installation and any saved upgrade record. For plugin installations, resolve the actual active plugin source before planning; do not install standalone skills alongside it.
 
+For an Antigravity plugin installation, refresh the local plugin through `agy plugin install` with its original GitHub source. Reopen the session and use `/plane-check` to verify the active connection. The unified upgrade helper's installation stages support Skills CLI on its listed hosts and the Codex plugin. Keep any project Action upgrade as a separate operation for Antigravity.
+
 An explicit version check can use `check-updates`; it reports a release without installing it. For a chosen formal target, run:
 
 ```sh
