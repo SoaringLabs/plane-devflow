@@ -43,6 +43,17 @@ class PackageValidationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("check-task", result.stdout)
 
+    def test_antigravity_package_requires_the_native_mcp_schema_and_product_version(self):
+        mcp = self.root / "mcp_config.json"
+        original = mcp.read_text()
+        self.replace(mcp, '"serverUrl"', '"url"')
+        self.rejects("Antigravity must bundle the shared Plane MCP endpoint")
+        mcp.write_text(original)
+        manifest = self.root / ".antigravity-plugin/plugin.json"
+        version = (self.root / "VERSION").read_text().strip()
+        self.replace(manifest, f'"version": "{version}"', '"version": "99.0.0"')
+        self.rejects("Version metadata drift: .antigravity-plugin/plugin.json")
+
     def test_frontmatter_required_fields_types_and_limits(self):
         original = self.skill.read_text()
         start = original.index("description:")

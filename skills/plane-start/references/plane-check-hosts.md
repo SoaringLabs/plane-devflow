@@ -8,5 +8,6 @@ Inspect only the affected host's connection status using settings or metadata th
 | Claude Code | Check `/mcp` in the affected session. CLI `claude mcp list` can help inspect registrations from the same directory; confirm whether the entry is local, project, or user scoped. |
 | Cursor | Check Tools & MCP settings for the active profile/project and check the tool inventory in the affected Agent session. Desktop and CLI evidence may differ. |
 | OpenCode | Inspect `opencode mcp list` in the matching profile and checkout and compare it with the session's tool inventory and permissions. |
+| Antigravity | Check the Plane DevFlow entry under Installed in `/plugin` or the app's plugin MCP settings. Compare the status of the bundled `plane-devflow_plane` server with the tools available in the affected session. |
 
 If registration or permission cannot be inspected, mark that cause unknown and ask the user to check the relevant host surface. Once the user has made a change, rerun the probe in the session intended to use Plane.

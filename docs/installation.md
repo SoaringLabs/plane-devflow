@@ -4,6 +4,21 @@
 
 No prepared repository or account connections yet? Use the [first-project guide](first-project.md) before installing. After installation, continue the same preparation rather than restarting it.
 
+## Install the Antigravity plugin from GitHub
+
+With Antigravity CLI (`agy`) installed, use the same stable GitHub channel as the other distributions. It gains Antigravity support when a release containing the plugin is promoted to `stable`.
+
+```sh
+agy plugin install https://github.com/SoaringLabs/plane-devflow/tree/stable
+agy plugin list
+```
+
+The plugin bundles `plane-setup`, `plane-start`, `plane-deliver`, `plane-check` and the Plane MCP server. Open the target repository in Antigravity. In the CLI, open `/plugin`, expand Plane DevFlow under Installed and choose **Sign in**. In the app, use the installed plugin's MCP settings. After OAuth, run `/plane-check` in a new session and give the expected workspace before running `/plane-setup`. The local workflow also needs Git and Python 3.10+. Pull request operations use an authenticated GitHub CLI.
+
+Refresh the plugin by installing again from the same GitHub source and reopening the session. Remove it with `agy plugin uninstall plane-devflow`. Use one Plane DevFlow distribution per session so the skill entries are unambiguous. See the [Antigravity host guide](../skills/plane-setup/references/hosts/antigravity.md).
+
+To test a candidate, run `agy plugin validate /path/to/plane-devflow` and `agy plugin install /path/to/plane-devflow` against a clean local snapshot in a disposable Antigravity profile. Check `agy plugin list --json` for four skills and one Plane MCP server.
+
 ## Install with Skills CLI
 
 Stable installation requires a formal product release with its manifest and an activated `stable` branch pointing to that release. Until both are available, use the [candidate validation procedure](#validation-scope). Candidate checks install isolated local snapshots and do not change real user installations.
@@ -13,7 +28,7 @@ npx skills add https://github.com/SoaringLabs/plane-devflow/tree/stable \
   --skill plane-setup plane-start plane-deliver plane-check
 ```
 
-Run the command from the target repository root. Choose Codex, Claude Code, Cursor or OpenCode when prompted. Optional `--agent codex`, `--agent claude-code`, `--agent cursor` or `--agent opencode` targets a host explicitly. The default installs into the current project. Add `--global` only when you choose user-level installation across projects. The default command remains interactive so existing-file decisions are visible. For one skill, use `--skill plane-setup` (or another entry point). Each generated skill is self-contained; its bundled fallback guides cover related workflows even when a companion skill is absent.
+Run the command from the target repository root. Choose Codex, Claude Code, Cursor, OpenCode or Antigravity when prompted. Optional `--agent codex`, `--agent claude-code`, `--agent cursor`, `--agent opencode` or `--agent antigravity` targets a host explicitly. The default installs into the current project. Add `--global` only when you choose user-level installation across projects. The default command remains interactive so existing-file decisions are visible. For one skill, use `--skill plane-setup` (or another entry point). Each generated skill is self-contained and includes fallback guides for related workflows.
 
 Requirements: Node.js 22.20+ for Skills CLI, npm, Git and an agent with local shell and MCP support. Runtime helpers use Python 3.10+; PR operations need an authenticated GitHub CLI. Skills CLI is a third-party installer, not an official Codex marketplace listing. It fetches the selected GitHub source; Plane DevFlow does not need a separate npm publication for this path.
 
@@ -27,7 +42,7 @@ Open a new session in the business repository and load/request `plane-setup`. Fo
 
 Reuse the host's working Plane tools and authorization. Check existing servers and the intended project/user configuration scope before adding a connection. Merge only the absent entry, preserve unrelated settings and credentials, and resolve conflicting server URLs before editing. Project configuration files are repository artifacts subject to the existing ownership/file-scope checks. User-level skill installation does not automatically choose MCP configuration scope.
 
-The host guides cover Codex CLI registration/login, Claude Code HTTP MCP registration and `/mcp`, Cursor's JSON/UI connection and OpenCode's remote server/auth commands. The user completes browser consent. Authorization tied to one client or server identity is not copied to another agent. Reopen/refresh the session when needed, inspect actual tool schemas and retrieve the requested workspace before claiming live access. An HTTP 401 challenge alone does not establish access.
+The host guides cover Codex CLI registration/login, Claude Code HTTP MCP registration and `/mcp`, Cursor's JSON/UI connection, OpenCode's remote server/auth commands and Antigravity's MCP settings. The user completes browser consent. Authorization tied to one client or server identity is not copied to another agent. Reopen/refresh the session when needed, inspect actual tool schemas and retrieve the requested workspace before claiming live access. An HTTP 401 challenge alone does not establish access.
 
 The Python/Git workflow shares `.plane-devflow.json`, task receipts, sync scripts and PR markers across agents. New task prefixes follow the active host unless the project fixes a prefix; existing task branches and worktrees are reused across serial host changes. See [agent compatibility](agent-compatibility.md#authorization-and-compatibility). `doctor` may report optional `codex_cli` availability; another host can work with it false. Hosts without managed-worktree APIs use the existing Git preparation path. Local terminal access is required for implementation; a text-only host can discuss the task but cannot execute the helpers.
 

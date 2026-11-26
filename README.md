@@ -14,7 +14,7 @@
 <p align="center"><a href="#features">Features</a> · <a href="#quick-start">Quick start</a> · <a href="#skills">Skills</a> · <a href="#documentation">Docs</a> · <a href="CHANGELOG.md">Changelog</a></p>
 <p align="center"><img src="docs/assets/workflow.svg" alt="Example workflow: Plane task DEMO-123 → coding agent in an isolated workspace → linked GitHub PR. GitHub Actions records PR activity back in Plane." width="100%"></p>
 
-Open-source Agent Skills with integration guides for **Codex, Claude Code, Cursor and OpenCode**. Work from a Plane task, deliver a linked PR, and use GitHub Actions to record PR activity back in Plane. No extra service to deploy.
+Open-source Agent Skills with integration guides for **Codex, Claude Code, Cursor, OpenCode and Antigravity**. Work from a Plane task, deliver a linked PR, and use GitHub Actions to record PR activity back in Plane. No extra service to deploy.
 
 ## Features
 
@@ -33,6 +33,8 @@ New setups record PR activity **without automatically changing task states**. Se
 ## Quick start
 
 ### Install
+
+**Antigravity:** [Install the plugin from GitHub](docs/installation.md#install-the-antigravity-plugin-from-github). It bundles all four skills and the Plane MCP connection.
 
 The `stable` channel includes `plane-check`. If you already use the Codex plugin, update it through your existing marketplace to get all four skills. Use Skills CLI for a standalone installation.
 
@@ -65,7 +67,7 @@ Each repository runs setup once and keeps its mapping in `.plane-devflow.json`. 
 
 ### Branch prefixes and switching agents
 
-New task branches use the active agent's prefix: `codex/`, `claude/` for Claude Code, `cursor/` or `opencode/`. New setups leave `github.branch_prefix` unset, so initializing a project with Codex does not fix later tasks to `codex/`. An explicit `github.branch_prefix` overrides these defaults. Existing projects keep their fixed prefix until you remove that field and merge the configuration change into the base branch.
+New task branches use the active agent's prefix: `codex/`, `claude/` for Claude Code, `cursor/`, `opencode/` or `antigravity/`. New setups leave `github.branch_prefix` unset, so initializing a project with Codex does not fix later tasks to `codex/`. An explicit `github.branch_prefix` overrides these defaults. Existing projects keep their fixed prefix until you remove that field and merge the configuration change into the base branch.
 
 To continue the same task in another agent, stop the previous session's work and open the recorded worktree. Keep its branch and primary PR: Claude Code continuing a task on `codex/project-123` uses that same branch. On the same machine, an agent with directory access can see uncommitted changes directly. See [agent naming and serial continuation](skills/plane-start/references/parallel-tasks.md#agent-naming-and-serial-continuation) for details.
 
@@ -105,6 +107,8 @@ Local task records support recovery in another chat when the host provides trust
 
 ### Update
 
+For Antigravity, [refresh the GitHub plugin through `agy`](docs/installation.md#install-the-antigravity-plugin-from-github).
+
 Ask your agent: **“Use plane-setup to upgrade Plane DevFlow in this repository; show the target release, changelog and plan first.”** One product version covers the skills and public GitHub Action. The flow preserves your installation channel and coordinates the local refresh, project upgrade PR, activation and verification.
 
 To refresh only the skill files, rerun the installation command:
@@ -130,7 +134,7 @@ For a global installation, add `--global`. Removal preserves MCP connections, ac
 | Topic | Read more |
 | --- | --- |
 | First project | [New-computer preparation, handoffs and first tasks](docs/first-project.md) |
-| Agent compatibility | [Codex, Claude Code, Cursor and OpenCode](docs/agent-compatibility.md) |
+| Agent compatibility | [Codex, Claude Code, Cursor, OpenCode and Antigravity](docs/agent-compatibility.md) |
 | Installation and updates | [Install, update, migrate and remove](docs/installation.md) |
 | Setup and recovery | [Project association & sync](skills/plane-setup/references/setup.md) · [Resume setup](skills/plane-setup/references/recovery.md) |
 | Task diagnosis | [Read-only task status and partial progress](skills/plane-deliver/references/task-diagnostics.md) |

@@ -8,6 +8,7 @@ Read this before the first local operation or live Plane call, and when the host
 | Claude Code | [Claude Code](hosts/claude-code.md) |
 | Cursor | [Cursor](hosts/cursor.md) |
 | OpenCode | [OpenCode](hosts/opencode.md) |
+| Antigravity | [Antigravity](hosts/antigravity.md) |
 
 For another/unknown host, inspect whether it can load Agent Skills, execute local Git/Python commands and connect to the Plane MCP. Ask only for a missing host identity when needed to choose configuration syntax. Missing terminal access blocks local development helpers; report that capability gap instead of inventing shell execution. Browser/app control is optional: use the existing recovery guide's manual links when absent.
 

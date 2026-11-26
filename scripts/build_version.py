@@ -14,7 +14,8 @@ def generate(root=ROOT, *, check=False):
     if not re.fullmatch(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)', version):
         raise ValueError('VERSION must contain a stable semantic version.')
     changes = {}
-    for name in ('package.json', 'package-lock.json', 'plugins/plane-devflow/plugin.json'):
+    for name in ('package.json', 'package-lock.json', 'plugins/plane-devflow/plugin.json',
+                 '.antigravity-plugin/plugin.json'):
         path = root / name
         original = path.read_text()
         data = json.loads(original)

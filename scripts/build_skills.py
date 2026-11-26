@@ -11,7 +11,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 NAMES = ("plane-setup", "plane-start", "plane-deliver", "plane-check")
-HOSTS = ("codex", "claude-code", "cursor", "opencode")
+HOSTS = ("codex", "claude-code", "cursor", "opencode", "antigravity")
 OWNER = "plane-devflow/build_skills.py"
 
 
